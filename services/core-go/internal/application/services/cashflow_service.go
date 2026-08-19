@@ -32,6 +32,9 @@ func (s *CashflowService) RecordTopUp(ctx context.Context, entry *domain.Cashflo
 	}
 	entry.EntryType = domain.EntryTopUp
 	entry.Debit = 0
+	if entry.Remarks == "" {
+		entry.Remarks = domain.PaymentPaid
+	}
 	return s.cashflowRepo.Create(ctx, entry)
 }
 
@@ -46,15 +49,90 @@ func (s *CashflowService) RecordShipment(ctx context.Context, entry *domain.Cash
 		}
 	}
 
+	if entry.Remarks == "" {
+		entry.Remarks = domain.PaymentUnpaid
+	}
+
 	return s.cashflowRepo.Create(ctx, entry)
 }
 
-func (s *CashflowService) GetDashboardData(ctx context.Context, page, limit int) ([]domain.CashflowEntry, int, error) {
-	offset := (page - 1) * limit
-	return s.cashflowRepo.ListAll(ctx, offset, limit)
+func (s *CashflowService) UpdateEntry(ctx context.Context, entry *domain.CashflowEntry, userID uuid.UUID) error {
+	oldEntry, err := s.cashflowRepo.GetByID(ctx, entry.ID)
+	if err != nil {
+		return err
+	}
+
+	// Archive old state for audit/history
+	_ = s.cashflowRepo.ArchiveEntry(ctx, oldEntry, userID, "manual_edit")
+
+	// Calculate difference for cascading balance
+	diff := (entry.Kredit - entry.Debit) - (oldEntry.Kredit - oldEntry.Debit)
+	entry.Saldo = oldEntry.Saldo + diff
+	entry.SequenceNo = oldEntry.SequenceNo
+	entry.UpdatedBy = userID
+
+	if entry.EntryType == domain.EntryShipment {
+		entry.Profit = entry.GrandSelling - entry.GrandCost
+		if entry.GrandSelling > 0 {
+			entry.MarginPct = entry.Profit / entry.GrandSelling
+		} else {
+			entry.MarginPct = 0
+		}
+		if entry.VendorID == nil && entry.VendorNameRaw != "" {
+			vendor, err := s.vendorSvc.FindOrCreateVendor(ctx, entry.VendorNameRaw, "")
+			if err == nil {
+				entry.VendorID = &vendor.ID
+			}
+		}
+	}
+
+	if err := s.cashflowRepo.Update(ctx, entry); err != nil {
+		return err
+	}
+
+	if diff != 0 {
+		if err := s.cashflowRepo.UpdateBalancesAfter(ctx, oldEntry.SequenceNo, diff); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
-func (s *CashflowService) GetSummary(ctx context.Context) (map[string]float64, error) {
+func (s *CashflowService) DeleteEntry(ctx context.Context, id int, userID uuid.UUID) error {
+	oldEntry, err := s.cashflowRepo.GetByID(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	// Archive old state before delete
+	_ = s.cashflowRepo.ArchiveEntry(ctx, oldEntry, userID, "manual_delete")
+
+	diff := -(oldEntry.Kredit - oldEntry.Debit)
+
+	if err := s.cashflowRepo.Delete(ctx, id); err != nil {
+		return err
+	}
+
+	if diff != 0 {
+		if err := s.cashflowRepo.UpdateBalancesAfter(ctx, oldEntry.SequenceNo, diff); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (s *CashflowService) UpdatePaymentStatus(ctx context.Context, id int, status domain.PaymentStatus, userID uuid.UUID) error {
+	return s.cashflowRepo.UpdateRemarks(ctx, id, status, userID)
+}
+
+func (s *CashflowService) GetDashboardData(ctx context.Context, page, limit int, filter ports.ListFilter) ([]domain.CashflowEntry, int, error) {
+	offset := (page - 1) * limit
+	return s.cashflowRepo.ListAll(ctx, offset, limit, filter)
+}
+
+func (s *CashflowService) GetSummary(ctx context.Context) (map[string]interface{}, error) {
 	return s.cashflowRepo.GetSummary(ctx)
 }
 
@@ -112,6 +190,8 @@ func (s *CashflowService) ProcessExcelImport(ctx context.Context, reader io.Read
 	}
 
 	var entriesToCreate []*domain.CashflowEntry
+	var previousSaldo float64
+	isFirstRow := true
 
 	// Row 6 is index 5 (header). Row 7 is index 6 (data)
 	for i := 6; i < len(rows); i++ {
@@ -123,8 +203,8 @@ func (s *CashflowService) ProcessExcelImport(ctx context.Context, reader io.Read
 		kredit := parseExcelFloat(row[0])
 		debit := parseExcelFloat(row[1])
 		
-		// If both are 0 or empty, maybe it's an empty row
-		if kredit == 0 && debit == 0 && row[4] == "" {
+		// If both are 0 or empty and info is empty, it's an empty row/placeholder
+		if kredit == 0 && debit == 0 && row[4] == "" && row[6] == "" {
 			continue
 		}
 
@@ -151,15 +231,35 @@ func (s *CashflowService) ProcessExcelImport(ctx context.Context, reader io.Read
 			remarks = domain.PaymentPending
 		}
 
-		if kredit > 0 {
-			entriesToCreate = append(entriesToCreate, &domain.CashflowEntry{
-				EntryType:   domain.EntryTopUp,
-				DateOfEntry: dateDebit,
-				Kredit:      kredit,
-				CreatedBy:   userID,
-				UpdatedBy:   userID,
-				Remarks:     "PAID",
-			})
+		// Intelligent carry-over vs new top-up modal detection
+		if isFirstRow {
+			if kredit > 0 {
+				entriesToCreate = append(entriesToCreate, &domain.CashflowEntry{
+					EntryType:      domain.EntryTopUp,
+					DateOfEntry:    dateDebit,
+					Kredit:         kredit,
+					ActInformation: "Modal Awal (Opening Balance)",
+					CreatedBy:      userID,
+					UpdatedBy:      userID,
+					Remarks:        domain.PaymentPaid,
+				})
+				previousSaldo = kredit
+			}
+			isFirstRow = false
+		} else {
+			selisih := kredit - previousSaldo
+			if selisih > 0.01 {
+				entriesToCreate = append(entriesToCreate, &domain.CashflowEntry{
+					EntryType:      domain.EntryTopUp,
+					DateOfEntry:    dateDebit,
+					Kredit:         selisih,
+					ActInformation: "Penambahan Modal (Injeksi Dana)",
+					CreatedBy:      userID,
+					UpdatedBy:      userID,
+					Remarks:        domain.PaymentPaid,
+				})
+				previousSaldo += selisih
+			}
 		}
 
 		if debit > 0 {
@@ -179,6 +279,7 @@ func (s *CashflowService) ProcessExcelImport(ctx context.Context, reader io.Read
 				CreatedBy:       userID,
 				UpdatedBy:       userID,
 			})
+			previousSaldo -= debit
 		}
 	}
 

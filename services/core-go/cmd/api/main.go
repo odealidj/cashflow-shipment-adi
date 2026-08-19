@@ -122,6 +122,9 @@ func main() {
 				r.Post("/import", cashflowHandler.ImportExcel)
 				r.Post("/shipment", cashflowHandler.CreateShipment)
 				r.Post("/topup", cashflowHandler.CreateTopUp)
+				r.Put("/{id}", cashflowHandler.Update)
+				r.Delete("/{id}", cashflowHandler.Delete)
+				r.Patch("/{id}/status", cashflowHandler.UpdateStatus)
 			})
 			
 			// Vendor Routes
