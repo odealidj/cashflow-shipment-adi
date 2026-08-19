@@ -17,6 +17,7 @@ import (
 	"github.com/cashflow-shipment-app/backend/internal/middleware"
 	"github.com/go-chi/chi/v5"
 	chiMiddleware "github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/cors"
 	httpSwagger "github.com/swaggo/http-swagger/v2"
 
 	_ "github.com/cashflow-shipment-app/backend/docs"
@@ -54,9 +55,6 @@ func main() {
 		jwtSecret = "super-secret-key-for-dev-only"
 	}
 
-	// Wait briefly for DB to be ready in docker-compose setup
-	time.Sleep(2 * time.Second)
-
 	// Initialize DB Pool
 	dbPool, err := repository.NewDBPool(ctx, dbUrl)
 	if err != nil {
@@ -80,6 +78,16 @@ func main() {
 	cashflowHandler := handler.NewCashflowHandler(cashflowService)
 
 	r := chi.NewRouter()
+
+	// CORS Middleware
+	r.Use(cors.Handler(cors.Options{
+		AllowedOrigins:   []string{"https://*", "http://*"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+		ExposedHeaders:   []string{"Link", "Content-Disposition"},
+		AllowCredentials: true,
+		MaxAge:           300,
+	}))
 
 	// Global Middlewares
 	r.Use(chiMiddleware.Logger)
