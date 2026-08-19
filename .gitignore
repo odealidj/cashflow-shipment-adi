@@ -1,27 +1,30 @@
 # Dependencies
 node_modules/
-frontend/node_modules/
+apps/*/node_modules/
 .pnp
 .pnp.*
 
 # Next.js / Frontend builds
 .next/
-frontend/.next/
-frontend/out/
-frontend/build/
-frontend/.vercel/
+apps/*/.next/
+apps/*/out/
+apps/*/build/
+apps/*/.vercel/
 *.tsbuildinfo
 
-# Go / Backend binaries
-backend/bin/
-backend/tmp/
-backend/*.exe
+# Go / Rust / Backend binaries
+services/*/bin/
+services/*/tmp/
+services/*/target/
+services/*/*.exe
+services/*/server
+services/*/main
 *.exe
 *.exe~
 *.dll
 *.so
 *.dylib
-backend/main
+backend/server
 
 # Environment variables
 .env
@@ -43,4 +46,3 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
-backend/server

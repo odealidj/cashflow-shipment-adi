@@ -2,7 +2,7 @@
 
 A modern, high-performance web application designed to manage and track operational cash flow, shipment costs, and vendor relationships for logistics and trucking businesses. 
 
-Built with a clean **Hexagonal Architecture** on the backend and a premium **Glassmorphism** UI on the frontend.
+Built using a **Polyglot Monorepo** structure (`apps/` & `services/`), with **Hexagonal Architecture** on the backend and a premium **Glassmorphism** UI on the frontend.
 
 ---
 
@@ -17,47 +17,43 @@ Built with a clean **Hexagonal Architecture** on the backend and a premium **Gla
 
 ---
 
-## 🛠 Tech Stack
+## 🛠 Tech Stack & Architecture
 
-### Frontend
-- **Framework:** [Next.js](https://nextjs.org/) (React)
-- **Styling:** [Tailwind CSS](https://tailwindcss.com/)
-- **Icons:** [Lucide React](https://lucide.dev/)
-- **State Management:** React Hooks & Context
+### Applications (`apps/`)
+- **`apps/web-next/`**: Web Application built with [Next.js](https://nextjs.org/) (React, Tailwind CSS, Lucide React).
+- *(Roadmap)* **`apps/web-angular/`**: Admin/Enterprise portal built with Angular.
+- *(Roadmap)* **`apps/mobile/`**: Mobile app for field operators (Flutter).
 
-### Backend
-- **Language:** [Go (Golang)](https://go.dev/)
-- **Router:** [go-chi/chi](https://github.com/go-chi/chi)
-- **Architecture:** Hexagonal Architecture (Domain-Driven Design)
-- **ORM / SQL:** [sqlx](https://github.com/jmoiron/sqlx) & [lib/pq](https://github.com/lib/pq)
-- **Excel Processor:** [Excelize (v2)](https://github.com/qax-os/excelize)
-- **Documentation:** Swagger (Swag)
+### Services (`services/`)
+- **`services/core-go/`**: Core REST API & Business Logic built with [Go (Golang)](https://go.dev/) using Hexagonal Architecture, `go-chi/chi`, `sqlx`, and `Excelize`.
+- *(Roadmap)* **`services/engine-rust/`**: High-performance computing & background processing engine built with Rust.
 
 ### Infrastructure
 - **Database:** PostgreSQL
-- **Containerization:** Podman / Docker Compose
+- **Containerization:** Docker Compose / Podman
 
 ---
 
 ## 🚀 Getting Started
 
 ### Prerequisites
-Make sure you have the following installed on your machine:
 - [Go](https://go.dev/doc/install) (v1.20 or newer)
 - [Node.js](https://nodejs.org/) (v18 or newer)
-- [Podman](https://podman.io/) or Docker
+- [Docker](https://www.docker.com/) or [Podman](https://podman.io/)
 
 ### 1. Database Setup
-Start the PostgreSQL database using the provided compose file:
+Start the PostgreSQL database using Docker Compose:
 ```bash
-podman-compose up -d
+docker compose up -d
+# atau jika menggunakan podman:
+# podman-compose up -d
 ```
-*The database will run on `localhost:5432` with user `postgres` and password `password`.*
+*The database will run on `localhost:5432` with user `cashflow_user` and database `cashflow_db`.*
 
-### 2. Backend Setup
-Navigate to the backend directory, install dependencies, generate swagger docs, and run the server:
+### 2. Backend Setup (`services/core-go`)
+Navigate to the Go service directory, tidy dependencies, generate swagger docs, and run the server:
 ```bash
-cd backend
+cd services/core-go
 go mod tidy
 
 # Generate Swagger Documentation
@@ -66,13 +62,13 @@ go run github.com/swaggo/swag/cmd/swag@latest init -g cmd/api/main.go
 # Run the API Server
 go run cmd/api/main.go
 ```
-*The backend API will be available at `http://localhost:8080`.*
+*The backend API will be available at `http://localhost:8080`.*  
 *Swagger UI is available at `http://localhost:8080/swagger/index.html`.*
 
-### 3. Frontend Setup
-In a new terminal, navigate to the frontend directory, install dependencies, and run the development server:
+### 3. Frontend Setup (`apps/web-next`)
+In a new terminal, navigate to the web application directory, install dependencies, and run the development server:
 ```bash
-cd frontend
+cd apps/web-next
 npm install
 npm run dev
 ```
@@ -84,36 +80,29 @@ npm run dev
 
 ```text
 cashflow-shipment-app/
-├── backend/
-│   ├── cmd/api/             # Application entrypoint & HTTP Router
-│   ├── docs/                # Auto-generated Swagger documentation
-│   ├── internal/
-│   │   ├── adapters/        # HTTP Handlers and DB Repositories (PostgreSQL)
-│   │   ├── application/     # Business logic & Services
-│   │   ├── core/            # Domain models and Interfaces (Ports)
-│   │   └── middleware/      # JWT Authentication middleware
-│   ├── pkg/                 # Utility packages (Auth, Password Hashing)
-│   └── go.mod
-├── frontend/
-│   ├── public/              # Static assets
-│   ├── src/
-│   │   ├── app/             # Next.js App Router (Pages & Layouts)
-│   │   └── components/      # Reusable React components (Tables, Modals)
-│   ├── tailwind.config.ts   # Tailwind CSS configuration
-│   └── package.json
-├── docker-compose.yml       # Database infrastructure
+├── apps/
+│   └── web-next/            # Next.js Web App (React 19, Tailwind CSS)
+│       ├── public/          # Static assets
+│       ├── src/             # App Router & UI components
+│       └── package.json
+├── services/
+│   └── core-go/             # Golang Core API Service
+│       ├── cmd/api/         # Entrypoint & HTTP Router
+│       ├── docs/            # Auto-generated Swagger docs
+│       ├── internal/        # Hexagonal Architecture (domain, ports, adapters)
+│       ├── pkg/             # Utilities (Auth, JWT, Hash)
+│       └── go.mod
+├── docker-compose.yml       # PostgreSQL database container configuration
+├── .gitignore               # Root gitignore with monorepo patterns
 └── README.md
 ```
 
 ---
 
 ## 📄 API Documentation
-The backend includes interactive API documentation powered by Swagger. Once the backend is running, visit:
+The backend includes interactive API documentation powered by Swagger. Once the backend is running, visit:  
 [http://localhost:8080/swagger/index.html](http://localhost:8080/swagger/index.html)
 
 ## 🔒 Security Notes
-- Passwords are securely hashed using `bcrypt` before entering the database.
+- Passwords are securely hashed using `bcrypt`.
 - API endpoints are protected using JWT (JSON Web Tokens).
-
----
-*Built with best practices for scalability, maintainability, and enterprise-grade performance.*
