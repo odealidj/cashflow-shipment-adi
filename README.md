@@ -41,38 +41,47 @@ Built using a **Polyglot Monorepo** structure (`apps/` & `services/`), with **He
 - [Node.js](https://nodejs.org/) (v18 or newer)
 - [Docker](https://www.docker.com/) or [Podman](https://podman.io/)
 
-### 1. Database Setup
-Start the PostgreSQL database using Docker Compose:
+### Quick Start (Using Makefile) ⚡
+Anda dapat menjalankan aplikasi dengan mudah menggunakan perintah `make`:
+
 ```bash
-docker compose up -d
-# atau jika menggunakan podman:
+# 1. Jalankan PostgreSQL Database (Infrastructure)
+make infra-up
+
+# 2. Jalankan Core Go Service (Terminal 1)
+make run-local-core-go
+
+# 3. Jalankan Next.js Web App (Terminal 2)
+make run-local-web-next
+```
+
+---
+
+### Manual Setup (Step-by-Step)
+
+#### 1. Database Setup
+```bash
+docker-compose up -d
+# atau
 # podman-compose up -d
 ```
 *The database will run on `localhost:5432` with user `cashflow_user` and database `cashflow_db`.*
 
-### 2. Backend Setup (`services/core-go`)
-Navigate to the Go service directory, tidy dependencies, generate swagger docs, and run the server:
+#### 2. Backend Setup (`services/core-go`)
 ```bash
 cd services/core-go
 go mod tidy
-
-# Generate Swagger Documentation
-go run github.com/swaggo/swag/cmd/swag@latest init -g cmd/api/main.go
-
-# Run the API Server
 go run cmd/api/main.go
 ```
-*The backend API will be available at `http://localhost:8080`.*  
-*Swagger UI is available at `http://localhost:8080/swagger/index.html`.*
+*API: `http://localhost:8080`* | *Swagger UI: `http://localhost:8080/swagger/index.html`*
 
-### 3. Frontend Setup (`apps/web-next`)
-In a new terminal, navigate to the web application directory, install dependencies, and run the development server:
+#### 3. Frontend Setup (`apps/web-next`)
 ```bash
 cd apps/web-next
 npm install
 npm run dev
 ```
-*The frontend application will be available at `http://localhost:3000`.*
+*Web App: `http://localhost:3000`*
 
 ---
 
