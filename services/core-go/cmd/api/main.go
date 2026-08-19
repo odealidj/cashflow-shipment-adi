@@ -2,10 +2,13 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/cashflow-shipment-app/backend/internal/adapters/handler"
@@ -127,10 +130,53 @@ func main() {
 		port = "8080"
 	}
 
+	server := &http.Server{
+		Addr:              ":" + port,
+		Handler:           r,
+		ReadHeaderTimeout: 10 * time.Second,
+	}
+
+	// Server run context for graceful shutdown
+	serverCtx, stopServer := context.WithCancel(context.Background())
+
+	// Listen for OS signals for graceful shutdown
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
+
+	go func() {
+		sig := <-sigChan
+		log.Printf("Received shutdown signal (%v). Initiating graceful shutdown...\n", sig)
+
+		// Create shutdown context with 10 second timeout
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
+		// Shutdown HTTP server gracefully
+		if err := server.Shutdown(shutdownCtx); err != nil {
+			log.Printf("HTTP server shutdown error: %v\n", err)
+		} else {
+			log.Println("HTTP server stopped gracefully.")
+		}
+
+		// Close DB connections
+		if err := dbPool.Close(); err != nil {
+			log.Printf("Database connection close error: %v\n", err)
+		} else {
+			log.Println("Database connection pool closed successfully.")
+		}
+
+		stopServer()
+	}()
+
 	fmt.Printf("Server running on port %s\n", port)
 	fmt.Printf("Swagger UI available at http://localhost:%s/swagger/index.html\n", port)
-	
-	if err := http.ListenAndServe(":"+port, r); err != nil {
+
+	// Run the server
+	if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		log.Fatalf("Server failed to start: %v", err)
 	}
+
+	// Wait for shutdown goroutine to complete
+	<-serverCtx.Done()
+	log.Println("Server gracefully stopped.")
 }
