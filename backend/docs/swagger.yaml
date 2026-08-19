@@ -1,0 +1,366 @@
+basePath: /api/v1
+definitions:
+  domain.CashflowEntry:
+    properties:
+      act_explaination:
+        type: string
+      act_information:
+        type: string
+      created_at:
+        type: string
+      created_by:
+        type: string
+      date_of_entry:
+        type: string
+      debit:
+        type: number
+      due_date:
+        type: string
+      entry_type:
+        $ref: '#/definitions/domain.EntryType'
+      grand_cost:
+        type: number
+      grand_selling:
+        type: number
+      id:
+        type: integer
+      kredit:
+        type: number
+      margin_pct:
+        type: number
+      profit:
+        type: number
+      remarks:
+        $ref: '#/definitions/domain.PaymentStatus'
+      saldo:
+        type: number
+      sequence_no:
+        type: integer
+      top_days:
+        type: integer
+      updated_at:
+        type: string
+      updated_by:
+        type: string
+      vendor_id:
+        type: integer
+      vendor_name_raw:
+        type: string
+    type: object
+  domain.EntryType:
+    enum:
+    - SHIPMENT
+    - TOP_UP
+    type: string
+    x-enum-varnames:
+    - EntryShipment
+    - EntryTopUp
+  domain.PaymentStatus:
+    enum:
+    - PAID
+    - UNPAID
+    - PENDING
+    type: string
+    x-enum-varnames:
+    - PaymentPaid
+    - PaymentUnpaid
+    - PaymentPending
+  domain.Vendor:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      notes:
+        type: string
+      phone:
+        type: string
+    type: object
+  handler.LoginRequest:
+    properties:
+      identifier:
+        description: Email or Phone
+        type: string
+      password:
+        type: string
+    type: object
+  handler.RegisterRequest:
+    properties:
+      email:
+        type: string
+      full_name:
+        type: string
+      password:
+        type: string
+      phone:
+        type: string
+      role:
+        type: string
+    type: object
+  response.APIResponse:
+    properties:
+      data: {}
+      message:
+        type: string
+      status:
+        type: boolean
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  description: API for managing continuous rolling cashflow for logistics/trucking.
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: Cashflow Shipment App API
+  version: "1.0"
+paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Login using email or phone number and password
+      parameters:
+      - description: Login Credentials
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      summary: User login
+      tags:
+      - auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Register a new user in the system (Admin only ideally, but open
+        for now)
+      parameters:
+      - description: User Registration Info
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      summary: Register a new user
+      tags:
+      - auth
+  /cashflow:
+    get:
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 50
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Get dashboard cashflow entries
+      tags:
+      - cashflow
+  /cashflow/export:
+    get:
+      produces:
+      - application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+      responses:
+        "200":
+          description: OK
+      security:
+      - BearerAuth: []
+      summary: Export cashflow data to Excel
+      tags:
+      - cashflow
+  /cashflow/import:
+    post:
+      consumes:
+      - multipart/form-data
+      parameters:
+      - description: Excel File
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Import cashflow data from Excel
+      tags:
+      - cashflow
+  /cashflow/shipment:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Shipment Entry Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/domain.CashflowEntry'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Record a Shipment entry
+      tags:
+      - cashflow
+  /cashflow/summary:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Get dashboard cashflow summary
+      tags:
+      - cashflow
+  /cashflow/topup:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Top-Up Entry Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/domain.CashflowEntry'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Record a Top-Up entry
+      tags:
+      - cashflow
+  /vendors:
+    get:
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 50
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Get all vendors
+      tags:
+      - vendors
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Vendor Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/domain.Vendor'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Create new vendor
+      tags:
+      - vendors
+  /vendors/{id}:
+    get:
+      parameters:
+      - description: Vendor ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Get vendor by ID
+      tags:
+      - vendors
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
