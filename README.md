@@ -57,6 +57,14 @@ make run-local-web-next
 
 ---
 
+### 🔑 Default Login Credentials
+Untuk masuk ke aplikasi pertama kali, gunakan akun default berikut:
+* **Email / Phone:** `admin@example.com` atau `08123456789`
+* **Password:** `password123`
+* **Role:** `super_admin`
+
+---
+
 ### Manual Setup (Step-by-Step)
 
 #### 1. Database Setup
