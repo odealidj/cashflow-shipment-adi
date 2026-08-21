@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { LogOut, Activity, LayoutDashboard, Truck } from "lucide-react";
+import { LogOut, Activity, LayoutDashboard, Truck, Receipt } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -26,6 +26,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   if (!user) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
 
+  const isDashboardActive = pathname === "/dashboard";
+  const isTransactionsActive = pathname.startsWith("/dashboard/transactions");
+  const isVendorsActive = pathname.startsWith("/dashboard/vendors");
+
   return (
     <div className="min-h-screen flex animate-fade-in bg-black">
       {/* Sidebar */}
@@ -42,7 +46,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <Link 
               href="/dashboard" 
               className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium ${
-                pathname === "/dashboard" 
+                isDashboardActive 
                 ? "bg-white/10 text-white shadow-sm" 
                 : "text-gray-400 hover:text-white hover:bg-white/5"
               }`}
@@ -51,9 +55,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               Dashboard
             </Link>
             <Link 
+              href="/dashboard/transactions" 
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium ${
+                isTransactionsActive 
+                ? "bg-white/10 text-white shadow-sm" 
+                : "text-gray-400 hover:text-white hover:bg-white/5"
+              }`}
+            >
+              <Receipt className="w-5 h-5" />
+              Transaksi
+            </Link>
+            <Link 
               href="/dashboard/vendors" 
               className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium ${
-                pathname === "/dashboard/vendors" 
+                isVendorsActive 
                 ? "bg-white/10 text-white shadow-sm" 
                 : "text-gray-400 hover:text-white hover:bg-white/5"
               }`}
