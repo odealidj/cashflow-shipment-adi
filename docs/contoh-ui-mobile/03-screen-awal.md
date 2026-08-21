@@ -1,25 +1,28 @@
 # 03 — Screen Awal (Splash & PIN Lock)
 
-> Referensi: `contoh-ui/0. screen-awal/`
-> **Catatan**: Folder ini berisi **2 halaman yang berbeda** (bukan 1 halaman scrollable).
+> Referensi: `contoh-ui/0. screen-awal/` | Aset gabungan: [`assets/00-screen-awal.png`](./assets/00-screen-awal.png)
+> **Catatan**: Folder ini berisi **2 halaman yang berbeda secara sekuensial** (Splash Screen muncul lebih dulu, lalu berpindah ke PIN Lock Screen).
 
 ---
 
-## 3.1 Splash Screen (`1.page-1.png`)
+## 3.1 Preview Visual Kedua Screen (Step 1 → Step 2)
 
-![Referensi: contoh-ui/0. screen-awal/1.page-1.png](../../contoh-ui/0.%20screen-awal/1.page-1.png)
+![Preview Screen Awal](./assets/00-screen-awal.png)
+
+---
+
+## 3.2 Splash Screen (`1.page-1.png` — Step 1)
 
 ### Layout
 ```
 ┌─────────────────────────────────┐
-│                                 │  ← Background: #1C2B4A biru gelap
-│                                 │
+│                                 │  ← Background: #1C2B4A (Dark Blue)
 │                                 │
 │         ╔══════════╗            │
-│         ║  [LOGO]  ║            │  ← Logo besar, centered
+│         ║  [LOGO]  ║            │  ← Logo "T" geometris, centered
 │         ╚══════════╝            │
-│           TRANSIO               │  ← Wordmark
-│      SHIPMENT CONTROL           │  ← Tagline (letter-spacing lebar)
+│           TRANSIO               │  ← Wordmark putih
+│      SHIPMENT CONTROL           │  ← Tagline biru muda (letter-spacing)
 │                                 │
 │                                 │
 └─────────────────────────────────┘
@@ -29,38 +32,29 @@
 | Elemen | Detail |
 |---|---|
 | **Background** | `#1C2B4A` — biru gelap solid |
-| **Logo** | Monogram "T" geometris/abstrak, warna biru terang + ungu/lavender |
-| **Ukuran Logo** | Besar, centered vertikal ~40–50% layar |
-| **Wordmark** | "TRANSIO" — Bold, putih, uppercase, tracking normal |
-| **Tagline** | "SHIPMENT CONTROL" — Regular/Light, biru muda, uppercase, **letter-spacing lebar** |
-| **Jarak logo ke teks** | ~24–32dp |
+| **Logo** | Monogram "T" geometris/abstrak (biru terang gradien ke ungu/cyan) |
+| **Ukuran Logo** | Centered vertikal (~40–50% layar) |
+| **Wordmark** | "TRANSIO" — Bold, putih, uppercase |
+| **Tagline** | "SHIPMENT CONTROL" — Regular, biru muda, uppercase, **letter-spacing lebar** |
 | **Status Bar** | Transparan (ikon putih) |
-| **Bottom Nav Bar** | Tidak ada (full screen) |
-
-### Behavior
-- Auto-navigate ke PIN Lock Screen setelah **~2 detik**
-- Atau langsung ke Beranda jika sesi masih aktif (opsional — sesuai implementasi)
-- Tidak ada interaksi user (non-interactive)
+| **Behavior** | Auto-navigate ke PIN Lock Screen setelah **~2 detik** |
 
 ---
 
-## 3.2 PIN Lock Screen (`2.page-2.png`)
-
-![Referensi: contoh-ui/0. screen-awal/2.page-2.png](../../contoh-ui/0.%20screen-awal/2.page-2.png)
+## 3.3 PIN Lock Screen (`2.page-2.png` — Step 2)
 
 ### Layout
 ```
 ┌─────────────────────────────────┐
-│                                 │  ← Background: #1C2B4A biru gelap
+│                                 │  ← Background: #1C2B4A (Dark Blue)
 │         ╔═════════╗             │
 │         ║ [logo]  ║             │  ← Logo kecil, centered
 │         ╚═════════╝             │
 │          TRANSIO                │
 │                                 │
-│   Masukkan PIN untuk membuka    │  ← Label instruksi (putih/abu)
+│   Masukkan PIN untuk membuka    │  ← Label instruksi
 │                                 │
 │     ○  ○  ○  ○  ○  ○           │  ← 6 dot indicator
-│                                 │
 │                                 │
 │   ┌─────┐  ┌─────┐  ┌─────┐   │
 │   │  1  │  │  2  │  │  3  │   │
@@ -72,39 +66,31 @@
 │   │  7  │  │  8  │  │  9  │   │
 │   └─────┘  └─────┘  └─────┘   │
 │   ┌─────┐  ┌─────┐  ┌─────┐   │
-│   │ 🔑  │  │  0  │  │ ⌫  │   │  ← fingerprint | 0 | backspace
+│   │ 🔄🔒 │  │  0  │  │  ⌫  │   │  ← Reset PIN | 0 | Backspace
 │   └─────┘  └─────┘  └─────┘   │
 └─────────────────────────────────┘
 ```
 
-### Spesifikasi
+### Spesifikasi Numpad & Kontrol
 | Elemen | Detail |
 |---|---|
-| **Background** | `#1C2B4A` — sama dengan Splash |
-| **Logo** | Lebih kecil dari Splash, tetap centered |
-| **Instruksi** | "Masukkan PIN untuk membuka" — teks abu/putih muda |
-| **PIN Indicator** | 6 lingkaran kosong (○) → terisi (●) saat digit diinput |
-| **PIN Length** | **6 digit** |
-| **Numpad Style** | Tombol lingkaran abu-abu gelap semi-transparan |
-| **Tombol Fingerprint** | Ikon sidik jari (kiri bawah numpad) — biometrik |
-| **Tombol Backspace** | Ikon ⌫ (kanan bawah numpad) |
-| **Status Bar** | Transparan (ikon putih) |
+| **Background** | `#1C2B4A` — sama dengan Splash Screen |
+| **Instruksi** | "Masukkan PIN untuk membuka" — teks abu-abu muda |
+| **PIN Indicator** | 6 lingkaran (○) → terisi (●) saat angka diketik |
+| **Panjang PIN** | **6 digit** |
+| **Tombol Angka (1–9, 0)** | Lingkaran abu-abu semi-transparan (`rgba(255,255,255,0.1)`) |
+| **Tombol Kiri Bawah** | **Ikon Gembok dengan Panah Melingkar (🔄🔒)** — Aksi: Reset PIN / Buka Kunci Ulang |
+| **Tombol Kanan Bawah** | **Ikon Backspace (⌫)** — Hapus digit terakhir |
 
-### Behavior & Logic
+### Logika & Keamanan
 ```
-User input digit  → Dot indicator terisi (● dari kiri)
-Input 6 digit     → Auto-validate PIN
-PIN benar         → Navigate ke Beranda (replace)
-PIN salah         → Shake animation + dot reset
-Tap fingerprint   → Trigger biometric dialog sistem
-Biometrik sukses  → Navigate ke Beranda (replace)
+Input digit       → Dot indicator terisi (●)
+Lengkap 6 digit   → Validasi otomatis PIN dengan local secure storage
+PIN benar         → Masuk ke Beranda (replace route)
+PIN salah         → Animasi getar (shake) + dot kembali kosong
+Tap Reset PIN     → Dialog verifikasi / reset keamanan
+(Opsional OS)     → Dapat dipadukan dengan Biometrik (Fingerprint/FaceID via local_auth)
 ```
-
-### Keamanan
-- **PIN 6 digit** — lebih aman dibanding 4 digit
-- **PIN disimpan secara lokal** di device (encrypted storage)
-- **Biometrik** sebagai alternatif (fingerprint; bisa extend ke Face ID)
-- Tidak ada "lupa PIN" yang terlihat di UI — perlu implementasi flow tersendiri
 
 ---
 

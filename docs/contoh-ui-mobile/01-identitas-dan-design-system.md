@@ -1,6 +1,6 @@
 # 01 — Identitas & Design System
 
-> Referensi: Seluruh screenshot di folder `contoh-ui/`
+> Referensi: Seluruh screenshot di folder `contoh-ui/` dan aset di `assets/`
 
 ---
 
@@ -23,8 +23,8 @@
 | Token | Hex (Estimasi) | Penggunaan |
 |---|---|---|
 | `primary` | `#2563EB` / `#3B5CF6` | CTA button, tab aktif, ikon form, badge |
-| `primary-dark` | `#1E3A8A` | AppBar gelap (form Tambah Transaksi) |
-| `primary-gradient` | `#1E40AF → #3B5CF6` | Splash screen background, hero banner |
+| `primary-dark` | `#1C2B4A` | Background Splash, PIN Screen, dan Dark AppBar (Tambah Transaksi) |
+| `primary-gradient` | `#1E40AF → #3B5CF6` | Hero banner gradien (Beranda) |
 | `success` | `#22C55E` | Status "Lunas", profit positif, bar chart, btn "Bayar", btn "Simpan" |
 | `success-bg` | `#F0FDF4` | Background field Profit (read-only, hijau muda) |
 | `warning` | `#F59E0B` | Status "Belum Lunas", overdue warning text |
@@ -38,7 +38,7 @@
 | `neutral-100` | `#F3F4F6` | Background chip filter non-aktif |
 | `surface` | `#FFFFFF` | Background card, input field |
 | `background` | `#F8FAFC` | Background halaman utama (abu sangat muda) |
-| `background-dark` | `#1C2B4A` | Splash screen & PIN screen (biru gelap) |
+| `background-dark` | `#1C2B4A` | Splash screen & PIN screen (navy dark blue) |
 | `info-bg` | `#EFF6FF` | Background field Margin/Saldo (biru muda) |
 
 ---
@@ -56,7 +56,7 @@
 | **Caption** | Regular | 12sp | Tanggal, hint text, info sekunder |
 | **Badge Label** | SemiBold | 11–12sp | Pill status (Lunas, Belum Lunas) |
 
-> **Font yang digunakan**: Kemungkinan besar **Inter** atau **Poppins** — sans-serif modern, clean, tinggi readability.
+> **Font yang digunakan**: Font sans-serif modern (**Inter** atau **Poppins**) — clean, rounded, dan highly readable.
 
 ---
 
@@ -70,20 +70,20 @@
 | Input field | 10–12px |
 | Badge/Chip | 9999px (pill penuh) |
 | Icon box (settings) | 10–12px (rounded-xl) |
-| FAB | 50% (circular) |
+| FAB | 50% (circular 56dp) |
 
 ### Elevasi & Shadow
 | Elemen | Shadow |
 |---|---|
 | Card | `0 1px 4px rgba(0,0,0,0.08)` |
-| FAB | Elevated, lebih kuat |
-| AppBar | Tidak ada shadow (flat) |
+| FAB | Elevated (shadow biru tegas) |
+| AppBar | Flat / no shadow |
 
-### Spacing
+### Spacing & Grid
 - **Base grid**: 8pt
 - **Card padding**: 16px horizontal, 14–16px vertikal
 - **Section padding**: 16px horizontal (konten halaman)
-- **Jarak antar item list**: 8–12px
+- **Jarak antar card**: 8–12px vertikal
 
 ### Input Field Style
 ```
@@ -96,31 +96,34 @@ Icon warna: primary (#2563EB)
 
 ### FAB (Floating Action Button)
 - **Ukuran**: 56dp × 56dp
-- **Warna**: `primary` biru solid
+- **Warna**: `primary` biru solid (`#2563EB`)
 - **Ikon**: Plus (+) putih
 - **Posisi**: Center di atas bottom navigation bar
-- **Elevasi**: Tinggi (shadow kuat)
+- **Aksi**: Membuka form Tambah Transaksi (push screen)
 
 ---
 
-## 1.5 Status Badge System
+## 1.5 Status Badge & Indicator System
 
 | Status | Background | Teks | Penggunaan |
 |---|---|---|---|
 | **Lunas** | `#22C55E` hijau | Putih | Transaksi sudah terbayar penuh |
 | **Sebagian** | `#374151` abu gelap | Putih | Terbayar sebagian |
 | **Belum Lunas** | `#F59E0B` oranye | Putih | Belum ada pembayaran |
-| **LEWAT X HARI** | `#EF4444` merah | Putih | Overdue (lewat jatuh tempo) |
+| **LEWAT X HARI** | `#EF4444` merah | Putih | Overdue (melewati tanggal jatuh tempo) |
 
-### Left Border Card (Status Visual)
-| Kondisi | Warna Border Kiri |
-|---|---|
-| Overdue / Jatuh Tempo | `#EF4444` merah, 4px |
-| Normal | Tidak ada border |
+### Left Border Strip pada Card
+- Pada screenshot UI asli (`Beranda4.png`, `Laporan1.png`, `Laporan2.png`), transaction card memiliki strip garis aksen 4px di sisi kiri (merah untuk indikator transaksi/biaya).
+- Pada card overdue di halaman Tagihan, card menggunakan background merah muda (`#FEF2F2`) dengan badge `LEWAT X HARI`.
 
-### Icon Badge Notifikasi
-- Lingkaran merah kecil di sudut kanan atas ikon lonceng
-- Berisi angka count notifikasi yang belum dibaca
+### Bottom Navigation Bar Icons
+| Tab | Ikon | Label |
+|---|---|---|
+| Tab 1 | House / Home | Beranda |
+| Tab 2 | Bar chart / Document | Laporan |
+| Center | Floating Action Button (+) | (Tambah Transaksi) |
+| Tab 3 | **Bell / Lonceng** | Tagihan |
+| Tab 4 | Gear / Settings | Pengaturan |
 
 ---
 
@@ -128,9 +131,9 @@ Icon warna: primary (#2563EB)
 
 | Variant | Background | Teks/Ikon | Digunakan Pada |
 |---|---|---|---|
-| **Dark** | `#1C2B4A` biru gelap | Putih | Splash, PIN screen, form Tambah Transaksi |
-| **Light** | `#FFFFFF` putih | Hitam | Beranda (AppBar tipis + logo) |
-| **Transparent / Page Title** | Tidak ada AppBar sticky | Judul di body | Laporan, Tagihan, Pengaturan |
+| **Dark (`#1C2B4A`)** | Biru gelap solid | Putih | Splash, PIN screen, form Tambah Transaksi |
+| **Light (`#FFFFFF`)** | Putih | Hitam | Beranda (AppBar tipis + logo + notifikasi) |
+| **Inline Title** | Tanpa sticky AppBar | Judul di body | Laporan, Tagihan, Pengaturan |
 
 ---
 

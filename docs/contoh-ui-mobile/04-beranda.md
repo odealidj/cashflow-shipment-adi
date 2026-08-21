@@ -1,14 +1,21 @@
 # 04 — Beranda (Dashboard Utama)
 
 > Referensi: `contoh-ui/1.Beranda/Beranda1.png` s/d `Beranda4.png`
-> **1 halaman yang dapat di-scroll secara vertikal** (4 screenshot = 4 potongan viewport dari halaman yang sama)
+> Aset Terkonsolidasi: [`assets/01-beranda-fullpage.png`](./assets/01-beranda-fullpage.png)
+> **1 halaman yang dapat di-scroll secara vertikal dari atas sampai bawah.**
 
 ---
 
-## 4.1 Urutan Konten (Top → Bottom)
+## 4.1 Preview Visual Halaman Penuh (Full Page Scroll)
+
+![Preview Beranda Full Page](./assets/01-beranda-fullpage.png)
+
+---
+
+## 4.2 Urutan Konten (Top → Bottom)
 
 ```
-┌─────────────────────────────────────────────┐  ← VIEWPORT 1 (Beranda1.png)
+┌─────────────────────────────────────────────┐  ← VIEWPORT 1 (Atas)
 │  AppBar: [Logo] Transio          [🔔¹]      │
 ├─────────────────────────────────────────────┤
 │  ┌──────────────────────────────────────┐   │
@@ -21,7 +28,7 @@
 │  │ ⏳ Masa uji coba: 17 hari tersisa   │   │  ← Trial banner
 │  │    Total uji coba 30 hari            │   │
 │  └──────────────────────────────────────┘   │
-│  Selamat Pagi, User 👋                      │  ← Greeting
+│  Selamat Pagi, User 👋                      │  ← Greeting dinamis
 │  Sabtu, 22 Agustus 2026                     │  ← Tanggal dinamis
 │                                             │
 │  ┌──────────────┐   ┌──────────────┐       │  ← KPI Grid 2x2
@@ -32,7 +39,7 @@
 │  │ Total Revenue│   │ Tagihan Belu.│       │
 │  │ Rp 46.000.000│   │ 1 Menunggu  │       │
 │  └──────────────┘   └──────────────┘       │
-├─────────────────────────────────────────────┤  ← VIEWPORT 2 (Beranda2.png)
+├─────────────────────────────────────────────┤  ← VIEWPORT 2 (Tengah Atas)
 │  Laba Bulanan                               │
 │  ┌──────────────────────────────────────┐   │
 │  │  [Bar Chart Hijau - per bulan]       │   │
@@ -41,7 +48,7 @@
 │  ┌──────────────────────────────────────┐   │
 │  │  [Line Chart Biru Area - tren]       │   │
 │  └──────────────────────────────────────┘   │
-├─────────────────────────────────────────────┤  ← VIEWPORT 3 (Beranda3.png)
+├─────────────────────────────────────────────┤  ← VIEWPORT 3 (Tengah Bawah)
 │  ┌──────────────────────────────────────┐   │
 │  │ 📅 Ringkasan Hari Ini    0 transaksi │   │
 │  │  ↓ Pemasukan  ↑ Pengeluaran  💼 Saldo│   │
@@ -51,7 +58,7 @@
 │  │ 🚚 Pantau Pengiriman   [Coming Soon] │   │  ← Feature promo card
 │  │    Informasi status pengiriman...  > │   │
 │  └──────────────────────────────────────┘   │
-├─────────────────────────────────────────────┤  ← VIEWPORT 4 (Beranda4.png)
+├─────────────────────────────────────────────┤  ← VIEWPORT 4 (Bawah)
 │  Transaksi Terakhir              Lihat Semua│
 │  ┌──────────────────────────────────────┐   │
 │  │ ║ CV. Mitra Peng... [Lunas]  Rp 4jt │   │
@@ -60,114 +67,56 @@
 │  ┌──────────────────────────────────────┐   │
 │  │ ║ PT. Armada...   [Sebagian] Rp 15jt│   │
 │  └──────────────────────────────────────┘   │
-│  ... (list transaksi lanjutan)              │
+│  ... (5 item transaksi terakhir)            │
+│                                             │
+│  [🏠]    [📊]      [ + ]      [🔔]     [⚙️]  │  ← Bottom nav
 └─────────────────────────────────────────────┘
 ```
 
 ---
 
-## 4.2 Komponen Detail
+## 4.3 Rincian Komponen
 
-### AppBar
-- Logo Transio kecil + label "Transio" di kiri
-- Ikon notifikasi lonceng di kanan dengan **badge merah** berisi angka count
-- Background putih atau transparan saat scroll
+### 1. Top AppBar
+- Logo Transio kecil + tulisan "Transio" di sebelah kiri
+- Ikon lonceng notifikasi di kanan dengan **badge merah berisi angka** (mis. `1`)
 
-### Hero Banner
-| Elemen | Detail |
-|---|---|
-| Background | Gradien biru `#1E40AF → #3B5CF6` |
-| Judul | "TRACKING PENGIRIMAN" — Bold putih uppercase |
-| Badge | `[COMING SOON]` — pill ungu/lavender |
-| Subtitle | "Pantau status pengiriman barang real-time" — putih kecil |
-| Ilustrasi | Truck + pin lokasi (hijau, ungu, biru) di sisi kanan |
-| Border Radius | 16px |
-| Padding | 20px |
+### 2. Hero Banner (Tracking Pengiriman)
+- Background: Gradien biru tajam (`#1E40AF → #3B5CF6`)
+- Teks: "TRACKING PENGIRIMAN" (putih bold) + badge `[COMING SOON]` (ungu pastel)
+- Subtitle: "Pantau status pengiriman barang real-time"
+- Ilustrasi: Truk pengiriman + pin rute lokasi di kanan
 
-### Trial Banner
-- Background putih, border abu tipis, atau background biru sangat muda
-- Ikon hourglass biru di kiri
-- Teks: "Masa uji coba: **X hari tersisa**" (bold) + "Total uji coba 30 hari" (abu)
+### 3. Trial Banner
+- Box putih dengan border tipis dan ikon jam pasir biru
+- Teks: "Masa uji coba: **17 hari tersisa**" / "Total uji coba 30 hari"
 
-### Greeting Section
-```
-Selamat [Pagi/Siang/Sore/Malam], [Nama User] 👋    ← dinamis
-[Nama Hari], [Tanggal Bulan Tahun]                  ← format Indonesia
-```
-- **Waktu sapaan** dinamis berdasarkan jam device
-- **Nama user** dari profil/storage lokal
-- **Tanggal** format: "Sabtu, 22 Agustus 2026"
+### 4. Greeting Dinamis
+- "Selamat [Pagi/Siang/Sore/Malam], [Nama Pengguna] 👋"
+- Tanggal hari ini dalam format Bahasa Indonesia (mis. "Sabtu, 22 Agustus 2026")
 
-### KPI Cards (Grid 2×2)
+### 5. Grid KPI (2×2)
+- **Total Saldo Aktif**: Border biru, Rp 4.500.000, Subtext "Kredit - Debit"
+- **Total Profit**: Border hijau, Rp 16.500.000, Subtext "Margin positif"
+- **Total Revenue**: Border biru, Rp 46.000.000, Subtext "Pemasukan keseluruhan"
+- **Tagihan Belum Bayar**: Border merah, 1, Subtext "Menunggu pembayaran"
 
-```
-┌────────────────────────────────────┐
-│ ▌ Label                [icon bg]  │
-│ ▌                                 │  ← left border 4px berwarna
-│ ▌ Rp X.XXX.XXX                   │  ← nilai, warna sesuai
-│ ▌ Subtitle kecil (abu)            │
-└────────────────────────────────────┘
-```
+### 6. Grafik Analitik
+- **Laba Bulanan**: Vertical Bar Chart (`fl_chart`), bar warna hijau (`#22C55E`), label sumbu Y (juta) dan sumbu X (nama bulan singkat).
+- **Tren Saldo**: Line Chart area fill biru, titik data penanda posisi saldo terkini.
 
-| Card | Left Border | Nilai Color | Label | Subtitle |
-|---|---|---|---|---|
-| Total Saldo Aktif | Biru | Biru | Total Saldo A... | Kredit - Debit |
-| Total Profit | Hijau | Hijau | Total Profit | Margin positif |
-| Total Revenue | Biru | Biru | Total Revenue | Pemasukan keseluru... |
-| Tagihan Belum Bayar | Merah | Merah | Tagihan Belu... | Menunggu pembaya... |
+### 7. Ringkasan Hari Ini
+- Card kalender berisi 3 kolom ringkasan harian:
+  - Pemasukan (hijau ↓)
+  - Pengeluaran (merah ↑)
+  - Saldo (biru 💼)
 
-### Charts
+### 8. Pantau Pengiriman (Promo Feature)
+- Card ungu muda dengan ikon truk dan badge "Coming Soon"
 
-**Laba Bulanan (Bar Chart)**
-- Tipe: Bar chart vertikal
-- Warna bar: `#22C55E` hijau solid
-- Label sumbu X: nama bulan singkat (Agu, Sep, ...)
-- Label sumbu Y: nilai dalam format "Xjt" (juta)
-- Background chart: putih card dengan radius 12px
-
-**Tren Saldo (Line Chart)**
-- Tipe: Line chart dengan area fill
-- Warna garis: `#2563EB` biru
-- Area fill: biru muda semi-transparan
-- Titik data: lingkaran biru solid di ujung
-- Label: "start", "Agu"
-
-### Ringkasan Hari Ini
-| Elemen | Warna Ikon | Label |
-|---|---|---|
-| Pemasukan ↓ | Hijau | Rp 0 |
-| Pengeluaran ↑ | Merah | Rp 0 |
-| Saldo 💼 | Biru | Rp 0 |
-
-Header card: "📅 Ringkasan Hari Ini" + badge count "0 transaksi"
-
-### Pantau Pengiriman (Feature Promo)
-- Background ungu sangat muda (`#F5F3FF`)
-- Ikon truck dalam box biru muda
-- Label "Coming Soon" — pill ungu/abu
-- Chevron `>` di kanan — navigable (meskipun belum aktif)
-- Teks: "Informasi status pengiriman barang real-time dengan AI agents"
-
-### Transaksi Terakhir
-- Section title "Transaksi Terakhir" + link "**Lihat Semua**" (biru, kanan)
-- List card transaksi (sama persis dengan design di halaman Laporan)
-- Menampilkan ~5 transaksi terbaru
-
----
-
-## 4.3 Data yang Dibutuhkan dari API
-
-| Komponen | Endpoint | Field |
-|---|---|---|
-| KPI Total Saldo | `GET /api/cashflow/summary` | `total_saldo_aktif` |
-| KPI Total Profit | `GET /api/cashflow/summary` | `total_profit` |
-| KPI Total Revenue | `GET /api/cashflow/summary` | `total_revenue` |
-| KPI Tagihan | `GET /api/cashflow/summary` | `tagihan_belum_bayar_count` |
-| Bar Chart Laba | `GET /api/cashflow/monthly-chart` | `[{bulan, laba}]` |
-| Line Chart Saldo | `GET /api/cashflow/saldo-trend` | `[{periode, saldo}]` |
-| Ringkasan Hari Ini | `GET /api/cashflow/today-summary` | `pemasukan, pengeluaran, saldo` |
-| Transaksi Terakhir | `GET /api/cashflow?limit=5&sort=terbaru` | list transaksi |
-| Greeting — nama | Local storage / profil user | `nama_pengguna` |
+### 9. Transaksi Terakhir
+- Header dengan tombol navigasi **"Lihat Semua"**
+- List 5 card transaksi terbaru
 
 ---
 

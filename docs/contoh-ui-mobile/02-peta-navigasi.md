@@ -1,6 +1,6 @@
 # 02 — Peta Navigasi
 
-> Referensi: Seluruh screenshot di folder `contoh-ui/`
+> Referensi: Seluruh screenshot di folder `contoh-ui/` dan aset di `assets/`
 
 ---
 
@@ -13,16 +13,16 @@
                             │
                             ▼
               ┌─────────────────────────┐
-              │    Splash Screen (0a)   │  ← Background biru gelap
+              │    Splash Screen (0a)   │  ← Background: #1C2B4A (Dark Blue)
               │    Logo + "TRANSIO"     │  ← Auto-navigate ~2 detik
               │    "SHIPMENT CONTROL"   │
               └────────────┬────────────┘
                            │
                            ▼
               ┌─────────────────────────┐
-              │   PIN Lock Screen (0b)  │  ← Background biru gelap
+              │   PIN Lock Screen (0b)  │  ← Background: #1C2B4A (Dark Blue)
               │   6-dot indicator       │  ← Input PIN 6 digit
-              │   Numpad 3x4            │  ← + opsi biometrik
+              │   Numpad 3x4            │  ← Keypad + Reset PIN + Backspace
               └────────────┬────────────┘
                            │ [PIN Benar]
                            ▼
@@ -43,7 +43,13 @@
 
 ---
 
-## 2.2 Bottom Navigation Bar
+## 2.2 Preview Visual Alur Awal (Step 1 & Step 2)
+
+![Preview Screen Awal](./assets/00-screen-awal.png)
+
+---
+
+## 2.3 Bottom Navigation Bar
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -54,50 +60,31 @@
 
 | Tab | Ikon | Label | Tipe |
 |---|---|---|---|
-| 1 | House | **Beranda** | Standard tab |
-| 2 | Bar chart | **Laporan** | Standard tab |
-| — | Plus (biru besar) | *(FAB)* | Floating Action Button |
-| 3 | Bell | **Tagihan** | Standard tab |
-| 4 | Gear | **Pengaturan** | Standard tab |
+| 1 | House | **Beranda** | Standard tab (Scrollable Page) |
+| 2 | Bar chart / Document | **Laporan** | Standard tab (Scrollable Page) |
+| — | Plus (biru besar) | **(FAB +)** | Floating Action Button (Push Screen Form) |
+| 3 | Bell / Lonceng | **Tagihan** | Standard tab (Single Page) |
+| 4 | Gear / Settings | **Pengaturan** | Standard tab (Scrollable Page) |
 
 **FAB (Floating Action Button):**
 - Posisi: Tepat di **tengah** bottom navigation bar
-- Ukuran: Lebih besar dari tab ikon biasa (~56dp)
-- Warna: `primary` biru solid, elevated
-- Aksi: **Push screen** "Tambah Transaksi" (bukan tab — ada back arrow)
-
-**Tab Aktif State:**
-- Ikon berubah warna ke `primary` biru
-- Label berubah ke `primary` biru, lebih tebal
-- Tab non-aktif: abu netral
+- Ukuran: 56dp × 56dp
+- Warna: `primary` biru solid (`#2563EB`), elevated
+- Aksi: **Push screen** "Tambah Transaksi" (bukan tab — bottom navigation bar menghilang dan ada back arrow `←` serta tombol simpan `✓` di AppBar gelap)
 
 ---
 
-## 2.3 Tipe Navigasi
+## 2.4 Inventaris Screen & Aset Terkonsolidasi
 
-| Navigasi | Tipe | Contoh |
-|---|---|---|
-| **Tab switching** | Replace (tanpa history) | Beranda ↔ Laporan ↔ Tagihan ↔ Pengaturan |
-| **FAB → Tambah Transaksi** | Push (ada back arrow ←) | Bottom nav menghilang, AppBar dark |
-| **Settings item →** | Push | Manajemen Vendor, Manajemen Kategori, Ubah PIN |
-| **"Lihat Semua" link** | Push | Beranda → Laporan (atau halaman list penuh) |
-| **App launch** | Replace | Splash → PIN → Beranda |
-
----
-
-## 2.4 Inventaris Screen
-
-| ID | Nama Screen | Folder Referensi | Jumlah Screenshot | Jumlah Halaman |
+| ID | Nama Screen | Sumber Mentah (`contoh-ui/`) | Aset Terkonsolidasi (`assets/`) | Sifat Halaman |
 |---|---|---|---|---|
-| S0a | Splash Screen | `0. screen-awal/1.page-1.png` | 1 | 1 halaman |
-| S0b | PIN Lock Screen | `0. screen-awal/2.page-2.png` | 1 | 1 halaman |
-| S1 | Beranda | `1.Beranda/Beranda1–4.png` | 4 | **1 halaman scrollable** |
-| S2 | Laporan | `2.Laporan/Laporan1–2.png` | 2 | **1 halaman scrollable** |
-| S3 | Tagihan | `3.Tagihan/Tagihan.png` | 1 | **1 halaman scrollable** |
-| S4 | Pengaturan | `4.Pengaturan/Pengaturan1–3.png` | 3 | **1 halaman scrollable** |
-| S5 | Tambah Transaksi | `5.Tambah-Transaksi/Tambah*.png` | 4 | **1 halaman scrollable** |
-
-> **Catatan penting**: Setiap folder (kecuali `0. screen-awal`) merepresentasikan **satu halaman yang dapat di-scroll**. Multiple screenshot per folder hanyalah potongan viewport dari satu halaman yang sama.
+| S0a | Splash Screen | `0. screen-awal/1.page-1.png` | [`00-screen-awal.png`](./assets/00-screen-awal.png) | Step 1 (auto-navigate) |
+| S0b | PIN Lock Screen | `0. screen-awal/2.page-2.png` | [`00-screen-awal.png`](./assets/00-screen-awal.png) | Step 2 (auth 6-digit) |
+| S1 | Beranda | `1.Beranda/Beranda1–4.png` | [`01-beranda-fullpage.png`](./assets/01-beranda-fullpage.png) | **1 Halaman Scroll Utuh** |
+| S2 | Laporan | `2.Laporan/Laporan1–2.png` | [`02-laporan-fullpage.png`](./assets/02-laporan-fullpage.png) | **1 Halaman Scroll Utuh** |
+| S3 | Tagihan | `3.Tagihan/Tagihan.png` | [`03-tagihan-fullpage.png`](./assets/03-tagihan-fullpage.png) | **1 Halaman Utuh** |
+| S4 | Pengaturan | `4.Pengaturan/Pengaturan1–3.png` | [`04-pengaturan-fullpage.png`](./assets/04-pengaturan-fullpage.png) | **1 Halaman Scroll Utuh** |
+| S5 | Tambah Transaksi | `5.Tambah-Transaksi/Tambah*.png` | [`05-tambah-transaksi-fullpage.png`](./assets/05-tambah-transaksi-fullpage.png) | **1 Form Push Screen Scroll** |
 
 ---
 
