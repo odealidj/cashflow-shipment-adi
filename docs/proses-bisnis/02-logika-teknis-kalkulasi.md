@@ -145,7 +145,148 @@ SELESAI
 
 ---
 
-## 5. Contoh Trace Lengkap Import
+## 5. Filter & Query API
+
+Endpoint `GET /api/v1/cashflow` mendukung parameter query untuk filtering dan sorting dinamis.
+
+### Query Parameters
+
+| Parameter | Tipe | Default | Keterangan |
+|-----------|------|---------|------------|
+| `sort` | `ASC` \| `DESC` | `ASC` | Arah urutan berdasarkan `sequence_no` |
+| `date_from` | `YYYY-MM-DD` | *(kosong)* | Batas awal tanggal transaksi |
+| `date_to` | `YYYY-MM-DD` | *(kosong)* | Batas akhir tanggal transaksi |
+| `entry_type` | `SHIPMENT` \| `TOP_UP` | *(semua)* | Filter berdasarkan tipe transaksi |
+| `remarks` | `PAID` \| `UNPAID` \| `PENDING` | *(semua)* | Filter berdasarkan status pembayaran |
+| `vendor_name` | string | *(kosong)* | Pencarian ILIKE pada nama vendor |
+| `page` | integer | `1` | Halaman data (pagination) |
+| `limit` | integer | `50` | Jumlah data per halaman |
+
+### Contoh Request
+
+```
+# Tampilkan shipment UNPAID bulan Maret 2026, terbaru dulu
+GET /api/v1/cashflow?entry_type=SHIPMENT&remarks=UNPAID&date_from=2026-03-01&date_to=2026-03-31&sort=DESC
+
+# Cari semua transaksi vendor "CV AIRA"
+GET /api/v1/cashflow?vendor_name=CV+AIRA&sort=ASC
+```
+
+### Pseudocode Filter di Repository
+
+```
+Fungsi: ListAll(filter)
+
+1. Bangun klausa WHERE secara dinamis:
+   kondisi = []
+
+   JIKA filter.DateFrom ada:
+     kondisi += "date_of_entry >= $N"
+
+   JIKA filter.DateTo ada:
+     kondisi += "date_of_entry <= $N"
+
+   JIKA filter.EntryType ada:
+     kondisi += "entry_type = $N"
+
+   JIKA filter.Remarks ada:
+     kondisi += "remarks = $N"
+
+   JIKA filter.VendorName ada:
+     kondisi += "vendor_name_raw ILIKE '%$N%'"
+
+2. Eksekusi query:
+   SELECT * FROM cashflow_entries
+   WHERE [kondisi]
+   ORDER BY sequence_no [ASC|DESC]
+   LIMIT $limit OFFSET $offset
+
+3. COUNT(*) terpisah untuk total pagination
+```
+
+> ⚠️ **Catatan:** Filter berlaku juga pada endpoint `GET /api/v1/cashflow/export` — file Excel yang didownload akan mengikuti filter yang aktif.
+
+---
+
+## 6. Audit History (Backup Otomatis)
+
+Setiap kali transaksi **diedit** atau **dihapus**, sistem secara otomatis menyimpan snapshot data lama ke tabel `cashflow_entries_history` sebelum perubahan dilakukan.
+
+### Tujuan
+
+- **Audit trail** — siapa mengubah apa dan kapan
+- **Recovery** — bisa restore ke nilai sebelumnya jika terjadi kesalahan input
+- **Compliance** — jejak perubahan data keuangan
+
+### Alur Pengarsipan
+
+```
+Fungsi: UpdateEntry(id, newEntry, userID)
+
+1. GET entry lama dari DB              ← oldEntry
+2. ArchiveEntry(oldEntry, userID, "manual_edit")
+   → INSERT INTO cashflow_entries_history (semua kolom + metadata)
+3. Hitung diff & update entry
+4. CASCADE UpdateBalancesAfter
+
+---
+
+Fungsi: DeleteEntry(id, userID)
+
+1. GET entry yang akan dihapus        ← entry
+2. ArchiveEntry(entry, userID, "manual_delete")
+   → INSERT INTO cashflow_entries_history (semua kolom + metadata)
+3. DELETE FROM cashflow_entries
+4. CASCADE UpdateBalancesAfter
+```
+
+### Skema Tabel `cashflow_entries_history`
+
+```sql
+CREATE TABLE cashflow_entries_history (
+  history_id          SERIAL PRIMARY KEY,
+  entry_id            INT NOT NULL,         -- ID asli dari cashflow_entries
+  sequence_no         INT,
+  entry_type          entry_type,
+  kredit              DECIMAL(15,2),
+  debit               DECIMAL(15,2),
+  saldo               DECIMAL(15,2),
+  date_of_entry       DATE,
+  act_information     VARCHAR,
+  act_explaination    VARCHAR,
+  vendor_id           INT,
+  vendor_name_raw     VARCHAR,
+  top_days            INT,
+  due_date            DATE,
+  grand_cost          DECIMAL(15,2),
+  grand_selling       DECIMAL(15,2),
+  profit              DECIMAL(15,2),
+  margin_pct          DECIMAL(5,4),
+  remarks             payment_status,
+  created_by          UUID,
+  updated_by          UUID,
+  original_created_at TIMESTAMP,
+  original_updated_at TIMESTAMP,
+  -- Metadata arsip
+  archived_at         TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  archived_by         UUID REFERENCES users(id),  -- user yang melakukan perubahan
+  archive_reason      VARCHAR   -- 'manual_edit' | 'manual_delete' | 'import_upsert'
+);
+```
+
+### Nilai `archive_reason`
+
+| Nilai | Kapan Digunakan |
+|-------|----------------|
+| `manual_edit` | User melakukan edit transaksi via UI |
+| `manual_delete` | User menghapus transaksi via UI |
+| `import_upsert` | Import Excel menimpa data yang sudah ada |
+
+> 💡 **Catatan:** Tabel history hanya untuk read/audit. Tidak ada endpoint API untuk restore otomatis — restore dilakukan secara manual oleh admin jika diperlukan.
+
+---
+
+## 7. Contoh Trace Lengkap Import
 
 **Input Excel (3 baris data):**
 
@@ -199,7 +340,7 @@ Total entri dibuat: 5
 
 ---
 
-## 6. Edge Cases
+## 8. Edge Cases
 
 | Kasus | Penanganan |
 |-------|-----------|

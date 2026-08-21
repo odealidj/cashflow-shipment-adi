@@ -12,7 +12,8 @@ Dokumen ini menjelaskan seluruh alur proses bisnis aplikasi **Cashflow Shipment 
 4. [Logika Profit & Margin](#logika-profit--margin)
 5. [Alur Import dari Excel](#alur-import-dari-excel)
 6. [Contoh Skenario Lengkap](#contoh-skenario-lengkap)
-7. [Status Pembayaran (Remarks)](#status-pembayaran-remarks)
+7. [Export Excel](#export-excel)
+8. [Status Pembayaran (Remarks)](#status-pembayaran-remarks)
 
 ---
 
@@ -239,6 +240,50 @@ Total Debit    : Rp   42,604,875  (semua biaya shipment)
 Total Profit   : (tergantung Grand Selling yang diisi)
 Tagihan UNPAID : 2 transaksi
 ```
+
+---
+
+## Export Excel
+
+Aplikasi menyediakan fitur export data cashflow ke file Excel (`Cashflow_Export.xlsx`) melalui endpoint:
+
+```
+GET /api/v1/cashflow/export
+```
+
+### Cara Kerja — Filter-Aware Export
+
+Export **mengikuti filter yang sedang aktif** di tampilan tabel. Artinya, jika user sedang menyaring data dengan filter tertentu, file Excel yang didownload hanya berisi data yang terfilter tersebut — bukan seluruh data.
+
+```
+# Contoh: Export hanya tagihan UNPAID bulan Maret
+GET /api/v1/cashflow/export?entry_type=SHIPMENT&remarks=UNPAID&date_from=2026-03-01&date_to=2026-03-31
+
+# Contoh: Export semua data (tanpa filter)
+GET /api/v1/cashflow/export
+```
+
+### Format Kolom Output Excel
+
+| Kolom | Header | Isi |
+|-------|--------|-----|
+| A | Tanggal | `date_of_entry` format `YYYY-MM-DD` |
+| B | No | `sequence_no` |
+| C | Information | `act_information` |
+| D | Description | `act_explaination` |
+| E | Vendor | `vendor_name_raw` |
+| F | T.O.P | `top_days` (angka hari) |
+| G | Due Date | `due_date` format `YYYY-MM-DD` |
+| H | HPP | `grand_cost` |
+| I | Selling | `grand_selling` |
+| J | Kredit | `kredit` |
+| K | Debit | `debit` |
+| L | Saldo | `saldo` |
+| M | Profit | `profit` |
+| N | Margin % | `margin_pct` dalam format `"6.17%"` |
+| O | Remarks | `remarks` (`PAID`/`UNPAID`/`PENDING`) |
+
+> 💡 **Catatan:** Format header output berbeda dari format Excel input (`CASHFLOW SHIPMENT CONTROL.xlsx`). Output export adalah format standar sistem, bukan format asli Excel yang diimport.
 
 ---
 
