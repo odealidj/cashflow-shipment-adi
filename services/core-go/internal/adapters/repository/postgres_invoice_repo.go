@@ -66,9 +66,15 @@ func (r *PostgresInvoiceRepo) Delete(ctx context.Context, id int) error {
 	return err
 }
 
+const invoiceSelectColumns = `
+	id, invoice_no, client_name, shipment_date, top_terms, top_days,
+	due_date, amount, status, paid_at, COALESCE(notes, '') AS notes,
+	cashflow_entry_id, created_by, created_at, updated_at, deleted_at
+`
+
 func (r *PostgresInvoiceRepo) GetByID(ctx context.Context, id int) (*domain.Invoice, error) {
 	var inv domain.Invoice
-	query := `SELECT * FROM invoices WHERE id = $1 AND deleted_at IS NULL`
+	query := fmt.Sprintf(`SELECT %s FROM invoices WHERE id = $1 AND deleted_at IS NULL`, invoiceSelectColumns)
 	err := r.db.GetContext(ctx, &inv, query, id)
 	if err != nil {
 		return nil, err
@@ -78,7 +84,7 @@ func (r *PostgresInvoiceRepo) GetByID(ctx context.Context, id int) (*domain.Invo
 
 func (r *PostgresInvoiceRepo) GetByInvoiceNo(ctx context.Context, invoiceNo string) (*domain.Invoice, error) {
 	var inv domain.Invoice
-	query := `SELECT * FROM invoices WHERE invoice_no = $1 AND deleted_at IS NULL`
+	query := fmt.Sprintf(`SELECT %s FROM invoices WHERE invoice_no = $1 AND deleted_at IS NULL`, invoiceSelectColumns)
 	err := r.db.GetContext(ctx, &inv, query, invoiceNo)
 	if err != nil {
 		return nil, err
@@ -141,8 +147,8 @@ func (r *PostgresInvoiceRepo) ListAll(ctx context.Context, offset, limit int, fi
 
 	dataArgs := append(args, limit, offset)
 	dataQuery := fmt.Sprintf(
-		`SELECT * FROM invoices %s ORDER BY %s %s, id %s LIMIT $%d OFFSET $%d`,
-		where, sortBy, sortDir, sortDir, argIdx, argIdx+1,
+		`SELECT %s FROM invoices %s ORDER BY %s %s, id %s LIMIT $%d OFFSET $%d`,
+		invoiceSelectColumns, where, sortBy, sortDir, sortDir, argIdx, argIdx+1,
 	)
 	err = r.db.SelectContext(ctx, &invoices, dataQuery, dataArgs...)
 	return invoices, total, err
