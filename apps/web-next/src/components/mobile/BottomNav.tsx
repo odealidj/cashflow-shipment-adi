@@ -33,10 +33,10 @@ export const BottomNav: React.FC = () => {
               key={item.href}
               href={item.href}
               className={`flex flex-col items-center gap-1 py-1 px-3 transition-colors ${
-                isActive ? 'text-blue-600 font-bold' : 'text-slate-500 hover:text-slate-800'
+                isActive ? 'text-sky-700 font-bold' : 'text-slate-400 hover:text-slate-700'
               }`}
             >
-              <Icon className={`w-5 h-5 ${isActive ? 'stroke-[2.5]' : 'stroke-2'}`} />
+              <Icon className={`w-5 h-5 ${isActive ? 'stroke-[2.2]' : 'stroke-[1.8]'}`} />
               <span className="text-[11px] tracking-tight">{item.label}</span>
             </Link>
           );
@@ -46,10 +46,10 @@ export const BottomNav: React.FC = () => {
         <div className="relative -top-5 flex flex-col items-center">
           <Link
             href="/m/tambah"
-            className="w-14 h-14 rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center shadow-lg shadow-blue-600/40 active:scale-95 transition-all"
+            className="w-13 h-13 rounded-full bg-gradient-to-tr from-sky-700 to-blue-600 hover:from-sky-800 hover:to-blue-700 text-white flex items-center justify-center shadow-lg shadow-sky-900/20 active:scale-95 transition-all"
             aria-label="Tambah Transaksi"
           >
-            <Plus className="w-8 h-8 stroke-[2.5]" />
+            <Plus className="w-7 h-7 stroke-[2.2]" />
           </Link>
         </div>
 
@@ -62,10 +62,10 @@ export const BottomNav: React.FC = () => {
               key={item.href}
               href={item.href}
               className={`flex flex-col items-center gap-1 py-1 px-3 transition-colors ${
-                isActive ? 'text-blue-600 font-bold' : 'text-slate-500 hover:text-slate-800'
+                isActive ? 'text-sky-700 font-bold' : 'text-slate-400 hover:text-slate-700'
               }`}
             >
-              <Icon className={`w-5 h-5 ${isActive ? 'stroke-[2.5]' : 'stroke-2'}`} />
+              <Icon className={`w-5 h-5 ${isActive ? 'stroke-[2.2]' : 'stroke-[1.8]'}`} />
               <span className="text-[11px] tracking-tight">{item.label}</span>
             </Link>
           );

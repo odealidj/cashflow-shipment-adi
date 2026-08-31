@@ -28,7 +28,7 @@ export default function PinLockPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#1C2B4A]">
+    <div className="min-h-screen bg-[#223249]">
       <NumpadPin
         title="ADIJAYANTARA"
         subtitle="Masukkan PIN untuk membuka"

@@ -52,7 +52,7 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center p-4 bg-[#1C2B4A]">
+    <main className="min-h-screen flex items-center justify-center p-4 bg-[#223249]">
       <div className="w-full max-w-md animate-fade-in">
         {/* Logo / Brand Section */}
         <div className="text-center mb-8">

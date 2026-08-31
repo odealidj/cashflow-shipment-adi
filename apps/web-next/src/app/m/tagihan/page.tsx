@@ -45,24 +45,24 @@ export default function TagihanPage() {
         {/* 1. Summary Row (2 Kolom) */}
         <div className="grid grid-cols-2 gap-3">
           {/* Belum Dibayar */}
-          <div className="bg-white rounded-2xl p-3.5 shadow-sm border border-slate-100 border-l-[5px] border-l-blue-600">
+          <div className="bg-white rounded-2xl p-3.5 shadow-2xs border border-slate-100 border-l-[5px] border-l-sky-700">
             <div className="flex items-center gap-1.5 text-slate-600 text-[12px] font-bold">
-              <Clock className="w-3.5 h-3.5" />
+              <Clock className="w-3.5 h-3.5 text-sky-700" />
               <span>Belum Dibayar</span>
             </div>
             <div className="mt-2">
-              <span className="text-2xl font-black text-slate-900">{allTagihan.length}</span>
+              <span className="text-2xl font-black text-slate-800">{allTagihan.length}</span>
             </div>
           </div>
 
           {/* Jatuh Tempo */}
-          <div className="bg-white rounded-2xl p-3.5 shadow-sm border border-slate-100 border-l-[5px] border-l-rose-500">
-            <div className="flex items-center gap-1.5 text-rose-600 text-[12px] font-bold">
+          <div className="bg-white rounded-2xl p-3.5 shadow-2xs border border-slate-100 border-l-[5px] border-l-rose-500">
+            <div className="flex items-center gap-1.5 text-rose-700 text-[12px] font-bold">
               <AlertTriangle className="w-3.5 h-3.5" />
               <span>Jatuh Tempo</span>
             </div>
             <div className="mt-2">
-              <span className="text-2xl font-black text-rose-600">{overdueTagihan.length}</span>
+              <span className="text-2xl font-black text-rose-700">{overdueTagihan.length}</span>
             </div>
           </div>
         </div>
@@ -80,12 +80,12 @@ export default function TagihanPage() {
           </div>
         )}
 
-        {/* 3. Filter Tabs (3 Mode) */}
-        <div className="flex bg-slate-100 p-1 rounded-xl">
+        {/* 3. Filter Tabs (Semua, Belum Bayar, Lewat Jatuh Tempo) */}
+        <div className="flex items-center gap-2">
           {[
-            { key: 'ALL', label: 'Semua' },
-            { key: 'UNPAID', label: 'Belum Bayar' },
-            { key: 'OVERDUE', label: 'Jatuh Tempo' },
+            { key: 'ALL', label: 'Semua', count: allTagihan.length },
+            { key: 'UNPAID', label: 'Belum Bayar', count: allTagihan.filter((e) => e.remarks === 'UNPAID').length },
+            { key: 'OVERDUE', label: 'Lewat Jatuh Tempo', count: overdueTagihan.length },
           ].map((tab) => {
             const isActive = tabFilter === tab.key;
             return (

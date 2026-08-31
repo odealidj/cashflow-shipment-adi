@@ -28,7 +28,7 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
 }) => {
   if (variant === 'dark') {
     return (
-      <header className="sticky top-0 z-40 bg-[#1C2B4A] text-white px-4 py-3 flex items-center justify-between shadow-md">
+      <header className="sticky top-0 z-40 bg-[#223249] text-white px-4 py-3 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-3">
           {showBack ? (
             <Link

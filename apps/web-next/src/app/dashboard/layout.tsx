@@ -34,8 +34,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="min-h-screen flex bg-[#F8FAFC] text-slate-900 font-sans antialiased">
-      {/* Deep Navy Sidebar */}
-      <aside className="w-68 bg-[#1C2B4A] text-white m-3 rounded-2xl p-4 flex flex-col justify-between shadow-xl shrink-0">
+      {/* Soft Slate Navy Sidebar */}
+      <aside className="w-68 bg-[#223249] text-white m-3 rounded-2xl p-4 flex flex-col justify-between shadow-lg shrink-0 border border-slate-700/30">
         <div>
           {/* Logo Branding Variants */}
           <div className="mb-5">
@@ -58,31 +58,28 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3.5 border border-white/20 flex items-center gap-3.5 shadow-lg animate-fade-in my-2">
                 <div className="w-16 h-16 rounded-2xl bg-white p-1 flex items-center justify-center shrink-0 shadow-md">
                   <Image
-                    src="/logo-symbol.png"
-                    alt="Adijayantara Symbol"
-                    width={60}
-                    height={60}
-                    className="w-14 h-14 object-contain"
+                    src="/logo.png"
+                    alt="Logo Adijayantara"
+                    width={64}
+                    height={64}
+                    className="w-full h-full object-contain"
                     priority
                   />
                 </div>
                 <div className="min-w-0">
-                  <h2 className="text-base font-black text-white tracking-tight uppercase leading-tight truncate">
+                  <h1 className="text-sm font-black text-white leading-tight tracking-tight uppercase">
                     Adijayantara
-                  </h2>
-                  <p className="text-[11px] text-blue-300 font-extrabold tracking-wider leading-tight uppercase truncate mt-0.5">
+                  </h1>
+                  <p className="text-[10px] text-blue-200 font-medium leading-snug">
                     Logistics Indonesia
                   </p>
-                  <span className="inline-block mt-1 px-2 py-0.5 bg-blue-500/30 text-blue-100 text-[9px] font-extrabold tracking-wider rounded-md">
-                    BACK-OFFICE
-                  </span>
                 </div>
               </div>
             )}
 
             {logoStyle === "C" && (
-              /* Opsi C: Original Kotak Putih */
-              <div className="bg-white rounded-2xl p-2 shadow-lg flex flex-col items-center justify-center border border-white/20 animate-fade-in">
+              /* Opsi C: Original Kotak Putih Bersih */
+              <div className="py-2 flex flex-col items-center justify-center animate-fade-in">
                 <Image
                   src="/logo.png"
                   alt="PT. Adijayantara Logistics Indonesia"
@@ -100,7 +97,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 onClick={() => setLogoStyle("A")}
                 className={`flex-1 py-1 text-[10px] font-extrabold rounded-lg transition-all cursor-pointer text-center ${
                   logoStyle === "A"
-                    ? "bg-blue-600 text-white shadow-xs"
+                    ? "bg-sky-700 text-white shadow-xs"
                     : "text-slate-400 hover:text-white"
                 }`}
                 title="Opsi A: Seamless Dark Transparan"
@@ -111,7 +108,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 onClick={() => setLogoStyle("B")}
                 className={`flex-1 py-1 text-[10px] font-extrabold rounded-lg transition-all cursor-pointer text-center ${
                   logoStyle === "B"
-                    ? "bg-blue-600 text-white shadow-xs"
+                    ? "bg-sky-700 text-white shadow-xs"
                     : "text-slate-400 hover:text-white"
                 }`}
                 title="Opsi B: Horizontal Banner Ramping"
@@ -122,7 +119,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 onClick={() => setLogoStyle("C")}
                 className={`flex-1 py-1 text-[10px] font-extrabold rounded-lg transition-all cursor-pointer text-center ${
                   logoStyle === "C"
-                    ? "bg-blue-600 text-white shadow-xs"
+                    ? "bg-sky-700 text-white shadow-xs"
                     : "text-slate-400 hover:text-white"
                 }`}
                 title="Opsi C: Original Kotak Putih"
@@ -138,7 +135,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               href="/dashboard" 
               className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all text-xs font-bold ${
                 isDashboardActive 
-                ? "bg-blue-600 text-white shadow-sm" 
+                ? "bg-sky-700/80 text-white shadow-xs" 
                 : "text-slate-300 hover:text-white hover:bg-white/10"
               }`}
             >
@@ -149,7 +146,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               href="/dashboard/transactions" 
               className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all text-xs font-bold ${
                 isTransactionsActive 
-                ? "bg-blue-600 text-white shadow-sm" 
+                ? "bg-sky-700/80 text-white shadow-xs" 
                 : "text-slate-300 hover:text-white hover:bg-white/10"
               }`}
             >
@@ -160,7 +157,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               href="/dashboard/vendors" 
               className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all text-xs font-bold ${
                 isVendorsActive 
-                ? "bg-blue-600 text-white shadow-sm" 
+                ? "bg-sky-700/80 text-white shadow-xs" 
                 : "text-slate-300 hover:text-white hover:bg-white/10"
               }`}
             >
@@ -172,9 +169,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <div className="pt-4 mt-4 border-t border-white/10">
               <Link 
                 href="/m" 
-                className="flex items-center gap-3 px-3.5 py-2 rounded-xl text-xs font-bold text-blue-300 hover:bg-white/10 hover:text-white transition-all"
+                className="flex items-center gap-3 px-3.5 py-2 rounded-xl text-xs font-bold text-sky-200 hover:bg-white/10 hover:text-white transition-all"
               >
-                <Smartphone className="w-4 h-4 text-blue-400" />
+                <Smartphone className="w-4 h-4 text-sky-300" />
                 <span>Buka Mobile PWA</span>
               </Link>
             </div>

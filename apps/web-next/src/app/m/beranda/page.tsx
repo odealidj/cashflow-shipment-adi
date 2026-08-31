@@ -52,28 +52,28 @@ export default function BerandaPage() {
       <MobileHeader notificationCount={summary.unpaid_count} />
 
       <div className="px-4 py-4 space-y-4">
-        {/* 1. Hero Banner: Tracking Pengiriman */}
-        <div className="rounded-2xl bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-600 p-4 text-white shadow-md relative overflow-hidden">
+        {/* 1. Hero Banner: Tracking Pengiriman (Soft Elegant Slate Blue) */}
+        <div className="rounded-2xl bg-gradient-to-r from-slate-800 via-slate-700 to-sky-900 p-4 text-white shadow-sm relative overflow-hidden">
           <div className="relative z-10 max-w-[70%]">
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-[11px] font-black tracking-wider uppercase">TRACKING PENGIRIMAN</span>
-              <span className="px-2 py-0.5 rounded-full bg-indigo-500/50 text-[9px] font-bold uppercase tracking-wide border border-white/20">
+              <span className="text-[11px] font-extrabold tracking-wider uppercase text-slate-200">TRACKING PENGIRIMAN</span>
+              <span className="px-2 py-0.5 rounded-full bg-white/15 text-[9px] font-bold uppercase tracking-wide border border-white/10 text-slate-100">
                 COMING SOON
               </span>
             </div>
-            <p className="text-[12px] text-blue-100 font-medium leading-snug">
+            <p className="text-[12px] text-slate-300 font-medium leading-snug">
               Pantau status pengiriman barang real-time
             </p>
           </div>
 
-          <div className="absolute right-2 bottom-1 text-white/20">
-            <Truck className="w-24 h-24 stroke-[1.2] text-white/30" />
+          <div className="absolute right-2 bottom-1 text-white/10">
+            <Truck className="w-24 h-24 stroke-[1.2] text-white/20" />
           </div>
         </div>
 
         {/* 2. Trial Period Banner */}
-        <div className="bg-white rounded-xl p-3 border border-slate-200/80 flex items-center gap-3 shadow-xs">
-          <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+        <div className="bg-white rounded-xl p-3 border border-slate-200/60 flex items-center gap-3 shadow-2xs">
+          <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center shrink-0">
             <Hourglass className="w-4 h-4" />
           </div>
           <div className="flex-1 min-w-0">
@@ -84,7 +84,7 @@ export default function BerandaPage() {
 
         {/* 3. Greeting Section */}
         <div>
-          <h2 className="text-[18px] font-black text-slate-900 tracking-tight">
+          <h2 className="text-[18px] font-black text-slate-800 tracking-tight">
             {greeting}, {userName} 👋
           </h2>
           <p className="text-[12px] text-slate-500 font-medium mt-0.5">{currentDateStr}</p>
@@ -93,30 +93,30 @@ export default function BerandaPage() {
         {/* 4. 2x2 KPI Grid */}
         <KPICardMobile summary={summary} />
 
-        {/* 5. Laba Bulanan Chart */}
+        {/* 5. Laba Bulanan Chart (Soft Pastel Green) */}
         <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
-          <h3 className="text-[14px] font-extrabold text-slate-900 mb-3">Laba Bulanan</h3>
+          <h3 className="text-[14px] font-extrabold text-slate-800 mb-3">Laba Bulanan</h3>
           <div className="h-44 flex items-end justify-center gap-6 pt-4 pb-2 border-b border-slate-100">
             <div className="flex flex-col items-center gap-1.5 h-full justify-end">
-              <div className="text-[11px] font-extrabold text-emerald-600">
+              <div className="text-[11px] font-extrabold text-teal-700">
                 {formatRupiah(summary.total_profit)}
               </div>
-              <div className="w-10 bg-emerald-500 rounded-t-lg h-28 shadow-sm transition-all animate-pulse" />
-              <span className="text-[11px] font-bold text-slate-500">Bulan Ini</span>
+              <div className="w-10 bg-teal-600/80 hover:bg-teal-600 rounded-t-lg h-28 shadow-xs transition-all" />
+              <span className="text-[11px] font-semibold text-slate-400">Bulan Ini</span>
             </div>
           </div>
         </div>
 
         {/* 6. Tren Saldo Chart */}
         <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
-          <h3 className="text-[14px] font-extrabold text-slate-900 mb-3">Tren Saldo</h3>
-          <div className="h-32 bg-gradient-to-t from-blue-50/80 to-transparent rounded-xl p-3 flex flex-col justify-between border border-blue-100/50">
+          <h3 className="text-[14px] font-extrabold text-slate-800 mb-3">Tren Saldo</h3>
+          <div className="h-32 bg-gradient-to-t from-slate-50 to-transparent rounded-xl p-3 flex flex-col justify-between border border-slate-100">
             <div className="flex justify-between items-center text-[12px]">
               <span className="text-slate-500 font-medium">Saldo Berjalan</span>
-              <span className="font-extrabold text-blue-600">{formatRupiah(summary.current_saldo)}</span>
+              <span className="font-extrabold text-sky-800">{formatRupiah(summary.current_saldo)}</span>
             </div>
-            <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
-              <div className="h-full bg-blue-600 rounded-full w-3/4" />
+            <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+              <div className="h-full bg-sky-700/80 rounded-full w-3/4" />
             </div>
             <div className="flex justify-between text-[10px] text-slate-400 font-medium">
               <span>Awal Periode</span>
