@@ -8,7 +8,6 @@ import { usePathname } from "next/navigation";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<any>(null);
-  const [logoStyle, setLogoStyle] = useState<"A" | "B" | "C">("B");
   const pathname = usePathname();
 
   useEffect(() => {
@@ -37,95 +36,30 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Soft Slate Navy Sidebar */}
       <aside className="w-68 bg-[#223249] text-white m-3 rounded-2xl p-4 flex flex-col justify-between shadow-lg shrink-0 border border-slate-700/30">
         <div>
-          {/* Logo Branding Variants */}
-          <div className="mb-5">
-            {logoStyle === "A" && (
-              /* Opsi A: Seamless Dark Transparan */
-              <div className="py-2 flex flex-col items-center justify-center animate-fade-in">
-                <Image
-                  src="/logo-dark-seamless.png"
-                  alt="PT. Adijayantara Logistics Indonesia"
-                  width={220}
-                  height={220}
-                  className="w-48 h-48 object-contain filter drop-shadow-md"
-                  priority
-                />
-              </div>
-            )}
-
-            {logoStyle === "B" && (
-              /* Opsi B: Horizontal Modern Banner (Enlarged & Crisp) */
-              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3.5 border border-white/20 flex items-center gap-3.5 shadow-lg animate-fade-in my-2">
-                <div className="w-16 h-16 rounded-2xl bg-white p-1 flex items-center justify-center shrink-0 shadow-md">
-                  <Image
-                    src="/logo.png"
-                    alt="Logo Adijayantara"
-                    width={64}
-                    height={64}
-                    className="w-full h-full object-contain"
-                    priority
-                  />
-                </div>
-                <div className="min-w-0">
-                  <h1 className="text-sm font-black text-white leading-tight tracking-tight uppercase">
-                    Adijayantara
-                  </h1>
-                  <p className="text-[10px] text-blue-200 font-medium leading-snug">
-                    Logistics Indonesia
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {logoStyle === "C" && (
-              /* Opsi C: Original Kotak Putih Bersih */
-              <div className="py-2 flex flex-col items-center justify-center animate-fade-in">
+          {/* Logo Branding: Horizontal Modern Banner (Enlarged & Crisp) */}
+          <div className="mb-6">
+            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3.5 border border-white/20 flex items-center gap-3.5 shadow-md">
+              <div className="w-18 h-18 rounded-2xl bg-white p-1.5 flex items-center justify-center shrink-0 shadow-md">
                 <Image
                   src="/logo.png"
-                  alt="PT. Adijayantara Logistics Indonesia"
-                  width={220}
-                  height={220}
-                  className="w-48 h-48 object-contain"
+                  alt="Logo PT. Adijayantara Logistics Indonesia"
+                  width={80}
+                  height={80}
+                  className="w-full h-full object-contain"
                   priority
                 />
               </div>
-            )}
-
-            {/* Quick Live Switcher Controls */}
-            <div className="mt-3 bg-black/20 p-1 rounded-xl flex items-center justify-between border border-white/10">
-              <button
-                onClick={() => setLogoStyle("A")}
-                className={`flex-1 py-1 text-[10px] font-extrabold rounded-lg transition-all cursor-pointer text-center ${
-                  logoStyle === "A"
-                    ? "bg-sky-700 text-white shadow-xs"
-                    : "text-slate-400 hover:text-white"
-                }`}
-                title="Opsi A: Seamless Dark Transparan"
-              >
-                Opsi A
-              </button>
-              <button
-                onClick={() => setLogoStyle("B")}
-                className={`flex-1 py-1 text-[10px] font-extrabold rounded-lg transition-all cursor-pointer text-center ${
-                  logoStyle === "B"
-                    ? "bg-sky-700 text-white shadow-xs"
-                    : "text-slate-400 hover:text-white"
-                }`}
-                title="Opsi B: Horizontal Banner Ramping"
-              >
-                Opsi B
-              </button>
-              <button
-                onClick={() => setLogoStyle("C")}
-                className={`flex-1 py-1 text-[10px] font-extrabold rounded-lg transition-all cursor-pointer text-center ${
-                  logoStyle === "C"
-                    ? "bg-sky-700 text-white shadow-xs"
-                    : "text-slate-400 hover:text-white"
-                }`}
-                title="Opsi C: Original Kotak Putih"
-              >
-                Opsi C
-              </button>
+              <div className="min-w-0">
+                <h1 className="text-base font-black text-white leading-tight tracking-tight uppercase">
+                  Adijayantara
+                </h1>
+                <p className="text-[11px] text-sky-200 font-bold leading-tight mt-0.5">
+                  Logistics Indonesia
+                </p>
+                <span className="inline-block mt-1.5 px-2 py-0.5 bg-sky-950/50 text-sky-300 text-[9px] font-extrabold tracking-wider rounded-md border border-sky-400/20">
+                  CASHFLOW CONTROL
+                </span>
+              </div>
             </div>
           </div>
 
