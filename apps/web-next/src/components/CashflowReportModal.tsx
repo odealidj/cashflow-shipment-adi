@@ -97,6 +97,55 @@ export function CashflowReportModal({
     fetchReportData();
   }, [isOpen, dateFrom, dateTo]);
 
+  // Transformasi Data Khusus Tab 1 (Versi Dokumen Asli):
+  // Top-Up Kas digabung ke dalam baris Shipment pertama setelahnya (persis baris 7 di file CASHFLOW SHIPMENT CONTROL.xlsx)
+  const mergedEntries = useMemo(() => {
+    const result: any[] = [];
+    let pendingKredit = 0;
+
+    for (const entry of entries) {
+      if (entry.entry_type === "TOP_UP") {
+        pendingKredit += (entry.kredit || 0);
+        continue;
+      }
+
+      // Entri SHIPMENT
+      const kreditVal = pendingKredit;
+      pendingKredit = 0;
+
+      result.push({
+        ...entry,
+        kredit: kreditVal,
+        hasMergedTopUp: kreditVal > 0,
+      });
+    }
+
+    // Jika ada sisa Top-Up di akhir tanpa shipment lanjutan
+    if (pendingKredit > 0) {
+      const lastDate = entries.length > 0 ? entries[entries.length - 1].date_of_entry : new Date().toISOString();
+      result.push({
+        id: "merged-tail-topup",
+        entry_type: "TOP_UP",
+        kredit: pendingKredit,
+        debit: 0,
+        saldo: pendingKredit,
+        date_of_entry: lastDate,
+        act_information: "Top-Up Modal Kas",
+        act_explaination: "Dana modal tersedia",
+        vendor_name_raw: "-",
+        top_days: 0,
+        due_date: null,
+        grand_cost: 0,
+        grand_selling: 0,
+        profit: 0,
+        margin_pct: 0,
+        remarks: "PAID"
+      });
+    }
+
+    return result;
+  }, [entries]);
+
   if (!isOpen) return null;
 
   // Handler Pindah Bulan
@@ -172,55 +221,6 @@ export function CashflowReportModal({
     const year = d.getFullYear();
     return `${day}/${month}/${year}`;
   };
-
-  // Transformasi Data Khusus Tab 1 (Versi Dokumen Asli):
-  // Top-Up Kas digabung ke dalam baris Shipment pertama setelahnya (persis baris 7 di file CASHFLOW SHIPMENT CONTROL.xlsx)
-  const mergedEntries = useMemo(() => {
-    const result: any[] = [];
-    let pendingKredit = 0;
-
-    for (const entry of entries) {
-      if (entry.entry_type === "TOP_UP") {
-        pendingKredit += (entry.kredit || 0);
-        continue;
-      }
-
-      // Entri SHIPMENT
-      const kreditVal = pendingKredit;
-      pendingKredit = 0;
-
-      result.push({
-        ...entry,
-        kredit: kreditVal,
-        hasMergedTopUp: kreditVal > 0,
-      });
-    }
-
-    // Jika ada sisa Top-Up di akhir tanpa shipment lanjutan
-    if (pendingKredit > 0) {
-      const lastDate = entries.length > 0 ? entries[entries.length - 1].date_of_entry : new Date().toISOString();
-      result.push({
-        id: "merged-tail-topup",
-        entry_type: "TOP_UP",
-        kredit: pendingKredit,
-        debit: 0,
-        saldo: pendingKredit,
-        date_of_entry: lastDate,
-        act_information: "Top-Up Modal Kas",
-        act_explaination: "Dana modal tersedia",
-        vendor_name_raw: "-",
-        top_days: 0,
-        due_date: null,
-        grand_cost: 0,
-        grand_selling: 0,
-        profit: 0,
-        margin_pct: 0,
-        remarks: "PAID"
-      });
-    }
-
-    return result;
-  }, [entries]);
 
   // Kalkulasi agregat langsung dari daftar entri
   const totalKredit = entries.reduce((acc, curr) => acc + (curr.kredit || 0), 0);
