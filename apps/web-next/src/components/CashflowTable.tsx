@@ -429,7 +429,11 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
                   <th className="px-3 py-3.5 font-black text-right min-w-[130px]">Profit & Margin</th>
                   <th className="px-3 py-3.5 font-black text-center min-w-[110px]">T.O.P / Due</th>
                   <th className="px-4 py-3.5 font-black text-right min-w-[140px]">Arus Kas</th>
-                  <th className="px-4 py-3.5 font-black text-right min-w-[130px] bg-sky-100/60 text-sky-950">Rolling Saldo</th>
+                  <th className="px-4 py-3.5 font-black text-right min-w-[140px] bg-sky-100/50">
+                    <span className="inline-flex items-center gap-1 bg-sky-900 text-white text-[10px] font-black px-2.5 py-1 rounded-lg shadow-2xs tracking-wider border border-sky-800">
+                      ★ ROLLING SALDO
+                    </span>
+                  </th>
                   <th className="px-3 py-3.5 font-black text-center">Status</th>
                   <th className="px-4 py-3.5 font-black text-right">Aksi</th>
                 </tr>
@@ -568,8 +572,10 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
                         </td>
 
                         {/* 7. Rolling Saldo */}
-                        <td className="px-4 py-3.5 text-right font-mono font-black text-sky-950 text-xs whitespace-nowrap bg-slate-50/50">
-                          {formatCurrency(entry.saldo)}
+                        <td className="px-4 py-3.5 text-right font-mono whitespace-nowrap bg-sky-50/30">
+                          <span className="inline-block font-black text-sky-950 text-xs px-2.5 py-1 bg-white rounded-lg border border-sky-200/80 shadow-2xs">
+                            {formatCurrency(entry.saldo)}
+                          </span>
                         </td>
 
                         {/* 8. Status Pembayaran */}
