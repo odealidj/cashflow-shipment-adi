@@ -32,6 +32,7 @@ import { CashflowReportModal } from "./CashflowReportModal";
 import { FilterBar, FilterState, getCurrentMonthRange, formatActivePeriod } from "./FilterBar";
 import { fetchWithAuth } from "@/lib/apiClient";
 import { TableCard, tableTheadClass, ActionButton } from "@/components/shared/TableCard";
+import { TablePagination } from "@/components/shared/TablePagination";
 
 interface CashflowTableProps {
   onDataChange?: () => void;
@@ -670,28 +671,15 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
         </div>
 
         {/* Pagination Footer Terpadu */}
-        <div className="border-t border-slate-100 bg-slate-50/50 px-6 py-3.5 flex flex-wrap justify-between items-center gap-3">
-          <span className="text-xs text-slate-500 font-medium">
-            Menampilkan <span className="font-bold text-slate-900">{safeEntries.length}</span> dari <span className="font-bold text-slate-900">{total}</span> transaksi (Urut {sortDir})
-          </span>
-          <div className="flex items-center gap-2">
-            <button 
-              disabled={page === 1}
-              onClick={() => setPage(p => Math.max(1, p - 1))}
-              className="px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 disabled:opacity-40 transition-colors text-xs font-bold shadow-2xs cursor-pointer"
-            >
-              Sebelumnya
-            </button>
-            <span className="px-2.5 py-1 text-xs font-bold text-slate-600 bg-slate-200/70 rounded-lg">Hal {page}</span>
-            <button 
-              disabled={safeEntries.length < 15}
-              onClick={() => setPage(p => p + 1)}
-              className="px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 disabled:opacity-40 transition-colors text-xs font-bold shadow-2xs cursor-pointer"
-            >
-              Selanjutnya
-            </button>
-          </div>
-        </div>
+        <TablePagination
+          currentPage={page}
+          totalItems={total}
+          pageSize={15}
+          currentCount={safeEntries.length}
+          onPageChange={(newPage) => setPage(newPage)}
+          itemUnit="transaksi"
+          infoSuffix={`Urut ${sortDir}`}
+        />
       </div>
     </div>
 

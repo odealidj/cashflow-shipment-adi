@@ -19,6 +19,7 @@ import {
 import { ActivityPresetModal, ActivityPreset } from "@/components/ActivityPresetModal";
 import { fetchWithAuth } from "@/lib/apiClient";
 import { tableTheadClass, ActionButton } from "@/components/shared/TableCard";
+import { TablePagination } from "@/components/shared/TablePagination";
 import { KpiCardGrid } from "@/components/shared/KpiCardGrid";
 import { KpiCard } from "@/components/shared/KpiCard";
 
@@ -32,7 +33,13 @@ export function ActivityPresetTable({ category }: ActivityPresetTableProps) {
   const [activeTab, setActiveTab] = useState<"ALL" | "ACT_INFO" | "ACT_EXPLAIN">(category || "ALL");
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(15);
   const [total, setTotal] = useState(0);
+
+  // Reset to page 1 when filter or search changes
+  useEffect(() => {
+    setPage(1);
+  }, [activeTab, category, searchTerm]);
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -51,13 +58,14 @@ export function ActivityPresetTable({ category }: ActivityPresetTableProps) {
     try {
       const categoryParam = effectiveCategory ? `&category=${effectiveCategory}` : "";
       const searchParam = searchTerm ? `&search=${encodeURIComponent(searchTerm.trim())}` : "";
-      const res = await fetchWithAuth(`http://localhost:8080/api/v1/activity-presets?page=${page}&limit=100${categoryParam}${searchParam}`);
+      const res = await fetchWithAuth(`http://localhost:8080/api/v1/activity-presets?page=${page}&limit=${pageSize}${categoryParam}${searchParam}`);
       const data = await res.json();
       if (data.status && data.data) {
         setPresets(data.data.entries || data.data || []);
         setTotal(data.data.total || 0);
       } else {
         setPresets([]);
+        setTotal(0);
       }
     } catch (err) {
       console.error("Failed to fetch presets", err);
@@ -69,7 +77,7 @@ export function ActivityPresetTable({ category }: ActivityPresetTableProps) {
 
   useEffect(() => {
     fetchPresets();
-  }, [page, activeTab, category, searchTerm]);
+  }, [page, pageSize, activeTab, category, searchTerm]);
 
   const handleOpenCreate = () => {
     setSelectedPreset(null);
@@ -356,15 +364,20 @@ export function ActivityPresetTable({ category }: ActivityPresetTableProps) {
             </table>
           </div>
 
-          {/* Footer Terpadu */}
-          <div className="border-t border-slate-100 bg-slate-50/50 px-6 py-3.5 flex flex-wrap justify-between items-center gap-3">
-            <span className="text-xs text-slate-500 font-medium">
-              Menampilkan <span className="font-bold text-slate-900">{safePresets.length}</span> dari <span className="font-bold text-slate-900">{currentTotal}</span> data terdaftar
-            </span>
-            <span className="text-[11px] text-slate-400 font-medium hidden sm:inline">
-              Opsi yang didaftarkan di sini otomatis muncul sebagai saran autocomplete di modal Shipment Desktop & Mobile PWA
-            </span>
-          </div>
+          {/* Footer Pagination Terpadu */}
+          <TablePagination
+            currentPage={page}
+            totalItems={total || currentTotal}
+            pageSize={pageSize}
+            currentCount={safePresets.length}
+            onPageChange={(newPage) => setPage(newPage)}
+            onPageSizeChange={(newSize) => {
+              setPageSize(newSize);
+              setPage(1);
+            }}
+            itemUnit={isArmada ? "aktivitas/armada" : "catatan/rute"}
+            infoSuffix={effectiveCategory ? `Kategori: ${effectiveCategory}` : "Semua Kategori"}
+          />
         </div>
       </div>
 

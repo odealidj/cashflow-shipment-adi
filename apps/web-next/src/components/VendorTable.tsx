@@ -19,6 +19,7 @@ import {
 import { VendorModal } from "@/components/VendorModal";
 import { fetchWithAuth } from "@/lib/apiClient";
 import { tableTheadClass, ActionButton } from "@/components/shared/TableCard";
+import { TablePagination } from "@/components/shared/TablePagination";
 import { KpiCardGrid } from "@/components/shared/KpiCardGrid";
 import { KpiCard } from "@/components/shared/KpiCard";
 
@@ -36,7 +37,13 @@ export function VendorTable() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(15);
   const [total, setTotal] = useState(0);
+
+  // Reset to page 1 on search change
+  useEffect(() => {
+    setPage(1);
+  }, [searchTerm]);
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -49,13 +56,15 @@ export function VendorTable() {
   const fetchVendors = async () => {
     setLoading(true);
     try {
-      const res = await fetchWithAuth(`http://localhost:8080/api/v1/vendors?page=${page}&limit=100`);
+      const searchParam = searchTerm ? `&search=${encodeURIComponent(searchTerm.trim())}` : "";
+      const res = await fetchWithAuth(`http://localhost:8080/api/v1/vendors?page=${page}&limit=${pageSize}${searchParam}`);
       const data = await res.json();
       if (data.status && data.data) {
         setVendors(data.data.entries || data.data || []);
         setTotal(data.data.total || 0);
       } else {
         setVendors([]);
+        setTotal(0);
       }
     } catch (err) {
       console.error("Failed to fetch vendors", err);
@@ -67,7 +76,7 @@ export function VendorTable() {
 
   useEffect(() => {
     fetchVendors();
-  }, [page]);
+  }, [page, pageSize, searchTerm]);
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return "-";
@@ -323,15 +332,19 @@ export function VendorTable() {
             </table>
           </div>
 
-          {/* Footer Terpadu */}
-          <div className="border-t border-slate-100 bg-slate-50/50 px-6 py-3.5 flex flex-wrap justify-between items-center gap-3">
-            <span className="text-xs text-slate-500 font-medium">
-              Menampilkan <span className="font-bold text-slate-900">{filteredVendors.length}</span> dari <span className="font-bold text-slate-900">{total || safeVendors.length}</span> vendor terdaftar
-            </span>
-            <span className="text-[11px] text-slate-400 font-medium hidden sm:inline">
-              Data mitra terhubung langsung ke pencatatan transaksi Grand Cost & Kas Keluar
-            </span>
-          </div>
+          {/* Footer Pagination Terpadu */}
+          <TablePagination
+            currentPage={page}
+            totalItems={total}
+            pageSize={pageSize}
+            currentCount={vendors.length}
+            onPageChange={(newPage) => setPage(newPage)}
+            onPageSizeChange={(newSize) => {
+              setPageSize(newSize);
+              setPage(1);
+            }}
+            itemUnit="vendor"
+          />
         </div>
       </div>
 

@@ -29,6 +29,7 @@ import { PageHeader } from "@/components/shared/PageHeader";
 import { KpiCardGrid } from "@/components/shared/KpiCardGrid";
 import { KpiCard } from "@/components/shared/KpiCard";
 import { TableCard, tableTheadClass, ActionButton } from "@/components/shared/TableCard";
+import { TablePagination } from "@/components/shared/TablePagination";
 import { 
   formatActivePeriod, 
   getCurrentMonthRange, 
@@ -96,6 +97,15 @@ export default function InvoicesPage() {
   }, [dateFrom, dateTo]);
 
 
+  // Pagination State
+  const [page, setPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(15);
+
+  // Reset to page 1 on filter changes
+  useEffect(() => {
+    setPage(1);
+  }, [statusFilter, searchQuery, dateFrom, dateTo, sortDir]);
+
   const fetchInvoices = useCallback(async () => {
     setLoading(true);
     try {
@@ -105,7 +115,8 @@ export default function InvoicesPage() {
       if (dateFrom) params.set("date_from", dateFrom);
       if (dateTo) params.set("date_to", dateTo);
       params.set("sort_dir", sortDir);
-      params.set("limit", "100");
+      params.set("page", String(page));
+      params.set("limit", String(pageSize));
 
       const res = await fetchWithAuth(`http://localhost:8080/api/v1/invoices?${params.toString()}`);
       const data = await res.json();
@@ -122,7 +133,7 @@ export default function InvoicesPage() {
     } finally {
       setLoading(false);
     }
-  }, [statusFilter, searchQuery, dateFrom, dateTo, sortDir]);
+  }, [statusFilter, searchQuery, dateFrom, dateTo, sortDir, page, pageSize]);
 
   const fetchSummary = useCallback(async () => {
     try {
@@ -540,15 +551,20 @@ export default function InvoicesPage() {
           </table>
         </div>
 
-        {/* 4. Footer Terpadu */}
-        <div className="border-t border-slate-100 bg-slate-50/50 px-6 py-3.5 flex flex-wrap justify-between items-center gap-3">
-          <span className="text-xs text-slate-500 font-medium">
-            Menampilkan <span className="font-bold text-slate-900">{invoices.length}</span> dari <span className="font-bold text-slate-900">{total}</span> invoice (Urut {sortDir})
-          </span>
-          <span className="text-[11px] text-slate-400 font-medium hidden sm:inline">
-            Status diperbarui otomatis berdasarkan tanggal jatuh tempo & pembayaran
-          </span>
-        </div>
+        {/* 4. Footer Pagination Terpadu */}
+        <TablePagination
+          currentPage={page}
+          totalItems={total}
+          pageSize={pageSize}
+          currentCount={invoices.length}
+          onPageChange={(newPage) => setPage(newPage)}
+          onPageSizeChange={(newSize) => {
+            setPageSize(newSize);
+            setPage(1);
+          }}
+          itemUnit="invoice"
+          infoSuffix={`Urut ${sortDir}`}
+        />
       </div>
 
       {/* MODAL BUAT INVOICE */}

@@ -22,6 +22,7 @@ import {
 import { CustomerModal, Customer } from "@/components/CustomerModal";
 import { fetchWithAuth } from "@/lib/apiClient";
 import { tableTheadClass, ActionButton } from "@/components/shared/TableCard";
+import { TablePagination } from "@/components/shared/TablePagination";
 import { KpiCardGrid } from "@/components/shared/KpiCardGrid";
 import { KpiCard } from "@/components/shared/KpiCard";
 
@@ -30,7 +31,13 @@ export function CustomerTable() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(15);
   const [total, setTotal] = useState(0);
+
+  // Reset to page 1 on search change
+  useEffect(() => {
+    setPage(1);
+  }, [searchTerm]);
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -43,13 +50,15 @@ export function CustomerTable() {
   const fetchCustomers = async () => {
     setLoading(true);
     try {
-      const res = await fetchWithAuth(`http://localhost:8080/api/v1/customers?page=${page}&limit=100`);
+      const searchParam = searchTerm ? `&search=${encodeURIComponent(searchTerm.trim())}` : "";
+      const res = await fetchWithAuth(`http://localhost:8080/api/v1/customers?page=${page}&limit=${pageSize}${searchParam}`);
       const data = await res.json();
       if (data.status && data.data) {
         setCustomers(data.data.entries || data.data || []);
         setTotal(data.data.total || 0);
       } else {
         setCustomers([]);
+        setTotal(0);
       }
     } catch (err) {
       console.error("Failed to fetch customers", err);
@@ -61,7 +70,7 @@ export function CustomerTable() {
 
   useEffect(() => {
     fetchCustomers();
-  }, [page]);
+  }, [page, pageSize, searchTerm]);
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return "-";
@@ -326,6 +335,20 @@ export function CustomerTable() {
               </tbody>
             </table>
           </div>
+
+          {/* Footer Pagination Terpadu */}
+          <TablePagination
+            currentPage={page}
+            totalItems={total}
+            pageSize={pageSize}
+            currentCount={customers.length}
+            onPageChange={(newPage) => setPage(newPage)}
+            onPageSizeChange={(newSize) => {
+              setPageSize(newSize);
+              setPage(1);
+            }}
+            itemUnit="customer"
+          />
         </div>
       </div>
 
