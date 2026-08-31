@@ -506,8 +506,8 @@ export default function InvoicesPage() {
                         </span>
                       </td>
                       <td className="py-3 px-3 text-center">
-                        <div className="flex items-center justify-center gap-1">
-                          {/* Cetak Kwitansi */}
+                        <div className="flex items-center justify-center gap-1.5">
+                          {/* 1. Cetak Kwitansi */}
                           <ActionButton
                             onClick={() => setSelectedInvoiceForPrint(inv)}
                             icon={<Printer className="w-3.5 h-3.5" />}
@@ -515,17 +515,7 @@ export default function InvoicesPage() {
                             variant="sky"
                           />
 
-                          {/* Tandai Lunas jika belum */}
-                          {!isPaid && (
-                            <ActionButton
-                              onClick={() => handleMarkPaid(inv.id)}
-                              icon={<CheckCircle2 className="w-3.5 h-3.5" />}
-                              title="Tandai Sudah Lunas"
-                              variant="emerald"
-                            />
-                          )}
-
-                          {/* Edit Invoice */}
+                          {/* 2. Edit Invoice */}
                           <ActionButton
                             onClick={() => setSelectedInvoiceForEdit(inv)}
                             icon={<Edit2 className="w-3.5 h-3.5" />}
@@ -533,7 +523,7 @@ export default function InvoicesPage() {
                             variant="amber"
                           />
 
-                          {/* Hapus Invoice */}
+                          {/* 3. Hapus Invoice */}
                           <ActionButton
                             onClick={() => setInvoiceToDelete(inv)}
                             icon={<Trash2 className="w-3.5 h-3.5" />}
