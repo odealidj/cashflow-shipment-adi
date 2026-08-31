@@ -29,6 +29,7 @@ import { EntryDetailModal } from "./EntryDetailModal";
 import { DeleteConfirmModal } from "./DeleteConfirmModal";
 import { FilterBar, FilterState, getCurrentMonthRange, formatActivePeriod } from "./FilterBar";
 import { fetchWithAuth } from "@/lib/apiClient";
+import { TableCard, tableTheadClass, ActionButton } from "@/components/shared/TableCard";
 
 interface CashflowTableProps {
   onDataChange?: () => void;
@@ -435,248 +436,247 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
           }}
         />
 
-        {/* LAYER 3: DATA TABLE CONTAINER (CARD MANDIRI) */}
-        <div className="bg-white rounded-2xl overflow-hidden border border-slate-200/80 shadow-2xs">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-slate-700 border-collapse">
-              <thead className="text-[11px] uppercase bg-[#EBF3FA] text-[#223249] border-b border-sky-200/70 tracking-wider">
+        {/* LAYER 3: DATA TABLE CONTAINER (SHARED TABLE CARD) */}
+        <TableCard
+          footer={
+            /* Pagination Controls */
+            <div className="flex flex-wrap justify-between items-center gap-3">
+              <span className="text-xs text-slate-500 font-medium">
+                Menampilkan <span className="font-bold text-slate-900">{safeEntries.length}</span> dari <span className="font-bold text-slate-900">{total}</span> transaksi (Urut {sortDir})
+              </span>
+              <div className="flex items-center gap-2">
+                <button 
+                  disabled={page === 1}
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  className="px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 disabled:opacity-40 transition-colors text-xs font-bold shadow-2xs cursor-pointer"
+                >
+                  Sebelumnya
+                </button>
+                <span className="px-2 py-1 text-xs font-bold text-slate-600 bg-slate-100 rounded-lg">Hal {page}</span>
+                <button 
+                  disabled={safeEntries.length < 15}
+                  onClick={() => setPage(p => p + 1)}
+                  className="px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 disabled:opacity-40 transition-colors text-xs font-bold shadow-2xs cursor-pointer"
+                >
+                  Selanjutnya
+                </button>
+              </div>
+            </div>
+          }
+        >
+          <table className="w-full text-left text-xs text-slate-700 border-collapse">
+            <thead className={tableTheadClass}>
+              <tr>
+                <th 
+                  onClick={toggleSort}
+                  className="px-4 py-3.5 cursor-pointer hover:text-sky-900 transition-colors group select-none whitespace-nowrap"
+                >
+                  <div className="flex items-center gap-1.5">
+                    <span>Tanggal & Seq</span>
+                    {sortDir === "ASC" ? (
+                      <ArrowUp className="w-3.5 h-3.5 text-sky-600" />
+                    ) : (
+                      <ArrowDown className="w-3.5 h-3.5 text-sky-600" />
+                    )}
+                  </div>
+                </th>
+                <th className="px-4 py-3.5 min-w-[220px]">Vendor & Aktivitas</th>
+                <th className="px-3 py-3.5 text-right min-w-[150px]">Penjualan & Biaya</th>
+                <th className="px-3 py-3.5 text-right min-w-[130px]">Profit & Margin</th>
+                <th className="px-3 py-3.5 text-center min-w-[110px]">T.O.P / Due</th>
+                <th className="px-4 py-3.5 text-right min-w-[140px]">Arus Kas</th>
+                <th className="px-4 py-3.5 text-right min-w-[140px] bg-sky-100/50">
+                  <span className="inline-flex items-center gap-1 bg-sky-900 text-white text-[10px] font-black px-2.5 py-1 rounded-lg shadow-2xs tracking-wider border border-sky-800">
+                    ★ ROLLING SALDO
+                  </span>
+                </th>
+                <th className="px-3 py-3.5 text-center">Status</th>
+                <th className="px-4 py-3.5 text-center w-28">Aksi</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {loading ? (
                 <tr>
-                  <th 
-                    onClick={toggleSort}
-                    className="px-4 py-3.5 font-black cursor-pointer hover:text-sky-700 transition-colors group select-none whitespace-nowrap"
-                  >
-                    <div className="flex items-center gap-1.5">
-                      <span>Tanggal & Seq</span>
-                      {sortDir === "ASC" ? (
-                        <ArrowUp className="w-3.5 h-3.5 text-sky-600" />
-                      ) : (
-                        <ArrowDown className="w-3.5 h-3.5 text-sky-600" />
-                      )}
-                    </div>
-                  </th>
-                  <th className="px-4 py-3.5 font-black min-w-[220px]">Vendor & Aktivitas</th>
-                  <th className="px-3 py-3.5 font-black text-right min-w-[150px]">Penjualan & Biaya</th>
-                  <th className="px-3 py-3.5 font-black text-right min-w-[130px]">Profit & Margin</th>
-                  <th className="px-3 py-3.5 font-black text-center min-w-[110px]">T.O.P / Due</th>
-                  <th className="px-4 py-3.5 font-black text-right min-w-[140px]">Arus Kas</th>
-                  <th className="px-4 py-3.5 font-black text-right min-w-[140px] bg-sky-100/50">
-                    <span className="inline-flex items-center gap-1 bg-sky-900 text-white text-[10px] font-black px-2.5 py-1 rounded-lg shadow-2xs tracking-wider border border-sky-800">
-                      ★ ROLLING SALDO
-                    </span>
-                  </th>
-                  <th className="px-3 py-3.5 font-black text-center">Status</th>
-                  <th className="px-4 py-3.5 font-black text-right">Aksi</th>
+                  <td colSpan={9} className="px-6 py-12 text-center text-slate-400">
+                    <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-sky-700"></div>
+                    <p className="mt-2 text-xs font-semibold">Memuat transaksi...</p>
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {loading ? (
-                  <tr>
-                    <td colSpan={9} className="px-6 py-12 text-center text-slate-400">
-                      <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-sky-700"></div>
-                      <p className="mt-2 text-xs font-semibold">Memuat transaksi...</p>
-                    </td>
-                  </tr>
-                ) : safeEntries.length === 0 ? (
-                  <tr>
-                    <td colSpan={9} className="px-6 py-12 text-center text-slate-400">
-                      Tidak ada transaksi yang cocok dengan filter.
-                    </td>
-                  </tr>
-                ) : (
-                  safeEntries.map((entry: any) => {
-                    const isShipment = entry.entry_type === "SHIPMENT";
-                    return (
-                      <tr 
-                        key={entry.id} 
-                        className="hover:bg-slate-50/80 transition-colors group cursor-pointer"
-                        onClick={(e) => {
-                          if ((e.target as HTMLElement).closest("button")) return;
-                          setSelectedEntry(entry);
-                          setIsDetailOpen(true);
-                        }}
-                      >
-                        {/* 1. Tanggal & Sequence */}
-                        <td className="px-4 py-3.5 whitespace-nowrap">
-                          <div className="flex items-center gap-2">
-                            <span className="font-mono text-slate-400 font-bold text-[10px] bg-slate-100 px-1.5 py-0.5 rounded">
-                              #{entry.sequence_no}
-                            </span>
-                            <span className="font-bold text-slate-800 text-xs">
-                              {formatDate(entry.date_of_entry)}
-                            </span>
-                          </div>
-                        </td>
+              ) : safeEntries.length === 0 ? (
+                <tr>
+                  <td colSpan={9} className="px-6 py-12 text-center text-slate-400 font-medium">
+                    Tidak ada data transaksi pada rentang periode yang dipilih.
+                  </td>
+                </tr>
+              ) : (
+                safeEntries.map((entry: any) => {
+                  const isShipment = entry.entry_type === "SHIPMENT";
 
-                        {/* 2. Vendor & Aktivitas */}
-                        <td className="px-4 py-3.5">
-                          <div className="flex items-center gap-2">
-                            <span className={`inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase ${
-                              !isShipment 
-                                ? "bg-emerald-50 text-emerald-700 border border-emerald-200" 
-                                : "bg-sky-50 text-sky-800 border border-sky-200"
-                            }`}>
-                              {!isShipment ? <ArrowUpRight className="w-2.5 h-2.5" /> : <ArrowDownRight className="w-2.5 h-2.5" />}
-                              {entry.entry_type}
-                            </span>
-                            <span className="font-black text-slate-900 text-xs truncate max-w-[180px]">
-                              {entry.vendor_name_raw || (!isShipment ? "KAS MODAL" : "-")}
-                            </span>
+                  return (
+                    <tr 
+                      key={entry.id}
+                      className="hover:bg-slate-50/80 transition-colors group"
+                    >
+                      {/* 1. Tanggal & Sequence No */}
+                      <td className="px-4 py-3.5 whitespace-nowrap">
+                        <div className="font-mono font-bold text-slate-900 text-xs">
+                          {formatDate(entry.date_of_entry)}
+                        </div>
+                        <div className="text-[10px] text-slate-400 font-mono mt-0.5">
+                          #{String(entry.sequence_no).padStart(4, "0")}
+                        </div>
+                      </td>
+
+                      {/* 2. Vendor & Aktivitas */}
+                      <td className="px-4 py-3.5">
+                        <div className="flex items-center gap-2">
+                          <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider ${
+                            isShipment 
+                              ? "bg-sky-100 text-sky-800 border border-sky-200" 
+                              : "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                          }`}>
+                            {entry.entry_type}
+                          </span>
+                          <span className="font-extrabold text-slate-900 text-xs line-clamp-1">
+                            {entry.vendor_name_raw || "-"}
+                          </span>
+                        </div>
+                        <div className="text-xs text-slate-600 mt-1 font-medium line-clamp-1">
+                          {entry.act_information || "-"}
+                        </div>
+                        {entry.act_explaination && (
+                          <div className="text-[11px] text-slate-400 mt-0.5 line-clamp-1 italic">
+                            {entry.act_explaination}
                           </div>
-                          <div className="text-[11px] text-slate-500 mt-1 truncate max-w-xs font-medium">
-                            <span>{entry.act_information}</span>
-                            {entry.act_explaination && (
-                              <span className="text-slate-400 ml-1">({entry.act_explaination})</span>
+                        )}
+                      </td>
+
+                      {/* 3. Penjualan & Biaya */}
+                      <td className="px-3 py-3.5 text-right font-mono whitespace-nowrap">
+                        {isShipment ? (
+                          <div>
+                            <div className="text-xs font-bold text-slate-800">
+                              {formatCurrency(entry.grand_selling)}
+                            </div>
+                            <div className="text-[11px] text-slate-400 mt-0.5">
+                              Cost: {formatCurrency(entry.grand_cost)}
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="text-slate-300 font-bold">-</span>
+                        )}
+                      </td>
+
+                      {/* 4. Profit & Margin */}
+                      <td className="px-3 py-3.5 text-right font-mono whitespace-nowrap">
+                        {isShipment ? (
+                          <div>
+                            <div className={`text-xs font-bold ${
+                              entry.profit >= 0 ? "text-emerald-700" : "text-rose-600"
+                            }`}>
+                              {formatCurrency(entry.profit)}
+                            </div>
+                            <div className="text-[10px] font-semibold text-slate-500 mt-0.5">
+                              {(entry.margin_pct * 100).toFixed(1)}%
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="text-slate-300 font-bold">-</span>
+                        )}
+                      </td>
+
+                      {/* 5. TOP & Due Date */}
+                      <td className="px-3 py-3.5 text-center whitespace-nowrap">
+                        {entry.top_days ? (
+                          <div>
+                            <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                              {entry.top_days} Hari
+                            </span>
+                            {entry.due_date && (
+                              <div className="text-[10px] font-mono text-slate-400 mt-1">
+                                {formatDate(entry.due_date)}
+                              </div>
                             )}
                           </div>
-                        </td>
+                        ) : (
+                          <span className="text-slate-300 font-bold">-</span>
+                        )}
+                      </td>
 
-                        {/* 3. Penjualan & Biaya (Grand Selling vs Grand Cost) */}
-                        <td className="px-3 py-3.5 text-right font-mono whitespace-nowrap">
-                          {isShipment ? (
-                            <div>
-                              <div className="text-slate-900 font-bold text-xs">
-                                {formatCurrency(entry.grand_selling)}
-                              </div>
-                              <div className="text-[10px] text-slate-400 font-medium mt-0.5">
-                                HPP: {formatCurrency(entry.grand_cost)}
-                              </div>
-                            </div>
-                          ) : (
-                            <span className="text-slate-300 font-bold">-</span>
-                          )}
-                        </td>
-
-                        {/* 4. Profit & Margin */}
-                        <td className="px-3 py-3.5 text-right font-mono whitespace-nowrap">
-                          {isShipment ? (
-                            <div>
-                              <span className="text-emerald-700 font-black text-xs block">
-                                + {formatCurrency(entry.profit)}
-                              </span>
-                              <span className="inline-block mt-0.5 px-1.5 py-0.2 rounded bg-sky-50 text-sky-700 text-[10px] font-bold border border-sky-100">
-                                {(entry.margin_pct * 100).toFixed(1)}%
-                              </span>
-                            </div>
-                          ) : (
-                            <span className="text-slate-300 font-bold">-</span>
-                          )}
-                        </td>
-
-                        {/* 5. T.O.P & Jatuh Tempo */}
-                        <td className="px-3 py-3.5 text-center whitespace-nowrap">
-                          {isShipment ? (
-                            <div>
-                              <span className="text-slate-800 text-xs font-bold bg-slate-100 px-2 py-0.5 rounded-md">
-                                {entry.top_days ? `${entry.top_days} hari` : "-"}
-                              </span>
-                              {entry.due_date && (
-                                <span className="text-[10px] text-amber-700 font-bold block mt-1">
-                                  {formatDate(entry.due_date)}
-                                </span>
-                              )}
-                            </div>
-                          ) : (
-                            <span className="text-slate-300 font-bold">-</span>
-                          )}
-                        </td>
-
-                        {/* 6. Arus Kas (Debit vs Kredit) */}
-                        <td className="px-4 py-3.5 text-right font-mono whitespace-nowrap">
-                          {entry.debit > 0 ? (
-                            <div>
-                              <span className="text-rose-600 font-black text-xs">
-                                − {formatCurrency(entry.debit)}
-                              </span>
-                              <span className="text-[9px] text-slate-400 block font-sans uppercase">Kas Keluar</span>
-                            </div>
-                          ) : entry.kredit > 0 ? (
-                            <div>
-                              <span className="text-emerald-700 font-black text-xs">
-                                + {formatCurrency(entry.kredit)}
-                              </span>
-                              <span className="text-[9px] text-slate-400 block font-sans uppercase">Kas Masuk</span>
-                            </div>
-                          ) : (
-                            <span className="text-slate-300 font-bold">-</span>
-                          )}
-                        </td>
-
-                        {/* 7. Rolling Saldo */}
-                        <td className="px-4 py-3.5 text-right font-mono whitespace-nowrap bg-sky-50/30">
-                          <span className="inline-block font-black text-sky-950 text-xs px-2.5 py-1 bg-white rounded-lg border border-sky-200/80 shadow-2xs">
-                            {formatCurrency(entry.saldo)}
-                          </span>
-                        </td>
-
-                        {/* 8. Status Pembayaran */}
-                        <td className="px-3 py-3.5 text-center whitespace-nowrap">
-                          {renderRemarksBadge(entry)}
-                        </td>
-
-                        {/* 9. Tombol Aksi */}
-                        <td className="px-4 py-3.5 text-right whitespace-nowrap">
-                          <div className="flex items-center justify-end gap-1">
-                            <button
-                              onClick={() => {
-                                setSelectedEntry(entry);
-                                setIsDetailOpen(true);
-                              }}
-                              className="p-1.5 rounded-lg text-slate-400 hover:text-sky-700 hover:bg-sky-50 transition-colors cursor-pointer"
-                              title="Lihat Detail"
-                            >
-                              <Eye className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => {
-                                setSelectedEntry(entry);
-                                setIsEditOpen(true);
-                              }}
-                              className="p-1.5 rounded-lg text-slate-400 hover:text-sky-700 hover:bg-sky-50 transition-colors cursor-pointer"
-                              title="Edit Transaksi"
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleOpenDelete(entry)}
-                              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
-                              title="Hapus Transaksi"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
+                      {/* 6. Arus Kas (Debit/Kredit) */}
+                      <td className="px-4 py-3.5 text-right font-mono whitespace-nowrap">
+                        {entry.debit > 0 ? (
+                          <div>
+                            <span className="text-rose-600 font-black text-xs">
+                              - {formatCurrency(entry.debit)}
+                            </span>
+                            <span className="text-[9px] text-slate-400 block font-sans uppercase">Kas Keluar</span>
                           </div>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-          
-          {/* Pagination Controls */}
-          <div className="px-6 py-3.5 border-t border-slate-100 flex flex-wrap justify-between items-center gap-3 bg-slate-50/50">
-            <span className="text-xs text-slate-500 font-medium">
-              Menampilkan <span className="font-bold text-slate-900">{safeEntries.length}</span> dari <span className="font-bold text-slate-900">{total}</span> transaksi (Urut {sortDir})
-            </span>
-            <div className="flex items-center gap-2">
-              <button 
-                disabled={page === 1}
-                onClick={() => setPage(p => Math.max(1, p - 1))}
-                className="px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 disabled:opacity-40 transition-colors text-xs font-bold shadow-2xs cursor-pointer"
-              >
-                Sebelumnya
-              </button>
-              <span className="px-2 py-1 text-xs font-bold text-slate-600 bg-slate-100 rounded-lg">Hal {page}</span>
-              <button 
-                disabled={safeEntries.length < 15}
-                onClick={() => setPage(p => p + 1)}
-                className="px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 disabled:opacity-40 transition-colors text-xs font-bold shadow-2xs cursor-pointer"
-              >
-                Selanjutnya
-              </button>
-            </div>
-          </div>
-        </div>
+                        ) : entry.kredit > 0 ? (
+                          <div>
+                            <span className="text-emerald-700 font-black text-xs">
+                              + {formatCurrency(entry.kredit)}
+                            </span>
+                            <span className="text-[9px] text-slate-400 block font-sans uppercase">Kas Masuk</span>
+                          </div>
+                        ) : (
+                          <span className="text-slate-300 font-bold">-</span>
+                        )}
+                      </td>
+
+                      {/* 7. Rolling Saldo */}
+                      <td className="px-4 py-3.5 text-right font-mono whitespace-nowrap bg-sky-50/30">
+                        <span className="inline-block font-black text-sky-950 text-xs px-2.5 py-1 bg-white rounded-lg border border-sky-200/80 shadow-2xs">
+                          {formatCurrency(entry.saldo)}
+                        </span>
+                      </td>
+
+                      {/* 8. Status Pembayaran */}
+                      <td className="px-3 py-3.5 text-center whitespace-nowrap">
+                        {renderRemarksBadge(entry)}
+                      </td>
+
+                      {/* 9. Tombol Aksi (Seragam dengan ActionButton) */}
+                      <td className="px-4 py-3.5 text-center whitespace-nowrap">
+                        <div className="flex items-center justify-center gap-1.5">
+                          {/* 1. Lihat Detail / Pratinjau */}
+                          <ActionButton
+                            onClick={() => {
+                              setSelectedEntry(entry);
+                              setIsDetailOpen(true);
+                            }}
+                            icon={<Eye className="w-3.5 h-3.5" />}
+                            title="Lihat Detail Transaksi"
+                            variant="sky"
+                          />
+
+                          {/* 2. Edit Transaksi */}
+                          <ActionButton
+                            onClick={() => {
+                              setSelectedEntry(entry);
+                              setIsEditOpen(true);
+                            }}
+                            icon={<Edit2 className="w-3.5 h-3.5" />}
+                            title="Edit Transaksi"
+                            variant="amber"
+                          />
+
+                          {/* 3. Hapus Transaksi */}
+                          <ActionButton
+                            onClick={() => handleOpenDelete(entry)}
+                            icon={<Trash2 className="w-3.5 h-3.5" />}
+                            title="Hapus Transaksi"
+                            variant="rose"
+                          />
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </TableCard>
       </div>
 
       <TopUpModal 

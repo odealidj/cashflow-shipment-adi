@@ -26,7 +26,7 @@ import { fetchWithAuth } from "@/lib/apiClient";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { KpiCardGrid } from "@/components/shared/KpiCardGrid";
 import { KpiCard } from "@/components/shared/KpiCard";
-import { TableCard, tableTheadClass } from "@/components/shared/TableCard";
+import { TableCard, tableTheadClass, ActionButton } from "@/components/shared/TableCard";
 import { 
   formatActivePeriod, 
   getCurrentMonthRange, 
@@ -486,31 +486,28 @@ export default function InvoicesPage() {
                     <td className="py-3 px-3 text-center">
                       <div className="flex items-center justify-center gap-1.5">
                         {/* 1. Tombol Pratinjau / Cetak Kwitansi */}
-                        <button
+                        <ActionButton
                           onClick={() => setSelectedInvoiceForPrint(inv)}
-                          className="p-1.5 rounded-lg bg-sky-50 text-sky-700 hover:bg-sky-100 transition cursor-pointer"
+                          icon={<Printer className="w-3.5 h-3.5" />}
                           title="Pratinjau / Cetak Kwitansi Resmi"
-                        >
-                          <Printer className="w-3.5 h-3.5" />
-                        </button>
+                          variant="sky"
+                        />
 
                         {/* 2. Tombol Edit Invoice */}
-                        <button
+                        <ActionButton
                           onClick={() => setSelectedInvoiceForEdit(inv)}
-                          className="p-1.5 rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100 transition cursor-pointer"
+                          icon={<Edit3 className="w-3.5 h-3.5" />}
                           title="Edit Rincian Invoice"
-                        >
-                          <Edit3 className="w-3.5 h-3.5" />
-                        </button>
+                          variant="amber"
+                        />
 
                         {/* 3. Tombol Hapus (Soft Delete) */}
-                        <button
+                        <ActionButton
                           onClick={() => handleDeleteInvoice(inv.id, inv.invoice_no)}
-                          className="p-1.5 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 transition cursor-pointer"
+                          icon={<Trash2 className="w-3.5 h-3.5" />}
                           title="Hapus Invoice (Soft Delete)"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                          variant="rose"
+                        />
                       </div>
                     </td>
                   </tr>

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Truck, Plus, Mail, Phone, Calendar, Edit, Trash2, Search, RotateCcw, AlertTriangle } from "lucide-react";
 import { VendorModal } from "@/components/VendorModal";
 import { fetchWithAuth } from "@/lib/apiClient";
+import { tableTheadClass, ActionButton } from "@/components/shared/TableCard";
 
 interface Vendor {
   id: number;
@@ -164,16 +165,16 @@ export function VendorTable() {
         {/* Vendor Table Data */}
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs text-slate-700">
-            <thead className="text-[11px] uppercase bg-slate-50 text-slate-500 border-y border-slate-200/80">
+            <thead className={tableTheadClass}>
               <tr>
-                <th className="px-6 py-3.5 font-bold">Nama Vendor</th>
-                <th className="px-6 py-3.5 font-bold">Kontak & Telepon</th>
-                <th className="px-6 py-3.5 font-bold">Catatan / Rute</th>
-                <th className="px-6 py-3.5 font-bold">Terdaftar Pada</th>
-                <th className="px-6 py-3.5 font-bold text-center">Aksi</th>
+                <th className="px-6 py-3.5">Nama Vendor</th>
+                <th className="px-6 py-3.5">Kontak & Telepon</th>
+                <th className="px-6 py-3.5">Catatan / Rute</th>
+                <th className="px-6 py-3.5">Terdaftar Pada</th>
+                <th className="px-6 py-3.5 text-center w-28">Aksi</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
               {loading ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-12 text-center text-slate-400">
@@ -230,20 +231,18 @@ export function VendorTable() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-center">
                       <div className="flex items-center justify-center gap-1.5">
-                        <button
+                        <ActionButton
                           onClick={() => handleOpenEdit(vendor)}
-                          className="p-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 transition-all cursor-pointer shadow-2xs hover:scale-105"
+                          icon={<Edit className="w-3.5 h-3.5" />}
                           title="Edit Data Vendor"
-                        >
-                          <Edit className="w-3.5 h-3.5" />
-                        </button>
-                        <button
+                          variant="amber"
+                        />
+                        <ActionButton
                           onClick={() => setDeleteCandidate(vendor)}
-                          className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 transition-all cursor-pointer shadow-2xs hover:scale-105"
+                          icon={<Trash2 className="w-3.5 h-3.5" />}
                           title="Hapus Vendor (Soft Delete)"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                          variant="rose"
+                        />
                       </div>
                     </td>
                   </tr>
