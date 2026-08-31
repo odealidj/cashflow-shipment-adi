@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { X, Loader2, Truck, TrendingUp, DollarSign, Wallet, ArrowRight, AlertTriangle } from "lucide-react";
 import { formatRupiah, calculateProfit, calculateMarginPct, calculateDueDate } from "@/hooks/useAutoCalculate";
+import { formatThousand, cleanThousand, terbilangRingkas } from "@/hooks/useTerbilang";
 import { VendorSelect } from "@/components/VendorSelect";
 
 interface ShipmentModalProps {
@@ -183,7 +184,7 @@ export function ShipmentModal({ isOpen, onClose, onSuccess }: ShipmentModalProps
               <span className="text-[10px] text-slate-400 font-medium">* Kolom wajib input</span>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
               {/* Grand Cost / HPP */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
@@ -192,22 +193,29 @@ export function ShipmentModal({ isOpen, onClose, onSuccess }: ShipmentModalProps
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">Rp</span>
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
                     required
-                    min="0"
-                    placeholder="28150000"
-                    value={formData.grand_cost}
+                    placeholder="28.150.000"
+                    value={formatThousand(formData.grand_cost)}
                     onChange={e => {
-                      const v = e.target.value;
+                      const clean = cleanThousand(e.target.value);
                       setFormData({
                         ...formData,
-                        grand_cost: v,
-                        debit: v
+                        grand_cost: clean,
+                        debit: clean
                       });
                     }}
                     className="w-full bg-white border border-slate-200 rounded-xl py-2 pl-9 pr-3 text-xs text-slate-900 font-bold focus:ring-2 focus:ring-sky-600 focus:outline-none"
                   />
                 </div>
+                {/* Indikator Terbilang Ringkas */}
+                {formData.grand_cost && Number(formData.grand_cost) > 0 && (
+                  <div className="mt-1 flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-sky-50/80 border border-sky-100 text-[10px] text-sky-900 font-bold animate-fade-in">
+                    <span className="text-sky-500 font-normal">Terbaca:</span>
+                    <span>{terbilangRingkas(formData.grand_cost)}</span>
+                  </div>
+                )}
               </div>
 
               {/* Grand Selling */}
@@ -218,15 +226,28 @@ export function ShipmentModal({ isOpen, onClose, onSuccess }: ShipmentModalProps
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">Rp</span>
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
                     required
-                    min="0"
-                    placeholder="30000000"
-                    value={formData.grand_selling}
-                    onChange={e => setFormData({ ...formData, grand_selling: e.target.value })}
+                    placeholder="30.000.000"
+                    value={formatThousand(formData.grand_selling)}
+                    onChange={e => {
+                      const clean = cleanThousand(e.target.value);
+                      setFormData({
+                        ...formData,
+                        grand_selling: clean
+                      });
+                    }}
                     className="w-full bg-white border border-slate-200 rounded-xl py-2 pl-9 pr-3 text-xs text-slate-900 font-bold focus:ring-2 focus:ring-sky-600 focus:outline-none"
                   />
                 </div>
+                {/* Indikator Terbilang Ringkas */}
+                {formData.grand_selling && Number(formData.grand_selling) > 0 && (
+                  <div className="mt-1 flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-emerald-50/80 border border-emerald-100 text-[10px] text-emerald-900 font-bold animate-fade-in">
+                    <span className="text-emerald-500 font-normal">Terbaca:</span>
+                    <span>{terbilangRingkas(formData.grand_selling)}</span>
+                  </div>
+                )}
               </div>
             </div>
 
