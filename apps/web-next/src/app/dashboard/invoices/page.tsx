@@ -36,8 +36,8 @@ export default function InvoicesPage() {
   const [dateTo, setDateTo] = useState<string>("");
   const [sortDir, setSortDir] = useState<"ASC" | "DESC">("ASC");
 
-  // Visual Header Theme Selector: Opsi 1 (Soft Ice Sky), Opsi 2 (Soft Pearl Slate), Opsi 3 (Ocean Sky), Opsi 4 (Deep Navy / Sidebar)
-  const [headerTheme, setHeaderTheme] = useState<"ice-sky" | "pearl-slate" | "ocean-sky" | "deep-navy">("ice-sky");
+  // Visual Header Theme Selector: Opsi 1, 2, 3, 4, 5 (Docx Classic Navy #1A365D)
+  const [headerTheme, setHeaderTheme] = useState<"ice-sky" | "pearl-slate" | "ocean-sky" | "deep-navy" | "docx-navy">("ice-sky");
 
   // Modals
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -286,10 +286,23 @@ export default function InvoicesPage() {
                   ? "bg-[#223249] text-white shadow-2xs border border-slate-700"
                   : "text-slate-500 hover:text-slate-800"
               }`}
-              title="Opsi 4: Deep Navy / Sidebar (#223249 - Biru Gelap Berwibawa Senada Sidebar)"
+              title="Opsi 4: Deep Navy / Sidebar (#223249 - Senada Sidebar Aplikasi)"
             >
               <span className="w-2.5 h-2.5 rounded-full bg-[#223249] border border-sky-400"></span>
-              <span>Opsi 4 (Deep Navy / Sidebar)</span>
+              <span>Opsi 4 (Sidebar Navy)</span>
+            </button>
+
+            <button
+              onClick={() => setHeaderTheme("docx-navy")}
+              className={`px-2.5 py-1 rounded-lg text-xs font-black transition cursor-pointer flex items-center gap-1.5 ${
+                headerTheme === "docx-navy"
+                  ? "bg-[#1A365D] text-white shadow-2xs border border-blue-900"
+                  : "text-slate-500 hover:text-slate-800"
+              }`}
+              title="Opsi 5: Dokumen Asli (#1A365D - Midnight Sapphire Navy Asli dari Dokumen Word)"
+            >
+              <span className="w-2.5 h-2.5 rounded-full bg-[#1A365D] border border-sky-300"></span>
+              <span>Opsi 5 (Dokumen Asli #1A365D)</span>
             </button>
           </div>
 
@@ -399,7 +412,9 @@ export default function InvoicesPage() {
             <thead>
               <tr 
                 className={`border-b tracking-wider uppercase text-[11px] font-black transition-colors duration-200 ${
-                  headerTheme === "deep-navy"
+                  headerTheme === "docx-navy"
+                    ? "bg-[#1A365D] border-[#0F2442] text-white shadow-xs"
+                    : headerTheme === "deep-navy"
                     ? "bg-[#223249] border-slate-700/80 text-white shadow-xs"
                     : headerTheme === "ocean-sky"
                     ? "bg-sky-700 border-sky-800 text-white shadow-xs"
