@@ -127,85 +127,120 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             )}
           </div>
 
-          {/* Navigation Links */}
-          <nav className="space-y-1.5">
-            <Link 
-              href="/dashboard" 
-              title="Dashboard Overview"
-              className={`flex items-center gap-3 rounded-xl transition-all text-xs font-bold ${
-                isCollapsed ? "justify-center p-3" : "px-3.5 py-2.5"
-              } ${
-                isDashboardActive 
-                ? "bg-sky-700/80 text-white shadow-xs" 
-                : "text-slate-300 hover:text-white hover:bg-white/10"
-              }`}
-            >
-              <LayoutDashboard className="w-5 h-5 shrink-0" />
-              {!isCollapsed && <span className="truncate">Dashboard Overview</span>}
-            </Link>
+          {/* Navigation Links Grouped by Functionality */}
+          <nav className="space-y-3">
+            {/* GRUP 1: UTAMA */}
+            <div>
+              {!isCollapsed && (
+                <div className="px-3 pb-1 text-[10px] font-black text-slate-400/90 uppercase tracking-widest">
+                  Utama
+                </div>
+              )}
+              <div className="space-y-1">
+                <Link 
+                  href="/dashboard" 
+                  title="Dashboard Overview"
+                  className={`flex items-center gap-3 rounded-xl transition-all text-xs font-bold ${
+                    isCollapsed ? "justify-center p-3" : "px-3.5 py-2.5"
+                  } ${
+                    isDashboardActive 
+                    ? "bg-sky-700/80 text-white shadow-xs" 
+                    : "text-slate-300 hover:text-white hover:bg-white/10"
+                  }`}
+                >
+                  <LayoutDashboard className="w-5 h-5 shrink-0" />
+                  {!isCollapsed && <span className="truncate">Dashboard Overview</span>}
+                </Link>
+              </div>
+            </div>
 
-            <Link 
-              href="/dashboard/transactions" 
-              title="Transaksi Cashflow"
-              className={`flex items-center gap-3 rounded-xl transition-all text-xs font-bold ${
-                isCollapsed ? "justify-center p-3" : "px-3.5 py-2.5"
-              } ${
-                isTransactionsActive 
-                ? "bg-sky-700/80 text-white shadow-xs" 
-                : "text-slate-300 hover:text-white hover:bg-white/10"
-              }`}
-            >
-              <Receipt className="w-5 h-5 shrink-0" />
-              {!isCollapsed && <span className="truncate">Transaksi Cashflow</span>}
-            </Link>
+            {/* GRUP 2: TRANSAKSI & OPERASIONAL */}
+            <div className={`pt-1 ${isCollapsed ? "border-t border-white/10 pt-2.5" : ""}`}>
+              {!isCollapsed && (
+                <div className="px-3 pb-1 text-[10px] font-black text-slate-400/90 uppercase tracking-widest">
+                  Transaksi & Kas
+                </div>
+              )}
+              <div className="space-y-1">
+                <Link 
+                  href="/dashboard/transactions" 
+                  title="Transaksi Cashflow & Shipment"
+                  className={`flex items-center gap-3 rounded-xl transition-all text-xs font-bold ${
+                    isCollapsed ? "justify-center p-3" : "px-3.5 py-2.5"
+                  } ${
+                    isTransactionsActive 
+                    ? "bg-sky-700/80 text-white shadow-xs" 
+                    : "text-slate-300 hover:text-white hover:bg-white/10"
+                  }`}
+                >
+                  <Receipt className="w-5 h-5 shrink-0" />
+                  {!isCollapsed && <span className="truncate">Transaksi Cashflow</span>}
+                </Link>
 
-            <Link 
-              href="/dashboard/invoices" 
-              title="Monitoring Invoice"
-              className={`flex items-center gap-3 rounded-xl transition-all text-xs font-bold ${
-                isCollapsed ? "justify-center p-3" : "px-3.5 py-2.5"
-              } ${
-                isInvoicesActive 
-                ? "bg-sky-700/80 text-white shadow-xs" 
-                : "text-slate-300 hover:text-white hover:bg-white/10"
-              }`}
-            >
-              <FileText className="w-5 h-5 shrink-0" />
-              {!isCollapsed && <span className="truncate">Monitoring Invoice</span>}
-            </Link>
+                <Link 
+                  href="/dashboard/invoices" 
+                  title="Monitoring Invoice & Piutang"
+                  className={`flex items-center gap-3 rounded-xl transition-all text-xs font-bold ${
+                    isCollapsed ? "justify-center p-3" : "px-3.5 py-2.5"
+                  } ${
+                    isInvoicesActive 
+                    ? "bg-sky-700/80 text-white shadow-xs" 
+                    : "text-slate-300 hover:text-white hover:bg-white/10"
+                  }`}
+                >
+                  <FileText className="w-5 h-5 shrink-0" />
+                  {!isCollapsed && <span className="truncate">Monitoring Invoice</span>}
+                </Link>
+              </div>
+            </div>
 
-            <Link 
-              href="/dashboard/customers" 
-              title="Daftar Customer"
-              className={`flex items-center gap-3 rounded-xl transition-all text-xs font-bold ${
-                isCollapsed ? "justify-center p-3" : "px-3.5 py-2.5"
-              } ${
-                isCustomersActive 
-                ? "bg-sky-700/80 text-white shadow-xs" 
-                : "text-slate-300 hover:text-white hover:bg-white/10"
-              }`}
-            >
-              <Building2 className="w-5 h-5 shrink-0" />
-              {!isCollapsed && <span className="truncate">Daftar Customer</span>}
-            </Link>
+            {/* GRUP 3: DATA MASTER */}
+            <div className={`pt-1 ${isCollapsed ? "border-t border-white/10 pt-2.5" : ""}`}>
+              {!isCollapsed && (
+                <div className="px-3 pb-1 text-[10px] font-black text-slate-400/90 uppercase tracking-widest">
+                  Data Master
+                </div>
+              )}
+              <div className="space-y-1">
+                <Link 
+                  href="/dashboard/customers" 
+                  title="Master Customer (Klien)"
+                  className={`flex items-center gap-3 rounded-xl transition-all text-xs font-bold ${
+                    isCollapsed ? "justify-center p-3" : "px-3.5 py-2.5"
+                  } ${
+                    isCustomersActive 
+                    ? "bg-sky-700/80 text-white shadow-xs" 
+                    : "text-slate-300 hover:text-white hover:bg-white/10"
+                  }`}
+                >
+                  <Building2 className="w-5 h-5 shrink-0" />
+                  {!isCollapsed && <span className="truncate">Daftar Customer</span>}
+                </Link>
 
-            <Link 
-              href="/dashboard/vendors" 
-              title="Daftar Vendor"
-              className={`flex items-center gap-3 rounded-xl transition-all text-xs font-bold ${
-                isCollapsed ? "justify-center p-3" : "px-3.5 py-2.5"
-              } ${
-                isVendorsActive 
-                ? "bg-sky-700/80 text-white shadow-xs" 
-                : "text-slate-300 hover:text-white hover:bg-white/10"
-              }`}
-            >
-              <Truck className="w-5 h-5 shrink-0" />
-              {!isCollapsed && <span className="truncate">Daftar Vendor</span>}
-            </Link>
+                <Link 
+                  href="/dashboard/vendors" 
+                  title="Master Vendor (Armada & Transporter)"
+                  className={`flex items-center gap-3 rounded-xl transition-all text-xs font-bold ${
+                    isCollapsed ? "justify-center p-3" : "px-3.5 py-2.5"
+                  } ${
+                    isVendorsActive 
+                    ? "bg-sky-700/80 text-white shadow-xs" 
+                    : "text-slate-300 hover:text-white hover:bg-white/10"
+                  }`}
+                >
+                  <Truck className="w-5 h-5 shrink-0" />
+                  {!isCollapsed && <span className="truncate">Daftar Vendor</span>}
+                </Link>
+              </div>
+            </div>
 
-            {/* Mobile PWA Shortcut */}
-            <div className={`pt-3 mt-3 border-t border-white/10 ${isCollapsed ? "flex justify-center" : ""}`}>
+            {/* GRUP 4: AKSES MOBILE PWA */}
+            <div className={`pt-2 border-t border-white/10 ${isCollapsed ? "flex justify-center pt-2.5" : ""}`}>
+              {!isCollapsed && (
+                <div className="px-3 pb-1 text-[10px] font-black text-slate-400/90 uppercase tracking-widest">
+                  Aplikasi Mobile
+                </div>
+              )}
               <Link 
                 href="/m" 
                 title="Buka Mobile PWA"
