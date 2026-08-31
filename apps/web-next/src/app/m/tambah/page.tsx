@@ -59,10 +59,19 @@ export default function TambahTransaksiPage() {
     setErrorMessage(null);
     setIsSubmitting(true);
 
-    if (entryType === 'SHIPMENT' && debit <= 0 && grandCost <= 0) {
-      setErrorMessage('Harap masukkan nilai Debit atau Grand Cost untuk shipment.');
-      setIsSubmitting(false);
-      return;
+    if (entryType === 'SHIPMENT') {
+      const finalCost = Number(grandCost || debit || 0);
+      if (finalCost <= 0) {
+        setErrorMessage('Harap masukkan nilai Grand Cost / Biaya untuk transaksi shipment.');
+        setIsSubmitting(false);
+        return;
+      }
+      // Validasi konsistensi
+      if (debit > 0 && grandCost > 0 && debit !== grandCost) {
+        setErrorMessage('Nilai Debit Keluar harus sama dengan Grand Cost (HPP).');
+        setIsSubmitting(false);
+        return;
+      }
     }
 
     if (entryType === 'TOP_UP' && kredit <= 0) {
@@ -71,18 +80,21 @@ export default function TambahTransaksiPage() {
       return;
     }
 
+    const finalDebit = entryType === 'SHIPMENT' ? Number(grandCost || debit || 0) : Number(debit || 0);
+    const finalGrandCost = entryType === 'SHIPMENT' ? finalDebit : 0;
+
     const payload = {
       entry_type: entryType,
       date_of_entry: dateOfEntry,
       kredit: Number(kredit || 0),
-      debit: Number(debit || (entryType === 'SHIPMENT' ? grandCost : 0)),
+      debit: finalDebit,
       saldo: calc.saldo,
       act_information: actInformation || (entryType === 'TOP_UP' ? 'Penambahan Modal' : 'Operasional Pengiriman'),
       act_explaination: actExplaination,
       vendor_name_raw: entryType === 'SHIPMENT' ? vendorName : undefined,
       top_days: entryType === 'SHIPMENT' ? Number(topDays || 0) : 0,
       due_date: entryType === 'SHIPMENT' ? effectiveDueDate : undefined,
-      grand_cost: Number(grandCost || 0),
+      grand_cost: finalGrandCost,
       grand_selling: Number(grandSelling || 0),
       profit: calc.profit,
       margin_pct: calc.marginPct,
@@ -188,13 +200,22 @@ export default function TambahTransaksiPage() {
             </div>
           ) : (
             <div>
-              <label className="block text-[12px] font-bold text-slate-700 mb-1">Debit Keluar (Biaya Kas)</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-[12px] font-bold text-slate-700">Debit Keluar (Biaya Kas)</label>
+                <span className="text-[10px] text-blue-600 font-semibold bg-blue-50 px-1.5 py-0.5 rounded">
+                  = Grand Cost (HPP)
+                </span>
+              </div>
               <div className="relative">
                 <DollarSign className="w-4 h-4 text-blue-600 absolute left-3 top-3" />
                 <input
                   type="number"
                   value={debit || ''}
-                  onChange={(e) => setDebit(Number(e.target.value))}
+                  onChange={(e) => {
+                    const val = Number(e.target.value);
+                    setDebit(val);
+                    setGrandCost(val);
+                  }}
                   placeholder="Rp 0"
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-3 py-2 text-[13px] text-slate-800 font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 />
@@ -285,7 +306,7 @@ export default function TambahTransaksiPage() {
                     onChange={(e) => {
                       const val = Number(e.target.value);
                       setGrandCost(val);
-                      if (debit === 0) setDebit(val);
+                      setDebit(val);
                     }}
                     placeholder="0"
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-8 pr-2 py-2 text-[12px] text-slate-800 font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"

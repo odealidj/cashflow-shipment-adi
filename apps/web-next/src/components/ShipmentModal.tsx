@@ -194,17 +194,22 @@ export function ShipmentModal({ isOpen, onClose, onSuccess }: ShipmentModalProps
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <label className="block text-xs font-bold text-slate-700">Debit (Kas Keluar)</label>
-                  <span className="text-[9px] text-slate-400 font-semibold">Kas Riil</span>
+                  <span className="text-[10px] text-blue-600 font-semibold bg-blue-50 px-1.5 py-0.5 rounded">
+                    = Grand Cost
+                  </span>
                 </div>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">Rp</span>
                   <input
                     type="number"
                     min="0"
-                    placeholder={formData.grand_cost || "0"}
-                    value={formData.debit}
-                    onChange={e => setFormData({ ...formData, debit: e.target.value })}
-                    className="w-full bg-white border border-slate-200 rounded-xl py-2 pl-9 pr-3 text-xs text-rose-600 font-bold focus:ring-2 focus:ring-rose-500 focus:outline-none"
+                    placeholder="0"
+                    value={formData.debit || formData.grand_cost}
+                    onChange={e => {
+                      const v = e.target.value;
+                      setFormData({ ...formData, debit: v, grand_cost: v });
+                    }}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 pl-9 pr-3 text-xs text-rose-600 font-bold focus:ring-2 focus:ring-rose-500 focus:outline-none"
                   />
                 </div>
               </div>

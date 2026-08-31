@@ -43,6 +43,23 @@ func (s *CashflowService) RecordTopUp(ctx context.Context, entry *domain.Cashflo
 
 func (s *CashflowService) RecordShipment(ctx context.Context, entry *domain.CashflowEntry) error {
 	entry.EntryType = domain.EntryShipment
+
+	// Aturan Logika Bisnis: Untuk SHIPMENT, DEBIT harus sama dengan GRAND COST (HPP)
+	if entry.GrandCost > 0 && entry.Debit == 0 {
+		entry.Debit = entry.GrandCost
+	} else if entry.Debit > 0 && entry.GrandCost == 0 {
+		entry.GrandCost = entry.Debit
+	} else if entry.Debit != entry.GrandCost {
+		return errors.New("untuk transaksi shipment, nilai debit harus sama dengan grand cost (HPP)")
+	}
+
+	// Auto-kalkulasi Profit & Margin Pct
+	entry.Profit = entry.GrandSelling - entry.GrandCost
+	if entry.GrandSelling > 0 {
+		entry.MarginPct = entry.Profit / entry.GrandSelling
+	} else {
+		entry.MarginPct = 0
+	}
 	
 	// Auto-register vendor if it doesn't exist and VendorID is nil but VendorNameRaw is provided
 	if entry.VendorID == nil && entry.VendorNameRaw != "" {
@@ -65,16 +82,16 @@ func (s *CashflowService) UpdateEntry(ctx context.Context, entry *domain.Cashflo
 		return err
 	}
 
-	// Archive old state for audit/history
-	_ = s.cashflowRepo.ArchiveEntry(ctx, oldEntry, userID, "manual_edit")
-
-	// Calculate difference for cascading balance
-	diff := (entry.Kredit - entry.Debit) - (oldEntry.Kredit - oldEntry.Debit)
-	entry.Saldo = oldEntry.Saldo + diff
-	entry.SequenceNo = oldEntry.SequenceNo
-	entry.UpdatedBy = userID
-
+	// Validasi & sinkronisasi jika bertipe SHIPMENT
 	if entry.EntryType == domain.EntryShipment {
+		if entry.GrandCost > 0 && entry.Debit == 0 {
+			entry.Debit = entry.GrandCost
+		} else if entry.Debit > 0 && entry.GrandCost == 0 {
+			entry.GrandCost = entry.Debit
+		} else if entry.Debit != entry.GrandCost {
+			return errors.New("untuk transaksi shipment, nilai debit harus sama dengan grand cost (HPP)")
+		}
+
 		entry.Profit = entry.GrandSelling - entry.GrandCost
 		if entry.GrandSelling > 0 {
 			entry.MarginPct = entry.Profit / entry.GrandSelling
@@ -88,6 +105,15 @@ func (s *CashflowService) UpdateEntry(ctx context.Context, entry *domain.Cashflo
 			}
 		}
 	}
+
+	// Archive old state for audit/history
+	_ = s.cashflowRepo.ArchiveEntry(ctx, oldEntry, userID, "manual_edit")
+
+	// Calculate difference for cascading balance
+	diff := (entry.Kredit - entry.Debit) - (oldEntry.Kredit - oldEntry.Debit)
+	entry.Saldo = oldEntry.Saldo + diff
+	entry.SequenceNo = oldEntry.SequenceNo
+	entry.UpdatedBy = userID
 
 	if err := s.cashflowRepo.Update(ctx, entry); err != nil {
 		return err
@@ -265,7 +291,11 @@ func (s *CashflowService) ProcessExcelImport(ctx context.Context, reader io.Read
 			}
 		}
 
-		if debit > 0 {
+		if debit > 0 || grandCost > 0 {
+			cost := grandCost
+			if cost == 0 {
+				cost = debit
+			}
 			entriesToCreate = append(entriesToCreate, &domain.CashflowEntry{
 				EntryType:       domain.EntryShipment,
 				DateOfEntry:     dateDebit,
@@ -274,15 +304,21 @@ func (s *CashflowService) ProcessExcelImport(ctx context.Context, reader io.Read
 				VendorNameRaw:   vendorName,
 				TopDays:         top,
 				DueDate:         dueDate,
-				GrandCost:       grandCost,
+				GrandCost:       cost,
 				GrandSelling:    grandSelling,
-				Kredit:          0,
-				Debit:           debit,
-				Remarks:         remarks,
-				CreatedBy:       userID,
-				UpdatedBy:       userID,
+				Profit:          grandSelling - cost,
+				MarginPct: func() float64 {
+					if grandSelling > 0 {
+						return (grandSelling - cost) / grandSelling
+					}
+					return 0
+				}(),
+				Remarks:   remarks,
+				Debit:     cost,
+				CreatedBy: userID,
+				UpdatedBy: userID,
 			})
-			previousSaldo -= debit
+			previousSaldo -= cost
 		}
 	}
 
