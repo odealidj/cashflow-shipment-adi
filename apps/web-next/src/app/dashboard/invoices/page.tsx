@@ -16,9 +16,11 @@ import {
   Calendar,
   Building,
   ArrowUpDown,
-  Download
+  Download,
+  Edit3
 } from "lucide-react";
 import { CreateInvoiceModal } from "@/components/CreateInvoiceModal";
+import { EditInvoiceModal } from "@/components/EditInvoiceModal";
 import { InvoicePrintModal } from "@/components/InvoicePrintModal";
 import { fetchWithAuth } from "@/lib/apiClient";
 import { PageHeader } from "@/components/shared/PageHeader";
@@ -88,6 +90,7 @@ export default function InvoicesPage() {
   // Modals
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [selectedInvoiceForPrint, setSelectedInvoiceForPrint] = useState<any | null>(null);
+  const [selectedInvoiceForEdit, setSelectedInvoiceForEdit] = useState<any | null>(null);
 
   const fetchInvoices = useCallback(async () => {
     setLoading(true);
@@ -395,20 +398,7 @@ export default function InvoicesPage() {
       </div>
 
       {/* LAYER 3: SHARED TABLE CARD (8 KOLOM RESMI DOKUMEN) */}
-      <TableCard
-        footer={
-          invoices.length > 0 ? (
-            <div className="flex items-center justify-between font-black text-slate-900 text-xs px-2">
-              <span className="uppercase tracking-wider text-[11px] text-slate-500">
-                Total Akumulasi Tagihan ({invoices.length} Invoice):
-              </span>
-              <span className="font-mono text-sm text-sky-950">
-                {formatCurrency(invoices.reduce((acc, curr) => acc + Number(curr.amount || 0), 0))}
-              </span>
-            </div>
-          ) : null
-        }
-      >
+      <TableCard>
         <table className="w-full text-left border-collapse text-xs">
           <thead>
             <tr className={tableTheadClass}>
@@ -495,7 +485,7 @@ export default function InvoicesPage() {
                     </td>
                     <td className="py-3 px-3 text-center">
                       <div className="flex items-center justify-center gap-1.5">
-                        {/* Tombol Cetak / PDF Kwitansi */}
+                        {/* 1. Tombol Pratinjau / Cetak Kwitansi */}
                         <button
                           onClick={() => setSelectedInvoiceForPrint(inv)}
                           className="p-1.5 rounded-lg bg-sky-50 text-sky-700 hover:bg-sky-100 transition cursor-pointer"
@@ -504,18 +494,16 @@ export default function InvoicesPage() {
                           <Printer className="w-3.5 h-3.5" />
                         </button>
 
-                        {/* Tombol Cepat Pelunasan */}
-                        {!isPaid && (
-                          <button
-                            onClick={() => handleMarkPaid(inv.id)}
-                            className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition cursor-pointer"
-                            title="Tandai Sudah Lunas"
-                          >
-                            <Check className="w-3.5 h-3.5" />
-                          </button>
-                        )}
+                        {/* 2. Tombol Edit Invoice */}
+                        <button
+                          onClick={() => setSelectedInvoiceForEdit(inv)}
+                          className="p-1.5 rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100 transition cursor-pointer"
+                          title="Edit Rincian Invoice"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                        </button>
 
-                        {/* Tombol Hapus (Soft Delete) */}
+                        {/* 3. Tombol Hapus (Soft Delete) */}
                         <button
                           onClick={() => handleDeleteInvoice(inv.id, inv.invoice_no)}
                           className="p-1.5 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 transition cursor-pointer"
@@ -537,6 +525,17 @@ export default function InvoicesPage() {
       <CreateInvoiceModal
         isOpen={isCreateOpen}
         onClose={() => setIsCreateOpen(false)}
+        onSuccess={() => {
+          fetchInvoices();
+          fetchSummary();
+        }}
+      />
+
+      {/* MODAL EDIT INVOICE */}
+      <EditInvoiceModal
+        isOpen={!!selectedInvoiceForEdit}
+        invoice={selectedInvoiceForEdit}
+        onClose={() => setSelectedInvoiceForEdit(null)}
         onSuccess={() => {
           fetchInvoices();
           fetchSummary();

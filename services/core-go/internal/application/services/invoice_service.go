@@ -146,8 +146,24 @@ func (s *InvoiceService) UpdateInvoice(ctx context.Context, id int, input Create
 		}
 	}
 
-	// Re-evaluate overdue if still unpaid
-	if inv.Status != domain.InvoiceStatusPaid {
+	// Update status jika user secara eksplisit mengubahnya
+	if input.Status != "" {
+		stUpper := domain.InvoiceStatus(strings.ToUpper(input.Status))
+		if stUpper == domain.InvoiceStatusPaid {
+			inv.Status = domain.InvoiceStatusPaid
+			if inv.PaidAt == nil {
+				t := time.Now()
+				inv.PaidAt = &t
+			}
+		} else if stUpper == domain.InvoiceStatusOverdue {
+			inv.Status = domain.InvoiceStatusOverdue
+			inv.PaidAt = nil
+		} else if stUpper == domain.InvoiceStatusUnpaid {
+			inv.Status = domain.InvoiceStatusUnpaid
+			inv.PaidAt = nil
+		}
+	} else if inv.Status != domain.InvoiceStatusPaid {
+		// Re-evaluate overdue if still unpaid
 		if time.Now().After(inv.DueDate) {
 			inv.Status = domain.InvoiceStatusOverdue
 		} else {
