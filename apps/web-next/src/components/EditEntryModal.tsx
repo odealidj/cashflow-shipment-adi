@@ -71,6 +71,8 @@ export function EditEntryModal({ isOpen, entry, onClose, onSuccess }: EditEntryM
   const sellNum = parseFloat(formData.grand_selling || "0");
   const profitNum = calculateProfit(sellNum, costNum);
   const marginNum = calculateMarginPct(profitNum, sellNum);
+  const autoDueDate = calculateDueDate(formData.date_of_entry, parseInt(formData.top_days || "0", 10));
+  const effectiveDueDate = formData.due_date || autoDueDate;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -217,96 +219,136 @@ export function EditEntryModal({ isOpen, entry, onClose, onSuccess }: EditEntryM
           </div>
 
           {isShipment ? (
-            <div className="p-4 bg-slate-50 border border-slate-200/80 rounded-2xl space-y-3">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Grand Cost (HPP)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={formData.grand_cost}
-                    onChange={e => setFormData({ ...formData, grand_cost: e.target.value, debit: formData.debit || e.target.value })}
-                    className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-xs text-slate-900 font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  />
+            <div className="space-y-4">
+              {/* SEKSI INPUT FINANSIAL & TERMIN */}
+              <div className="bg-slate-50/80 p-3.5 rounded-2xl border border-slate-200/80 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-black text-slate-700 uppercase tracking-wider">
+                    Input Finansial & Termin Pembayaran
+                  </span>
                 </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Grand Selling (Jual)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={formData.grand_selling}
-                    onChange={e => setFormData({ ...formData, grand_selling: e.target.value })}
-                    className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-xs text-slate-900 font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  />
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Grand Cost (HPP) *</label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">Rp</span>
+                      <input
+                        type="number"
+                        min="0"
+                        value={formData.grand_cost}
+                        onChange={e => {
+                          const v = e.target.value;
+                          setFormData({ ...formData, grand_cost: v, debit: v });
+                        }}
+                        className="w-full bg-white border border-slate-200 rounded-xl py-2 pl-9 pr-3 text-xs text-slate-900 font-bold focus:ring-2 focus:ring-sky-600 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Grand Selling (Harga Jual) *</label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">Rp</span>
+                      <input
+                        type="number"
+                        min="0"
+                        value={formData.grand_selling}
+                        onChange={e => setFormData({ ...formData, grand_selling: e.target.value })}
+                        className="w-full bg-white border border-slate-200 rounded-xl py-2 pl-9 pr-3 text-xs text-slate-900 font-bold focus:ring-2 focus:ring-sky-600 focus:outline-none"
+                      />
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Debit (Kas Keluar)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={formData.debit}
-                    onChange={e => setFormData({ ...formData, debit: e.target.value })}
-                    className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-xs text-rose-600 font-bold focus:ring-2 focus:ring-rose-500 focus:outline-none"
-                  />
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-0.5">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Termin Pembayaran (T.O.P) *</label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        min="0"
+                        value={formData.top_days}
+                        onChange={e => setFormData({ ...formData, top_days: e.target.value })}
+                        className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-xs text-slate-800 font-bold focus:ring-2 focus:ring-sky-600 focus:outline-none pr-12"
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">Hari</span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Status Pembayaran</label>
+                    <select
+                      value={formData.remarks}
+                      onChange={e => setFormData({ ...formData, remarks: e.target.value })}
+                      className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-xs text-slate-800 font-bold focus:ring-2 focus:ring-sky-600 focus:outline-none cursor-pointer"
+                    >
+                      <option value="UNPAID">Belum Lunas (UNPAID)</option>
+                      <option value="PENDING">Sebagian (PENDING)</option>
+                      <option value="PAID">Lunas (PAID)</option>
+                    </select>
+                  </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 pt-1">
-                <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-2.5">
-                  <span className="text-[11px] text-emerald-700 font-semibold block">Profit</span>
-                  <span className="text-sm font-black text-emerald-700 font-mono">{formatRupiah(profitNum)}</span>
+              {/* SEKSI HASIL KALKULASI OTOMATIS SISTEM */}
+              <div className="p-3.5 bg-sky-950/5 border border-sky-200/60 rounded-2xl space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-black text-sky-900 uppercase tracking-wider">
+                    Hasil Kalkulasi Otomatis Sistem
+                  </span>
+                  <span className="text-[10px] text-sky-700 font-semibold bg-sky-100/70 px-2 py-0.5 rounded-md">
+                    Auto-calculated
+                  </span>
                 </div>
-                <div className="bg-blue-50 border border-blue-200 rounded-xl p-2.5">
-                  <span className="text-[11px] text-blue-700 font-semibold block">Margin</span>
-                  <span className="text-sm font-black text-blue-700 font-mono">{marginNum}%</span>
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
+                  <div className="bg-white rounded-xl p-2.5 border border-slate-200/70 shadow-2xs">
+                    <div className="text-[10px] text-slate-500 font-bold uppercase tracking-tight">Debit Kas Keluar</div>
+                    <div className="text-xs font-black text-rose-700 font-mono mt-0.5">
+                      {formatRupiah(costNum)}
+                    </div>
+                    <div className="text-[9px] text-slate-400 mt-0.5 leading-none">= Grand Cost</div>
+                  </div>
+
+                  <div className="bg-white rounded-xl p-2.5 border border-slate-200/70 shadow-2xs">
+                    <div className="text-[10px] text-slate-500 font-bold uppercase tracking-tight">Jatuh Tempo</div>
+                    <div className="text-xs font-black text-amber-700 mt-0.5 truncate">
+                      {effectiveDueDate ? new Date(effectiveDueDate).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : "-"}
+                    </div>
+                    <div className="text-[9px] text-slate-400 mt-0.5 leading-none">{formData.top_days || 0} hari kerja</div>
+                  </div>
+
+                  <div className="bg-white rounded-xl p-2.5 border border-emerald-200/70 shadow-2xs">
+                    <div className="text-[10px] text-emerald-700 font-bold uppercase tracking-tight">Profit Estimasi</div>
+                    <div className={`text-xs font-black font-mono mt-0.5 ${profitNum >= 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
+                      {formatRupiah(profitNum)}
+                    </div>
+                    <div className="text-[9px] text-emerald-600/70 mt-0.5 leading-none">Selling - Cost</div>
+                  </div>
+
+                  <div className="bg-white rounded-xl p-2.5 border border-blue-200/70 shadow-2xs">
+                    <div className="text-[10px] text-sky-700 font-bold uppercase tracking-tight">Margin Laba</div>
+                    <div className={`text-xs font-black font-mono mt-0.5 ${marginNum >= 0 ? 'text-sky-700' : 'text-rose-600'}`}>
+                      {marginNum}%
+                    </div>
+                    <div className="text-[9px] text-sky-600/70 mt-0.5 leading-none">Persentase</div>
+                  </div>
                 </div>
               </div>
             </div>
           ) : (
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Nominal Kredit (Masuk)</label>
-              <input
-                type="number"
-                min="0"
-                value={formData.kredit}
-                onChange={e => setFormData({ ...formData, kredit: e.target.value })}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs text-slate-900 font-bold focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
-              />
-            </div>
-          )}
-
-          {isShipment && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">T.O.P (Hari)</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Nominal Kredit (Kas Masuk) *</label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">Rp</span>
                 <input
                   type="number"
                   min="0"
-                  value={formData.top_days}
-                  onChange={e => setFormData({ ...formData, top_days: e.target.value })}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs text-slate-800 font-bold focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  value={formData.kredit}
+                  onChange={e => setFormData({ ...formData, kredit: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 pl-9 pr-3 text-xs text-slate-900 font-bold focus:bg-white focus:ring-2 focus:ring-sky-600 focus:outline-none"
                 />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Due Date</label>
-                <input
-                  type="date"
-                  value={formData.due_date}
-                  onChange={e => setFormData({ ...formData, due_date: e.target.value })}
-                  className="w-full bg-amber-50/60 border border-amber-200 rounded-xl py-2 px-3 text-xs text-amber-900 font-bold focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Status</label>
-                <select
-                  value={formData.remarks}
-                  onChange={e => setFormData({ ...formData, remarks: e.target.value })}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs text-slate-800 font-bold focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                >
-                  <option value="UNPAID">Belum Lunas</option>
-                  <option value="PENDING">Sebagian</option>
-                  <option value="PAID">Lunas</option>
-                </select>
               </div>
             </div>
           )}

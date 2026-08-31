@@ -102,58 +102,71 @@ export function ShipmentModal({ isOpen, onClose, onSuccess }: ShipmentModalProps
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Tanggal Transaksi</label>
-              <input
-                type="date"
-                required
-                value={formData.date_of_entry}
-                onChange={e => setFormData({ ...formData, date_of_entry: e.target.value })}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs text-slate-800 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none font-medium"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Nama Vendor / Transporter</label>
-              <VendorSelect
-                value={formData.vendor_name_raw}
-                onChange={v => setFormData({ ...formData, vendor_name_raw: v })}
-                required
-                placeholder="Pilih atau ketik vendor..."
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Act Information</label>
-              <input
-                type="text"
-                required
-                placeholder="Mis. Angkut Semen Cibinong-SBY"
-                value={formData.act_information}
-                onChange={e => setFormData({ ...formData, act_information: e.target.value })}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs text-slate-800 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Act Explaination</label>
-              <input
-                type="text"
-                placeholder="Rute, muatan, no referensi..."
-                value={formData.act_explaination}
-                onChange={e => setFormData({ ...formData, act_explaination: e.target.value })}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs text-slate-800 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
-              />
-            </div>
-          </div>
-
-          <div className="p-4 bg-slate-50 border border-slate-200/80 rounded-2xl space-y-3">
-            <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Rincian Finansial & Kalkulasi Otomatis</h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {/* SEKSI 1: IDENTITAS OPERASIONAL & VENDOR */}
+          <div className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Grand Cost / HPP</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Tanggal Transaksi *</label>
+                <input
+                  type="date"
+                  required
+                  value={formData.date_of_entry}
+                  onChange={e => setFormData({ ...formData, date_of_entry: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs text-slate-800 focus:bg-white focus:ring-2 focus:ring-sky-600 focus:outline-none font-medium"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Nama Vendor / Transporter *</label>
+                <VendorSelect
+                  value={formData.vendor_name_raw}
+                  onChange={v => setFormData({ ...formData, vendor_name_raw: v })}
+                  required
+                  placeholder="Pilih atau ketik vendor..."
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Act Information (Aktivitas) *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Mis. Angkut Semen Cibinong-SBY"
+                  value={formData.act_information}
+                  onChange={e => setFormData({ ...formData, act_information: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs text-slate-800 focus:bg-white focus:ring-2 focus:ring-sky-600 focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Act Explaination (Keterangan/Rute)</label>
+                <input
+                  type="text"
+                  placeholder="Rute, muatan, no surat jalan..."
+                  value={formData.act_explaination}
+                  onChange={e => setFormData({ ...formData, act_explaination: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs text-slate-800 focus:bg-white focus:ring-2 focus:ring-sky-600 focus:outline-none"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* SEKSI 2: INPUT FINANSIAL & TERMIN (SEMUA INPUT USER DIKELOMPOKKAN) */}
+          <div className="bg-slate-50/80 p-3.5 rounded-2xl border border-slate-200/80 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                <DollarSign className="w-3.5 h-3.5 text-sky-700" />
+                Input Finansial & Termin Pembayaran
+              </span>
+              <span className="text-[10px] text-slate-400 font-medium">* Kolom wajib input</span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {/* Grand Cost / HPP */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Grand Cost (HPP) *
+                </label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">Rp</span>
                   <input
@@ -167,16 +180,19 @@ export function ShipmentModal({ isOpen, onClose, onSuccess }: ShipmentModalProps
                       setFormData({
                         ...formData,
                         grand_cost: v,
-                        debit: (!formData.debit || formData.debit === formData.grand_cost) ? v : formData.debit
+                        debit: v
                       });
                     }}
-                    className="w-full bg-white border border-slate-200 rounded-xl py-2 pl-9 pr-3 text-xs text-slate-900 font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    className="w-full bg-white border border-slate-200 rounded-xl py-2 pl-9 pr-3 text-xs text-slate-900 font-bold focus:ring-2 focus:ring-sky-600 focus:outline-none"
                   />
                 </div>
               </div>
 
+              {/* Grand Selling */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Grand Selling (Jual)</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Grand Selling (Harga Jual) *
+                </label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">Rp</span>
                   <input
@@ -186,89 +202,101 @@ export function ShipmentModal({ isOpen, onClose, onSuccess }: ShipmentModalProps
                     placeholder="30000000"
                     value={formData.grand_selling}
                     onChange={e => setFormData({ ...formData, grand_selling: e.target.value })}
-                    className="w-full bg-white border border-slate-200 rounded-xl py-2 pl-9 pr-3 text-xs text-slate-900 font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    className="w-full bg-white border border-slate-200 rounded-xl py-2 pl-9 pr-3 text-xs text-slate-900 font-bold focus:ring-2 focus:ring-sky-600 focus:outline-none"
                   />
                 </div>
               </div>
+            </div>
 
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-0.5">
+              {/* T.O.P */}
               <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block text-xs font-bold text-slate-700">Debit (Kas Keluar)</label>
-                  <span className="text-[10px] text-blue-600 font-semibold bg-blue-50 px-1.5 py-0.5 rounded">
-                    = Grand Cost
-                  </span>
-                </div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Termin Pembayaran (T.O.P) *
+                </label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">Rp</span>
                   <input
                     type="number"
                     min="0"
-                    placeholder="0"
-                    value={formData.debit || formData.grand_cost}
-                    onChange={e => {
-                      const v = e.target.value;
-                      setFormData({ ...formData, debit: v, grand_cost: v });
-                    }}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 pl-9 pr-3 text-xs text-rose-600 font-bold focus:ring-2 focus:ring-rose-500 focus:outline-none"
+                    required
+                    placeholder="14"
+                    value={formData.top_days}
+                    onChange={e => setFormData({ ...formData, top_days: e.target.value })}
+                    className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-xs text-slate-800 font-bold focus:ring-2 focus:ring-sky-600 focus:outline-none pr-12"
                   />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">Hari</span>
                 </div>
               </div>
+
+              {/* Status Pembayaran */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Status Pembayaran</label>
+                <select
+                  value={formData.remarks}
+                  onChange={e => setFormData({ ...formData, remarks: e.target.value })}
+                  className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-xs text-slate-800 font-bold focus:ring-2 focus:ring-sky-600 focus:outline-none cursor-pointer"
+                >
+                  <option value="UNPAID">Belum Lunas (UNPAID)</option>
+                  <option value="PENDING">Sebagian (PENDING)</option>
+                  <option value="PAID">Lunas (PAID)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* SEKSI 3: HASIL KALKULASI OTOMATIS SISTEM (READ-ONLY DASHBOARD BADGES) */}
+          <div className="p-3.5 bg-sky-950/5 border border-sky-200/60 rounded-2xl space-y-2.5">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-black text-sky-900 uppercase tracking-wider flex items-center gap-1.5">
+                <TrendingUp className="w-3.5 h-3.5 text-sky-700" />
+                Hasil Kalkulasi Otomatis Sistem
+              </span>
+              <span className="text-[10px] text-sky-700 font-semibold bg-sky-100/70 px-2 py-0.5 rounded-md">
+                Auto-calculated
+              </span>
             </div>
 
-            {/* Live Auto Profit & Margin Display */}
-            <div className="grid grid-cols-2 gap-3 pt-1">
-              <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-2.5">
-                <span className="text-[11px] text-emerald-700 font-semibold block">Profit Estimasi</span>
-                <span className="text-sm font-black text-emerald-700 font-mono">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
+              {/* Auto Debit */}
+              <div className="bg-white rounded-xl p-2.5 border border-slate-200/70 shadow-2xs">
+                <div className="text-[10px] text-slate-500 font-bold uppercase tracking-tight">Debit Kas Keluar</div>
+                <div className="text-xs font-black text-rose-700 font-mono mt-0.5">
+                  {formatRupiah(costNum)}
+                </div>
+                <div className="text-[9px] text-slate-400 mt-0.5 leading-none">= Grand Cost</div>
+              </div>
+
+              {/* Auto Due Date */}
+              <div className="bg-white rounded-xl p-2.5 border border-slate-200/70 shadow-2xs">
+                <div className="text-[10px] text-slate-500 font-bold uppercase tracking-tight">Jatuh Tempo</div>
+                <div className="text-xs font-black text-amber-700 mt-0.5 truncate">
+                  {effectiveDueDate ? new Date(effectiveDueDate).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : "-"}
+                </div>
+                <div className="text-[9px] text-slate-400 mt-0.5 leading-none">{formData.top_days || 0} hari kerja</div>
+              </div>
+
+              {/* Auto Profit */}
+              <div className="bg-white rounded-xl p-2.5 border border-emerald-200/70 shadow-2xs">
+                <div className="text-[10px] text-emerald-700 font-bold uppercase tracking-tight">Profit Estimasi</div>
+                <div className={`text-xs font-black font-mono mt-0.5 ${profitNum >= 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
                   {formatRupiah(profitNum)}
-                </span>
+                </div>
+                <div className="text-[9px] text-emerald-600/70 mt-0.5 leading-none">Selling - Cost</div>
               </div>
-              <div className="bg-blue-50 border border-blue-200 rounded-xl p-2.5">
-                <span className="text-[11px] text-blue-700 font-semibold block">Margin Persentase</span>
-                <span className="text-sm font-black text-blue-700 font-mono">
+
+              {/* Auto Margin */}
+              <div className="bg-white rounded-xl p-2.5 border border-blue-200/70 shadow-2xs">
+                <div className="text-[10px] text-sky-700 font-bold uppercase tracking-tight">Margin Laba</div>
+                <div className={`text-xs font-black font-mono mt-0.5 ${marginNum >= 0 ? 'text-sky-700' : 'text-rose-600'}`}>
                   {marginNum}%
-                </span>
+                </div>
+                <div className="text-[9px] text-sky-600/70 mt-0.5 leading-none">Persentase</div>
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">T.O.P (Hari)</label>
-              <input
-                type="number"
-                min="0"
-                value={formData.top_days}
-                onChange={e => setFormData({ ...formData, top_days: e.target.value })}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs text-slate-800 font-bold focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Jatuh Tempo (Due Date)</label>
-              <input
-                type="date"
-                value={effectiveDueDate}
-                onChange={e => setFormData({ ...formData, due_date: e.target.value })}
-                className="w-full bg-amber-50/60 border border-amber-200 rounded-xl py-2 px-3 text-xs text-amber-900 font-bold focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Status Pembayaran</label>
-              <select
-                value={formData.remarks}
-                onChange={e => setFormData({ ...formData, remarks: e.target.value })}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs text-slate-800 font-bold focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
-              >
-                <option value="UNPAID">Belum Lunas (UNPAID)</option>
-                <option value="PENDING">Sebagian (PENDING)</option>
-                <option value="PAID">Lunas (PAID)</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="pt-3 flex gap-2.5">
+          {/* ACTION BUTTONS */}
+          <div className="pt-2 flex gap-2.5">
             <button
               type="button"
               onClick={onClose}
@@ -279,7 +307,7 @@ export function ShipmentModal({ isOpen, onClose, onSuccess }: ShipmentModalProps
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 py-2.5 rounded-xl font-bold text-xs text-white bg-blue-600 hover:bg-blue-700 active:scale-95 shadow-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+              className="flex-1 py-2.5 rounded-xl font-bold text-xs text-white bg-sky-700 hover:bg-sky-800 active:scale-95 shadow-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Simpan Shipment"}
             </button>
