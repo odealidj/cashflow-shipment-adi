@@ -293,7 +293,7 @@ func (h *CashflowHandler) ExportExcel(w http.ResponseWriter, r *http.Request) {
 	}()
 	sheetName := "Sheet1"
 	
-	headers := []string{"Tanggal", "No", "Information", "Description", "Vendor", "T.O.P", "Due Date", "HPP", "Selling", "Kredit", "Debit", "Saldo", "Profit", "Margin %", "Remarks"}
+	headers := []string{"KREDIT", "DEBIT", "SALDO", "DATE OF DEBIT", "ACT INFORMATION", "ACT EXPLAINATION", "VENDOR", "T O P", "DUE DATE", "GRAND COST", "GRAND SELLING", "PROFIT", "MARGIN IN %", "REMARKS"}
 	for i, header := range headers {
 		cell, _ := excelize.CoordinatesToCellName(i+1, 1)
 		f.SetCellValue(sheetName, cell, header)
@@ -301,23 +301,28 @@ func (h *CashflowHandler) ExportExcel(w http.ResponseWriter, r *http.Request) {
 
 	for i, entry := range entries {
 		row := i + 2
-		f.SetCellValue(sheetName, fmt.Sprintf("A%d", row), entry.DateOfEntry.Format("2006-01-02"))
-		f.SetCellValue(sheetName, fmt.Sprintf("B%d", row), entry.SequenceNo)
-		f.SetCellValue(sheetName, fmt.Sprintf("C%d", row), entry.ActInformation)
-		f.SetCellValue(sheetName, fmt.Sprintf("D%d", row), entry.ActExplaination)
-		f.SetCellValue(sheetName, fmt.Sprintf("E%d", row), entry.VendorNameRaw)
-		f.SetCellValue(sheetName, fmt.Sprintf("F%d", row), entry.TopDays)
-		if entry.DueDate != nil {
-			f.SetCellValue(sheetName, fmt.Sprintf("G%d", row), entry.DueDate.Format("2006-01-02"))
+		f.SetCellValue(sheetName, fmt.Sprintf("A%d", row), entry.Kredit)
+		f.SetCellValue(sheetName, fmt.Sprintf("B%d", row), entry.Debit)
+		f.SetCellValue(sheetName, fmt.Sprintf("C%d", row), entry.Saldo)
+		f.SetCellValue(sheetName, fmt.Sprintf("D%d", row), entry.DateOfEntry.Format("2006-01-02"))
+		f.SetCellValue(sheetName, fmt.Sprintf("E%d", row), entry.ActInformation)
+		f.SetCellValue(sheetName, fmt.Sprintf("F%d", row), entry.ActExplaination)
+		f.SetCellValue(sheetName, fmt.Sprintf("G%d", row), entry.VendorNameRaw)
+		if entry.TopDays > 0 {
+			f.SetCellValue(sheetName, fmt.Sprintf("H%d", row), fmt.Sprintf("%d HARI", entry.TopDays))
+		} else {
+			f.SetCellValue(sheetName, fmt.Sprintf("H%d", row), "-")
 		}
-		f.SetCellValue(sheetName, fmt.Sprintf("H%d", row), entry.GrandCost)
-		f.SetCellValue(sheetName, fmt.Sprintf("I%d", row), entry.GrandSelling)
-		f.SetCellValue(sheetName, fmt.Sprintf("J%d", row), entry.Kredit)
-		f.SetCellValue(sheetName, fmt.Sprintf("K%d", row), entry.Debit)
-		f.SetCellValue(sheetName, fmt.Sprintf("L%d", row), entry.Saldo)
-		f.SetCellValue(sheetName, fmt.Sprintf("M%d", row), entry.Profit)
-		f.SetCellValue(sheetName, fmt.Sprintf("N%d", row), fmt.Sprintf("%.2f%%", entry.MarginPct*100))
-		f.SetCellValue(sheetName, fmt.Sprintf("O%d", row), entry.Remarks)
+		if entry.DueDate != nil {
+			f.SetCellValue(sheetName, fmt.Sprintf("I%d", row), entry.DueDate.Format("2006-01-02"))
+		} else {
+			f.SetCellValue(sheetName, fmt.Sprintf("I%d", row), "-")
+		}
+		f.SetCellValue(sheetName, fmt.Sprintf("J%d", row), entry.GrandCost)
+		f.SetCellValue(sheetName, fmt.Sprintf("K%d", row), entry.GrandSelling)
+		f.SetCellValue(sheetName, fmt.Sprintf("L%d", row), entry.Profit)
+		f.SetCellValue(sheetName, fmt.Sprintf("M%d", row), fmt.Sprintf("%.2f%%", entry.MarginPct*100))
+		f.SetCellValue(sheetName, fmt.Sprintf("N%d", row), entry.Remarks)
 	}
 
 	w.Header().Set("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
