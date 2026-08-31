@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
-import { X, Plus, Calendar, Clock, DollarSign, Building, FileText, CheckCircle2 } from "lucide-react";
+import { X, Plus, Calendar, Clock, DollarSign, Building, FileText, CheckCircle2, ShieldCheck } from "lucide-react";
 import { formatThousand, cleanThousand, terbilangRingkas } from "@/hooks/useTerbilang";
+import { fetchWithAuth } from "@/lib/apiClient";
 
 interface CreateInvoiceModalProps {
   isOpen: boolean;
@@ -20,15 +21,44 @@ const TOP_OPTIONS = [
   { label: "Net 90 Hari", days: 90 },
 ];
 
+const INVOICE_STATUS_OPTIONS = [
+  { value: "UNPAID", label: "Menunggu Pembayaran", color: "bg-amber-50 text-amber-700 border-amber-200" },
+  { value: "PAID", label: "Lunas", color: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+  { value: "OVERDUE", label: "Jatuh Tempo (Overdue)", color: "bg-rose-50 text-rose-700 border-rose-200" }
+];
+
 export function CreateInvoiceModal({ isOpen, onClose, onSuccess }: CreateInvoiceModalProps) {
-  const [invoiceNo, setInvoiceNo] = useState("");
-  const [clientName, setClientName] = useState("");
+  // Nilai default no invoice: INV/{Tahun}/{Bulan 2 Digit}/
+  const getDefaultInvoicePrefix = (dateStr?: string) => {
+    const d = dateStr ? new Date(dateStr) : new Date();
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    return `INV/${yyyy}/${mm}/`;
+  };
+
   const [shipmentDate, setShipmentDate] = useState(() => new Date().toISOString().split("T")[0]);
+  const [invoiceNo, setInvoiceNo] = useState(() => getDefaultInvoicePrefix());
+  const [clientName, setClientName] = useState("");
   const [topDays, setTopDays] = useState(30);
+  const [status, setStatus] = useState<"UNPAID" | "PAID" | "OVERDUE">("UNPAID");
   const [amountRaw, setAmountRaw] = useState("");
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Update prefix otomatis jika user mengubah shipmentDate dan invoiceNo masih berupa prefix default
+  const handleShipmentDateChange = (newDate: string) => {
+    setShipmentDate(newDate);
+    const oldPrefix = getDefaultInvoicePrefix(shipmentDate);
+    if (!invoiceNo || invoiceNo.startsWith("INV/")) {
+      const newPrefix = getDefaultInvoicePrefix(newDate);
+      if (invoiceNo.startsWith(oldPrefix)) {
+        setInvoiceNo(invoiceNo.replace(oldPrefix, newPrefix));
+      } else if (!invoiceNo.trim() || invoiceNo === oldPrefix) {
+        setInvoiceNo(newPrefix);
+      }
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -63,12 +93,10 @@ export function CreateInvoiceModal({ isOpen, onClose, onSuccess }: CreateInvoice
 
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:8080/api/v1/invoices", {
+      const res = await fetchWithAuth("http://localhost:8080/api/v1/invoices", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({
           invoice_no: invoiceNo.trim(),
@@ -77,6 +105,7 @@ export function CreateInvoiceModal({ isOpen, onClose, onSuccess }: CreateInvoice
           top_terms: topTerms,
           top_days: Number(topDays),
           amount: cleanAmount,
+          status: status,
           notes: notes.trim()
         })
       });
@@ -166,7 +195,7 @@ export function CreateInvoiceModal({ isOpen, onClose, onSuccess }: CreateInvoice
               <input
                 type="date"
                 value={shipmentDate}
-                onChange={e => setShipmentDate(e.target.value)}
+                onChange={e => handleShipmentDateChange(e.target.value)}
                 required
                 className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent"
               />
@@ -191,12 +220,33 @@ export function CreateInvoiceModal({ isOpen, onClose, onSuccess }: CreateInvoice
             </div>
           </div>
 
-          {/* Info Auto Jatuh Tempo */}
-          <div className="bg-sky-50/70 border border-sky-200/80 rounded-xl p-3 flex items-center justify-between text-xs">
-            <span className="font-bold text-sky-900">Perkiraan Jatuh Tempo:</span>
-            <span className="font-extrabold text-sky-950 font-mono bg-white px-2.5 py-1 rounded-lg border border-sky-200 shadow-2xs">
-              📅 {calculateDueDateStr()}
-            </span>
+          {/* Info Auto Jatuh Tempo & Pilihan Status Pelunasan */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 items-center">
+            <div className="bg-sky-50/70 border border-sky-200/80 rounded-xl p-3 flex flex-col justify-center text-xs">
+              <span className="font-bold text-sky-900 text-[11px] uppercase tracking-wider">Perkiraan Jatuh Tempo:</span>
+              <span className="font-extrabold text-sky-950 font-mono mt-1 text-xs">
+                📅 {calculateDueDateStr()}
+              </span>
+            </div>
+
+            {/* Pilihan Status Invoice */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1">
+                <ShieldCheck className="w-3.5 h-3.5 text-slate-400" />
+                <span>Status Invoice <span className="text-rose-500">*</span></span>
+              </label>
+              <select
+                value={status}
+                onChange={e => setStatus(e.target.value as any)}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent bg-white cursor-pointer"
+              >
+                {INVOICE_STATUS_OPTIONS.map(opt => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {/* Nominal Tagihan dengan Titik Ribuan & Live Terbilang Ringkas */}

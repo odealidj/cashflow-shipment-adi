@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/cashflow-shipment-app/backend/internal/core/domain"
@@ -26,6 +27,7 @@ type CreateInvoiceInput struct {
 	TopTerms        string     `json:"top_terms"`
 	TopDays         int        `json:"top_days"`
 	Amount          float64    `json:"amount"`
+	Status          string     `json:"status"` // UNPAID, PAID, OVERDUE (opsional)
 	Notes           string     `json:"notes"`
 	CashflowEntryID *int       `json:"cashflow_entry_id"`
 	CreatedBy       *uuid.UUID `json:"created_by"`
@@ -67,10 +69,25 @@ func (s *InvoiceService) CreateInvoice(ctx context.Context, input CreateInvoiceI
 	}
 
 	status := domain.InvoiceStatusUnpaid
-	// Check if overdue upon creation
-	now := time.Now()
-	if now.After(dueDate) {
-		status = domain.InvoiceStatusOverdue
+	var paidAt *time.Time
+
+	if input.Status != "" {
+		stUpper := domain.InvoiceStatus(strings.ToUpper(input.Status))
+		if stUpper == domain.InvoiceStatusPaid {
+			status = domain.InvoiceStatusPaid
+			t := time.Now()
+			paidAt = &t
+		} else if stUpper == domain.InvoiceStatusOverdue {
+			status = domain.InvoiceStatusOverdue
+		} else if stUpper == domain.InvoiceStatusUnpaid {
+			status = domain.InvoiceStatusUnpaid
+		}
+	} else {
+		// Default: Check if overdue upon creation
+		now := time.Now()
+		if now.After(dueDate) {
+			status = domain.InvoiceStatusOverdue
+		}
 	}
 
 	invoice := &domain.Invoice{
@@ -82,6 +99,7 @@ func (s *InvoiceService) CreateInvoice(ctx context.Context, input CreateInvoiceI
 		DueDate:         dueDate,
 		Amount:          input.Amount,
 		Status:          status,
+		PaidAt:          paidAt,
 		Notes:           input.Notes,
 		CashflowEntryID: input.CashflowEntryID,
 		CreatedBy:       input.CreatedBy,
