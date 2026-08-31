@@ -24,6 +24,7 @@ import { TopUpModal } from "./TopUpModal";
 import { ShipmentModal } from "./ShipmentModal";
 import { EditEntryModal } from "./EditEntryModal";
 import { EntryDetailModal } from "./EntryDetailModal";
+import { DeleteConfirmModal } from "./DeleteConfirmModal";
 import { FilterBar, FilterState, getCurrentMonthRange } from "./FilterBar";
 
 interface CashflowTableProps {
@@ -54,6 +55,8 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
   const [isShipmentOpen, setIsShipmentOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [entryToDelete, setEntryToDelete] = useState<any>(null);
   const [selectedEntry, setSelectedEntry] = useState<any>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -184,9 +187,7 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
     }
   };
 
-  const handleDelete = async (entry: any) => {
-    if (!confirm(`Hapus transaksi #${entry.sequence_no} (${entry.vendor_name_raw || entry.act_information})?`)) return;
-
+  const handleDeleteConfirm = async (entry: any) => {
     try {
       const token = localStorage.getItem("token");
       const res = await fetch(`http://localhost:8080/api/v1/cashflow/${entry.id}`, {
@@ -199,8 +200,13 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
       if (onDataChange) onDataChange();
     } catch (err) {
       console.error("Delete failed", err);
-      alert("Gagal menghapus transaksi");
+      alert("Gagal menghapus transaksi dari database.");
     }
+  };
+
+  const handleOpenDelete = (entry: any) => {
+    setEntryToDelete(entry);
+    setIsDeleteOpen(true);
   };
 
   const handleStatusChange = async (entryId: any, nextStatus: string) => {
@@ -607,7 +613,7 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
                               <Edit2 className="w-4 h-4" />
                             </button>
                             <button
-                              onClick={() => handleDelete(entry)}
+                              onClick={() => handleOpenDelete(entry)}
                               className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
                               title="Hapus Transaksi"
                             >
@@ -683,6 +689,16 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
           setIsEditOpen(true);
         }}
         onStatusChange={handleStatusChange}
+      />
+
+      <DeleteConfirmModal
+        isOpen={isDeleteOpen}
+        entry={entryToDelete}
+        onClose={() => {
+          setIsDeleteOpen(false);
+          setEntryToDelete(null);
+        }}
+        onConfirm={handleDeleteConfirm}
       />
     </>
   );
