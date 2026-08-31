@@ -66,16 +66,19 @@ func main() {
 	userRepo := repository.NewPostgresUserRepo(dbPool)
 	vendorRepo := repository.NewPostgresVendorRepo(dbPool)
 	cashflowRepo := repository.NewPostgresCashflowRepo(dbPool)
+	invoiceRepo := repository.NewPostgresInvoiceRepo(dbPool)
 	
 	// Initialize Services
 	authService := services.NewAuthService(userRepo, jwtSecret)
 	vendorService := services.NewVendorService(vendorRepo)
 	cashflowService := services.NewCashflowService(cashflowRepo, vendorService)
+	invoiceService := services.NewInvoiceService(invoiceRepo)
 
 	// Initialize Handlers
 	authHandler := handler.NewAuthHandler(authService)
 	vendorHandler := handler.NewVendorHandler(vendorService)
 	cashflowHandler := handler.NewCashflowHandler(cashflowService)
+	invoiceHandler := handler.NewInvoiceHandler(invoiceService)
 
 	r := chi.NewRouter()
 
@@ -134,6 +137,17 @@ func main() {
 				r.Get("/{id}", vendorHandler.Get)
 				r.Put("/{id}", vendorHandler.Update)
 				r.Delete("/{id}", vendorHandler.Delete)
+			})
+
+			// Invoice Routes (Monitoring Piutang Klien)
+			r.Route("/invoices", func(r chi.Router) {
+				r.Get("/", invoiceHandler.List)
+				r.Get("/summary", invoiceHandler.GetSummary)
+				r.Post("/", invoiceHandler.Create)
+				r.Get("/{id}", invoiceHandler.GetByID)
+				r.Put("/{id}", invoiceHandler.Update)
+				r.Patch("/{id}/pay", invoiceHandler.MarkPaid)
+				r.Delete("/{id}", invoiceHandler.Delete)
 			})
 		})
 	})
