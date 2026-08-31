@@ -18,7 +18,8 @@ import {
   Clock,
   AlertCircle,
   Plus,
-  TrendingUp
+  TrendingUp,
+  Calendar
 } from "lucide-react";
 
 import { TopUpModal } from "./TopUpModal";
@@ -26,7 +27,7 @@ import { ShipmentModal } from "./ShipmentModal";
 import { EditEntryModal } from "./EditEntryModal";
 import { EntryDetailModal } from "./EntryDetailModal";
 import { DeleteConfirmModal } from "./DeleteConfirmModal";
-import { FilterBar, FilterState, getCurrentMonthRange } from "./FilterBar";
+import { FilterBar, FilterState, getCurrentMonthRange, formatActivePeriod } from "./FilterBar";
 
 interface CashflowTableProps {
   onDataChange?: () => void;
@@ -105,7 +106,13 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
   const fetchSummary = useCallback(async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:8080/api/v1/cashflow/summary", {
+      const params = new URLSearchParams();
+      if (filters.date_from) params.set("date_from", filters.date_from);
+      if (filters.date_to) params.set("date_to", filters.date_to);
+
+      const q = params.toString();
+      const url = q ? `http://localhost:8080/api/v1/cashflow/summary?${q}` : "http://localhost:8080/api/v1/cashflow/summary";
+      const res = await fetch(url, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();
@@ -115,7 +122,7 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
     } catch (err) {
       console.error("Failed to fetch summary", err);
     }
-  }, []);
+  }, [filters.date_from, filters.date_to]);
 
   useEffect(() => {
     fetchCashflow();
@@ -285,77 +292,106 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
     <>
       <div className="space-y-4">
         {/* MINI SUMMARY STRIP (KPI SNAPSHOT REAL-TIME: 5 KARTU SEJAJAR) */}
-        {summary && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-            {/* 1. Saldo Kas */}
-            <div className="bg-white rounded-2xl p-3.5 border border-slate-200/80 shadow-2xs">
-              <div className="flex items-center justify-between text-slate-500 text-[11px] font-bold uppercase tracking-wider">
-                <span>Saldo Kas</span>
-                <Wallet className="w-4 h-4 text-sky-700" />
-              </div>
-              <div className="mt-1.5 font-mono text-base lg:text-lg font-black text-sky-950 truncate">
-                {formatCurrency(summary.current_saldo)}
-              </div>
-              <div className="text-[10px] text-slate-400 mt-0.5">Posisi kas operasional</div>
-            </div>
+        {summary && (() => {
+          const currentMonth = getCurrentMonthRange();
+          const isThisMonth = filters.date_from === currentMonth.date_from && filters.date_to === currentMonth.date_to;
+          const activePeriodLabel = formatActivePeriod(filters.date_from, filters.date_to);
 
-            {/* 2. Total Profit & Margin */}
-            <div className="bg-white rounded-2xl p-3.5 border border-teal-200/80 shadow-2xs bg-gradient-to-b from-white to-teal-50/20">
-              <div className="flex items-center justify-between text-slate-500 text-[11px] font-bold uppercase tracking-wider">
-                <span>Total Profit</span>
-                <TrendingUp className="w-4 h-4 text-teal-600" />
+          return (
+            <div className="space-y-2">
+              {/* PENANDA WAKTU & PERIODE AKTIF (STRATEGI 1) */}
+              <div className="flex items-center justify-between px-1">
+                <div className="flex items-center gap-2 text-xs font-black text-slate-700">
+                  <div className="w-5 h-5 rounded-md bg-sky-100/80 text-sky-800 flex items-center justify-center">
+                    <Calendar className="w-3.5 h-3.5" />
+                  </div>
+                  <span>
+                    Kinerja Kas & Shipment: <span className="text-sky-800 underline decoration-sky-300 underline-offset-2">{activePeriodLabel}</span>
+                  </span>
+                  {isThisMonth && (
+                    <span className="text-[10px] font-bold bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full border border-emerald-200">
+                      ● Bulan Berjalan
+                    </span>
+                  )}
+                </div>
+                <div className="text-[11px] text-slate-400 font-medium hidden sm:block">
+                  Nilai otomatis menyesuaikan filter periode
+                </div>
               </div>
-              <div className="mt-1.5 font-mono text-base lg:text-lg font-black text-teal-700 truncate">
-                {formatCurrency(summary.total_profit || 0)}
-              </div>
-              <div className="text-[10px] text-teal-600 font-bold mt-0.5 flex items-center gap-1">
-                <span className="bg-teal-50 text-teal-700 px-1.5 py-0.2 rounded border border-teal-200/60 font-mono">
-                  {summary.avg_margin_pct ? `${(summary.avg_margin_pct * 100).toFixed(1)}%` : "0%"}
-                </span>
-                <span className="text-slate-400 font-normal">avg margin</span>
-              </div>
-            </div>
 
-            {/* 3. Total Pengeluaran (Debit) */}
-            <div className="bg-white rounded-2xl p-3.5 border border-slate-200/80 shadow-2xs">
-              <div className="flex items-center justify-between text-slate-500 text-[11px] font-bold uppercase tracking-wider">
-                <span>Pengeluaran</span>
-                <ArrowDownRight className="w-4 h-4 text-rose-600" />
-              </div>
-              <div className="mt-1.5 font-mono text-base lg:text-lg font-black text-rose-600 truncate">
-                {formatCurrency(summary.total_debit)}
-              </div>
-              <div className="text-[10px] text-slate-400 mt-0.5">Akumulasi kas keluar</div>
-            </div>
+              {/* 5 KARTU KPI DENGAN LABEL JELAS (STRATEGI 2) */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                {/* 1. Saldo Kas */}
+                <div className="bg-white rounded-2xl p-3.5 border border-slate-200/80 shadow-2xs">
+                  <div className="flex items-center justify-between text-slate-500 text-[11px] font-bold uppercase tracking-wider">
+                    <span>Saldo Kas Terkini</span>
+                    <Wallet className="w-4 h-4 text-sky-700" />
+                  </div>
+                  <div className="mt-1.5 font-mono text-base lg:text-lg font-black text-sky-950 truncate">
+                    {formatCurrency(summary.current_saldo)}
+                  </div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">Saldo riil di kas</div>
+                </div>
 
-            {/* 4. Total Modal Masuk (Kredit) */}
-            <div className="bg-white rounded-2xl p-3.5 border border-slate-200/80 shadow-2xs">
-              <div className="flex items-center justify-between text-slate-500 text-[11px] font-bold uppercase tracking-wider">
-                <span>Modal Masuk</span>
-                <ArrowUpRight className="w-4 h-4 text-emerald-600" />
-              </div>
-              <div className="mt-1.5 font-mono text-base lg:text-lg font-black text-emerald-700 truncate">
-                {formatCurrency(summary.total_kredit)}
-              </div>
-              <div className="text-[10px] text-slate-400 mt-0.5">Top-up & kas masuk</div>
-            </div>
+                {/* 2. Total Profit & Margin */}
+                <div className="bg-white rounded-2xl p-3.5 border border-teal-200/80 shadow-2xs bg-gradient-to-b from-white to-teal-50/20">
+                  <div className="flex items-center justify-between text-slate-500 text-[11px] font-bold uppercase tracking-wider">
+                    <span>{isThisMonth ? "Profit Bulan Ini" : "Profit Periode Ini"}</span>
+                    <TrendingUp className="w-4 h-4 text-teal-600" />
+                  </div>
+                  <div className="mt-1.5 font-mono text-base lg:text-lg font-black text-teal-700 truncate">
+                    {formatCurrency(summary.total_profit || 0)}
+                  </div>
+                  <div className="text-[10px] text-teal-600 font-bold mt-0.5 flex items-center gap-1">
+                    <span className="bg-teal-50 text-teal-700 px-1.5 py-0.2 rounded border border-teal-200/60 font-mono">
+                      {summary.avg_margin_pct ? `${(summary.avg_margin_pct * 100).toFixed(1)}%` : "0%"}
+                    </span>
+                    <span className="text-slate-400 font-normal">avg margin</span>
+                  </div>
+                </div>
 
-            {/* 5. Tagihan Belum Lunas */}
-            <div className="bg-white rounded-2xl p-3.5 border border-slate-200/80 shadow-2xs col-span-2 sm:col-span-1">
-              <div className="flex items-center justify-between text-slate-500 text-[11px] font-bold uppercase tracking-wider">
-                <span>Belum Dibayar</span>
-                <Clock className="w-4 h-4 text-amber-600" />
+                {/* 3. Total Pengeluaran (Debit) */}
+                <div className="bg-white rounded-2xl p-3.5 border border-slate-200/80 shadow-2xs">
+                  <div className="flex items-center justify-between text-slate-500 text-[11px] font-bold uppercase tracking-wider">
+                    <span>{isThisMonth ? "Pengeluaran Bulan Ini" : "Pengeluaran Periode Ini"}</span>
+                    <ArrowDownRight className="w-4 h-4 text-rose-600" />
+                  </div>
+                  <div className="mt-1.5 font-mono text-base lg:text-lg font-black text-rose-600 truncate">
+                    {formatCurrency(summary.total_debit)}
+                  </div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">Kas keluar periode ini</div>
+                </div>
+
+                {/* 4. Total Modal Masuk (Kredit) */}
+                <div className="bg-white rounded-2xl p-3.5 border border-slate-200/80 shadow-2xs">
+                  <div className="flex items-center justify-between text-slate-500 text-[11px] font-bold uppercase tracking-wider">
+                    <span>{isThisMonth ? "Modal Masuk Bulan Ini" : "Modal Masuk Periode Ini"}</span>
+                    <ArrowUpRight className="w-4 h-4 text-emerald-600" />
+                  </div>
+                  <div className="mt-1.5 font-mono text-base lg:text-lg font-black text-emerald-700 truncate">
+                    {formatCurrency(summary.total_kredit)}
+                  </div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">Top-up kas periode ini</div>
+                </div>
+
+                {/* 5. Tagihan Belum Lunas */}
+                <div className="bg-white rounded-2xl p-3.5 border border-slate-200/80 shadow-2xs col-span-2 sm:col-span-1">
+                  <div className="flex items-center justify-between text-slate-500 text-[11px] font-bold uppercase tracking-wider">
+                    <span>Tagihan Belum Lunas</span>
+                    <Clock className="w-4 h-4 text-amber-600" />
+                  </div>
+                  <div className="mt-1.5 font-mono text-base lg:text-lg font-black text-amber-700 flex items-baseline gap-1.5 truncate">
+                    <span>{summary.unpaid_count}</span>
+                    <span className="text-xs font-bold text-slate-400 font-sans">
+                      ({formatCurrency(summary.unpaid_amount)})
+                    </span>
+                  </div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">Kewajiban periode ini</div>
+                </div>
               </div>
-              <div className="mt-1.5 font-mono text-base lg:text-lg font-black text-amber-700 flex items-baseline gap-1.5 truncate">
-                <span>{summary.unpaid_count}</span>
-                <span className="text-xs font-bold text-slate-400 font-sans">
-                  ({formatCurrency(summary.unpaid_amount)})
-                </span>
-              </div>
-              <div className="text-[10px] text-slate-400 mt-0.5">Kewajiban vendor pending</div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* LAYER 1: TOP HEADER & ACTION BUTTONS (CLEAN HEADER TANPA KOTAK CARD) */}
         <div className="flex flex-wrap justify-between items-center gap-4 py-1">

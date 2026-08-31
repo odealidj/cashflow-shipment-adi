@@ -161,8 +161,8 @@ func (s *CashflowService) GetDashboardData(ctx context.Context, page, limit int,
 	return s.cashflowRepo.ListAll(ctx, offset, limit, filter)
 }
 
-func (s *CashflowService) GetSummary(ctx context.Context) (map[string]interface{}, error) {
-	return s.cashflowRepo.GetSummary(ctx)
+func (s *CashflowService) GetSummary(ctx context.Context, filter ports.ListFilter) (map[string]interface{}, error) {
+	return s.cashflowRepo.GetSummary(ctx, filter)
 }
 
 func parseExcelDate(s string) time.Time {

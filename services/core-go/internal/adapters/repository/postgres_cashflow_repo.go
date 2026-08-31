@@ -201,33 +201,71 @@ func (r *PostgresCashflowRepo) UpdateRemarks(ctx context.Context, id int, status
 	return nil
 }
 
-func (r *PostgresCashflowRepo) GetSummary(ctx context.Context) (map[string]interface{}, error) {
+func (r *PostgresCashflowRepo) GetSummary(ctx context.Context, filter ports.ListFilter) (map[string]interface{}, error) {
 	var currentSaldo, totalKredit, totalDebit, totalProfit, avgMargin float64
 	var unpaidCount int
 	var unpaidAmount float64
 
-	queryMain := `
-		SELECT 
-			COALESCE((SELECT saldo FROM cashflow_entries ORDER BY sequence_no DESC LIMIT 1), 0) as current_saldo,
-			COALESCE(SUM(kredit), 0) as total_kredit,
-			COALESCE(SUM(debit), 0) as total_debit,
-			COALESCE(SUM(CASE WHEN entry_type = 'SHIPMENT' THEN profit ELSE 0 END), 0) as total_profit,
-			COALESCE(AVG(CASE WHEN entry_type = 'SHIPMENT' AND grand_selling > 0 THEN margin_pct ELSE NULL END), 0) as avg_margin
-		FROM cashflow_entries;
-	`
-	err := r.db.QueryRowContext(ctx, queryMain).Scan(&currentSaldo, &totalKredit, &totalDebit, &totalProfit, &avgMargin)
+	// Query Saldo Terkini (Real-time current wallet balance, all-time latest)
+	err := r.db.QueryRowContext(ctx, `SELECT COALESCE((SELECT saldo FROM cashflow_entries ORDER BY sequence_no DESC LIMIT 1), 0)`).Scan(&currentSaldo)
 	if err != nil {
 		return nil, err
 	}
 
-	queryUnpaid := `
+	// Build dynamic WHERE clause for periodic metrics
+	wherePeriodic := "WHERE 1=1"
+	argsPeriodic := []interface{}{}
+	argIdx := 1
+
+	if filter.DateFrom != nil && *filter.DateFrom != "" {
+		wherePeriodic += fmt.Sprintf(" AND date_of_entry >= $%d", argIdx)
+		argsPeriodic = append(argsPeriodic, *filter.DateFrom)
+		argIdx++
+	}
+	if filter.DateTo != nil && *filter.DateTo != "" {
+		wherePeriodic += fmt.Sprintf(" AND date_of_entry <= $%d", argIdx)
+		argsPeriodic = append(argsPeriodic, *filter.DateTo)
+		argIdx++
+	}
+
+	queryMain := fmt.Sprintf(`
+		SELECT 
+			COALESCE(SUM(kredit), 0) as total_kredit,
+			COALESCE(SUM(debit), 0) as total_debit,
+			COALESCE(SUM(CASE WHEN entry_type = 'SHIPMENT' THEN profit ELSE 0 END), 0) as total_profit,
+			COALESCE(AVG(CASE WHEN entry_type = 'SHIPMENT' AND grand_selling > 0 THEN margin_pct ELSE NULL END), 0) as avg_margin
+		FROM cashflow_entries %s;
+	`, wherePeriodic)
+
+	err = r.db.QueryRowContext(ctx, queryMain, argsPeriodic...).Scan(&totalKredit, &totalDebit, &totalProfit, &avgMargin)
+	if err != nil {
+		return nil, err
+	}
+
+	// Unpaid summary (also filtered by period if specified)
+	whereUnpaid := "WHERE remarks = 'UNPAID' AND entry_type = 'SHIPMENT'"
+	argsUnpaid := []interface{}{}
+	argUnpaidIdx := 1
+
+	if filter.DateFrom != nil && *filter.DateFrom != "" {
+		whereUnpaid += fmt.Sprintf(" AND date_of_entry >= $%d", argUnpaidIdx)
+		argsUnpaid = append(argsUnpaid, *filter.DateFrom)
+		argUnpaidIdx++
+	}
+	if filter.DateTo != nil && *filter.DateTo != "" {
+		whereUnpaid += fmt.Sprintf(" AND date_of_entry <= $%d", argUnpaidIdx)
+		argsUnpaid = append(argsUnpaid, *filter.DateTo)
+		argUnpaidIdx++
+	}
+
+	queryUnpaid := fmt.Sprintf(`
 		SELECT 
 			COUNT(*) as unpaid_count,
 			COALESCE(SUM(debit), 0) as unpaid_amount
-		FROM cashflow_entries
-		WHERE remarks = 'UNPAID' AND entry_type = 'SHIPMENT';
-	`
-	err = r.db.QueryRowContext(ctx, queryUnpaid).Scan(&unpaidCount, &unpaidAmount)
+		FROM cashflow_entries %s;
+	`, whereUnpaid)
+
+	err = r.db.QueryRowContext(ctx, queryUnpaid, argsUnpaid...).Scan(&unpaidCount, &unpaidAmount)
 	if err != nil {
 		return nil, err
 	}

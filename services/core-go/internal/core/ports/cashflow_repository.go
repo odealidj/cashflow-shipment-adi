@@ -23,7 +23,7 @@ type CashflowRepository interface {
 	ListAll(ctx context.Context, offset, limit int, filter ListFilter) ([]domain.CashflowEntry, int, error)
 	GetLatestEntry(ctx context.Context) (*domain.CashflowEntry, error)
 	UpdateBalancesAfter(ctx context.Context, sequenceNo int, diff float64) error
-	GetSummary(ctx context.Context) (map[string]interface{}, error)
+	GetSummary(ctx context.Context, filter ListFilter) (map[string]interface{}, error)
 	UpdateRemarks(ctx context.Context, id int, status domain.PaymentStatus, updatedBy uuid.UUID) error
 	ArchiveEntry(ctx context.Context, entry *domain.CashflowEntry, archivedBy uuid.UUID, reason string) error
 }

@@ -261,7 +261,8 @@ func (h *CashflowHandler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 // @Success      200  {object}  response.APIResponse
 // @Router       /cashflow/summary [get]
 func (h *CashflowHandler) GetSummary(w http.ResponseWriter, r *http.Request) {
-	summary, err := h.cashflowService.GetSummary(r.Context())
+	filter := extractListFilter(r)
+	summary, err := h.cashflowService.GetSummary(r.Context(), filter)
 	if err != nil {
 		response.Error(w, http.StatusInternalServerError, "Failed to retrieve summary")
 		return
