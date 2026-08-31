@@ -409,29 +409,29 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
         <div className="bg-white rounded-2xl overflow-hidden border border-slate-200/80 shadow-2xs">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs text-slate-700 border-collapse">
-              <thead className="text-[11px] uppercase bg-[#1E293B] text-slate-200 border-b border-slate-700/80 tracking-wider">
+              <thead className="text-[11px] uppercase bg-[#EBF3FA] text-[#223249] border-b border-sky-200/70 tracking-wider">
                 <tr>
                   <th 
                     onClick={toggleSort}
-                    className="px-4 py-3.5 font-black cursor-pointer hover:text-sky-300 transition-colors group select-none whitespace-nowrap text-slate-100"
+                    className="px-4 py-3.5 font-black cursor-pointer hover:text-sky-700 transition-colors group select-none whitespace-nowrap"
                   >
                     <div className="flex items-center gap-1.5">
                       <span>Tanggal & Seq</span>
                       {sortDir === "ASC" ? (
-                        <ArrowUp className="w-3.5 h-3.5 text-sky-400" />
+                        <ArrowUp className="w-3.5 h-3.5 text-sky-600" />
                       ) : (
-                        <ArrowDown className="w-3.5 h-3.5 text-sky-400" />
+                        <ArrowDown className="w-3.5 h-3.5 text-sky-600" />
                       )}
                     </div>
                   </th>
-                  <th className="px-4 py-3.5 font-black min-w-[220px] text-slate-100">Vendor & Aktivitas</th>
-                  <th className="px-3 py-3.5 font-black text-right min-w-[150px] text-slate-100">Penjualan & Biaya</th>
-                  <th className="px-3 py-3.5 font-black text-right min-w-[130px] text-slate-100">Profit & Margin</th>
-                  <th className="px-3 py-3.5 font-black text-center min-w-[110px] text-slate-100">T.O.P / Due</th>
-                  <th className="px-4 py-3.5 font-black text-right min-w-[140px] text-slate-100">Arus Kas</th>
-                  <th className="px-4 py-3.5 font-black text-right min-w-[130px] bg-slate-900/50 text-sky-300">Rolling Saldo</th>
-                  <th className="px-3 py-3.5 font-black text-center text-slate-100">Status</th>
-                  <th className="px-4 py-3.5 font-black text-right text-slate-100">Aksi</th>
+                  <th className="px-4 py-3.5 font-black min-w-[220px]">Vendor & Aktivitas</th>
+                  <th className="px-3 py-3.5 font-black text-right min-w-[150px]">Penjualan & Biaya</th>
+                  <th className="px-3 py-3.5 font-black text-right min-w-[130px]">Profit & Margin</th>
+                  <th className="px-3 py-3.5 font-black text-center min-w-[110px]">T.O.P / Due</th>
+                  <th className="px-4 py-3.5 font-black text-right min-w-[140px]">Arus Kas</th>
+                  <th className="px-4 py-3.5 font-black text-right min-w-[130px] bg-sky-100/60 text-sky-950">Rolling Saldo</th>
+                  <th className="px-3 py-3.5 font-black text-center">Status</th>
+                  <th className="px-4 py-3.5 font-black text-right">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
