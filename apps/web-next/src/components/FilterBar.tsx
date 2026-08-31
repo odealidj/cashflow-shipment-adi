@@ -28,6 +28,7 @@ interface FilterBarProps {
   onReset: () => void;
   sortDir?: "ASC" | "DESC";
   onToggleSort?: () => void;
+  embedded?: boolean;
 }
 
 export const MONTH_NAMES = [
@@ -99,7 +100,8 @@ export function FilterBar({
   onFilterChange, 
   onReset,
   sortDir = "ASC",
-  onToggleSort
+  onToggleSort,
+  embedded = false
 }: FilterBarProps) {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -252,7 +254,10 @@ export function FilterBar({
     (!isCurrentMonthActive && (Boolean(filters.date_from) || Boolean(filters.date_to)));
 
   return (
-    <div className="bg-white border border-slate-200/80 rounded-2xl p-3.5 space-y-3 transition-all shadow-2xs">
+    <div className={embedded 
+      ? "p-4 pb-3.5 bg-slate-50/40 border-b border-slate-100 space-y-3 transition-all" 
+      : "bg-white border border-slate-200/80 rounded-2xl p-3.5 space-y-3 transition-all shadow-2xs"
+    }>
       {/* BARIS UTAMA: SEARCH, MONTH SELECTOR, QUICK ACTION */}
       <div className="flex flex-wrap items-center justify-between gap-2.5">
         <div className="flex flex-wrap items-center gap-2">
