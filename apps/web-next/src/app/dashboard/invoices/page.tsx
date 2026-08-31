@@ -23,6 +23,7 @@ import {
 import { CreateInvoiceModal } from "@/components/CreateInvoiceModal";
 import { EditInvoiceModal } from "@/components/EditInvoiceModal";
 import { InvoicePrintModal } from "@/components/InvoicePrintModal";
+import { DeleteInvoiceModal, InvoiceItem } from "@/components/DeleteInvoiceModal";
 import { fetchWithAuth } from "@/lib/apiClient";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { KpiCardGrid } from "@/components/shared/KpiCardGrid";
@@ -41,6 +42,12 @@ export default function InvoicesPage() {
   const [total, setTotal] = useState(0);
   const [summary, setSummary] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+
+  // Modal States
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [selectedInvoiceForEdit, setSelectedInvoiceForEdit] = useState<any>(null);
+  const [selectedInvoiceForPrint, setSelectedInvoiceForPrint] = useState<any>(null);
+  const [invoiceToDelete, setInvoiceToDelete] = useState<InvoiceItem | null>(null);
 
   // Filters State
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
@@ -88,10 +95,6 @@ export default function InvoicesPage() {
     return "CUSTOM";
   }, [dateFrom, dateTo]);
 
-  // Modals
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [selectedInvoiceForPrint, setSelectedInvoiceForPrint] = useState<any | null>(null);
-  const [selectedInvoiceForEdit, setSelectedInvoiceForEdit] = useState<any | null>(null);
 
   const fetchInvoices = useCallback(async () => {
     setLoading(true);
@@ -162,21 +165,20 @@ export default function InvoicesPage() {
     }
   };
 
-  const handleDeleteInvoice = async (id: number, invNo: string) => {
-    if (!window.confirm(`Hapus invoice ${invNo}? Data akan diarsipkan (soft delete).`)) return;
+  const handleConfirmDelete = async (inv: InvoiceItem) => {
     try {
-      const res = await fetchWithAuth(`http://localhost:8080/api/v1/invoices/${id}`, {
+      const res = await fetchWithAuth(`http://localhost:8080/api/v1/invoices/${inv.id}`, {
         method: "DELETE"
       });
       const data = await res.json();
-      if (data.status) {
-        fetchInvoices();
-        fetchSummary();
-      } else {
-        alert(data.message || "Gagal menghapus invoice");
+      if (!res.ok || !data.status) {
+        throw new Error(data.message || "Gagal menghapus invoice");
       }
+      fetchInvoices();
+      fetchSummary();
     } catch (err: any) {
       alert("Error: " + err.message);
+      throw err;
     }
   };
 
@@ -533,9 +535,9 @@ export default function InvoicesPage() {
 
                           {/* Hapus Invoice */}
                           <ActionButton
-                            onClick={() => handleDeleteInvoice(inv.id, inv.invoice_no)}
+                            onClick={() => setInvoiceToDelete(inv)}
                             icon={<Trash2 className="w-3.5 h-3.5" />}
-                            title="Hapus Invoice"
+                            title="Hapus Invoice (Soft Delete)"
                             variant="rose"
                           />
                         </div>
@@ -585,6 +587,14 @@ export default function InvoicesPage() {
         isOpen={!!selectedInvoiceForPrint}
         onClose={() => setSelectedInvoiceForPrint(null)}
         invoice={selectedInvoiceForPrint}
+      />
+
+      {/* MODAL KONFIRMASI HAPUS INVOICE (SESUAI DENGAN CASHFLOW DELETECONFIRMMODAL) */}
+      <DeleteInvoiceModal
+        isOpen={!!invoiceToDelete}
+        invoice={invoiceToDelete}
+        onClose={() => setInvoiceToDelete(null)}
+        onConfirm={handleConfirmDelete}
       />
     </div>
   );
