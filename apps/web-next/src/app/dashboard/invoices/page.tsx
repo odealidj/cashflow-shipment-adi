@@ -16,7 +16,8 @@ import {
   Calendar,
   Building,
   ArrowUpDown,
-  Download
+  Download,
+  Palette
 } from "lucide-react";
 import { CreateInvoiceModal } from "@/components/CreateInvoiceModal";
 import { InvoicePrintModal } from "@/components/InvoicePrintModal";
@@ -34,6 +35,9 @@ export default function InvoicesPage() {
   const [dateFrom, setDateFrom] = useState<string>("");
   const [dateTo, setDateTo] = useState<string>("");
   const [sortDir, setSortDir] = useState<"ASC" | "DESC">("ASC");
+
+  // Visual Header Theme Selector: Opsi 1 (Soft Ice Sky) vs Opsi 2 (Soft Pearl Slate)
+  const [headerTheme, setHeaderTheme] = useState<"ice-sky" | "pearl-slate">("ice-sky");
 
   // Modals
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -229,13 +233,46 @@ export default function InvoicesPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {/* THEME COLOR TOGGLE SWITCH (OPSI 1 vs OPSI 2) */}
+          <div className="flex items-center bg-white border border-slate-200/90 rounded-xl p-1 shadow-2xs">
+            <div className="flex items-center gap-1 px-2 text-[11px] font-bold text-slate-500 hidden sm:flex">
+              <Palette className="w-3.5 h-3.5 text-sky-700" />
+              <span>Warna Header:</span>
+            </div>
+            <button
+              onClick={() => setHeaderTheme("ice-sky")}
+              className={`px-2.5 py-1 rounded-lg text-xs font-black transition cursor-pointer flex items-center gap-1.5 ${
+                headerTheme === "ice-sky"
+                  ? "bg-[#EAF2F9] text-sky-950 shadow-2xs border border-sky-300/70"
+                  : "text-slate-500 hover:text-slate-800"
+              }`}
+              title="Opsi 1: Soft Ice Sky (Nuansa Biru Soft Logo)"
+            >
+              <span className="w-2.5 h-2.5 rounded-full bg-sky-300 border border-sky-600"></span>
+              <span>Opsi 1 (Soft Ice Sky)</span>
+            </button>
+
+            <button
+              onClick={() => setHeaderTheme("pearl-slate")}
+              className={`px-2.5 py-1 rounded-lg text-xs font-black transition cursor-pointer flex items-center gap-1.5 ${
+                headerTheme === "pearl-slate"
+                  ? "bg-slate-200 text-slate-900 shadow-2xs border border-slate-300"
+                  : "text-slate-500 hover:text-slate-800"
+              }`}
+              title="Opsi 2: Soft Pearl Slate (Nuansa Netral Elegan)"
+            >
+              <span className="w-2.5 h-2.5 rounded-full bg-slate-300 border border-slate-500"></span>
+              <span>Opsi 2 (Soft Pearl Slate)</span>
+            </button>
+          </div>
+
           <button
             onClick={() => window.print()}
             className="px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-700 text-xs font-bold hover:bg-slate-50 transition shadow-2xs flex items-center gap-1.5 cursor-pointer"
           >
             <Printer className="w-3.5 h-3.5 text-slate-500" />
-            <span>Cetak Rekapitulasi</span>
+            <span className="hidden sm:inline">Cetak Rekapitulasi</span>
           </button>
 
           <button
@@ -334,7 +371,13 @@ export default function InvoicesPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="bg-[#EBF3FA] border-b border-sky-200/70 text-[#223249] font-black tracking-wider uppercase text-[11px]">
+              <tr 
+                className={`border-b tracking-wider uppercase text-[11px] font-black transition-colors duration-200 ${
+                  headerTheme === "ice-sky"
+                    ? "bg-[#EAF2F9] border-sky-200/80 text-[#1D354B]"
+                    : "bg-[#F1F5F9] border-slate-200 text-[#334155]"
+                }`}
+              >
                 <th className="py-3.5 px-3 text-center w-12">No</th>
                 <th className="py-3.5 px-3">No. Invoice</th>
                 <th className="py-3.5 px-3">Nama Klien / Perusahaan</th>
