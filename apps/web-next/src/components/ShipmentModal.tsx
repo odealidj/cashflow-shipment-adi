@@ -100,32 +100,37 @@ export function ShipmentModal({ isOpen, onClose, onSuccess }: ShipmentModalProps
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-fade-in overflow-y-auto">
-      <div className="bg-white w-full max-w-2xl rounded-2xl p-6 relative my-auto border border-slate-100 shadow-2xl">
-        <button 
-          onClick={onClose} 
-          className="absolute top-4 right-4 p-1.5 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors cursor-pointer"
-        >
-          <X className="w-5 h-5" />
-        </button>
-        
-        <div className="flex items-center gap-2.5 mb-5">
-          <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
-            <Truck className="w-5 h-5" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in overflow-y-auto">
+      <div className="bg-white w-full max-w-2xl rounded-3xl overflow-hidden flex flex-col shadow-2xl border border-slate-200 my-auto max-h-[92vh]">
+        {/* Header Gradient Nordic Navy (Selaras dengan Buat Invoice Baru) */}
+        <div className="bg-linear-to-r from-[#1B2A4A] to-[#223249] p-5 text-white flex justify-between items-center shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center border border-white/20">
+              <Truck className="w-5 h-5 text-sky-300" />
+            </div>
+            <div>
+              <h2 className="text-base font-black tracking-tight">Catat Pengiriman (Shipment)</h2>
+              <p className="text-xs text-sky-200/80 font-medium">Pencatatan biaya transport, pendapatan, dan jatuh tempo vendor</p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-lg font-black text-slate-900 tracking-tight">Catat Pengiriman (Shipment)</h2>
-            <p className="text-xs text-slate-500 font-medium">Pencatatan biaya transport, pendapatan, dan jatuh tempo vendor</p>
-          </div>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/80 hover:text-white transition-colors cursor-pointer"
+            title="Tutup"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
 
-        {error && (
-          <div className="bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold p-3 rounded-xl mb-4">
-            {error}
-          </div>
-        )}
+        {/* Modal Scrollable Body */}
+        <div className="p-6 overflow-y-auto soft-scrollbar">
+          {error && (
+            <div className="bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold p-3 rounded-xl mb-4">
+              {error}
+            </div>
+          )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
           {/* SEKSI 1: IDENTITAS OPERASIONAL & VENDOR */}
           <div className="space-y-3">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
@@ -406,6 +411,7 @@ export function ShipmentModal({ isOpen, onClose, onSuccess }: ShipmentModalProps
             </button>
           </div>
         </form>
+        </div>
       </div>
     </div>
   );
