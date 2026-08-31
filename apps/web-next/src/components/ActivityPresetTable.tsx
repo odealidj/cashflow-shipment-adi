@@ -13,7 +13,8 @@ import {
   Trash2,
   Calendar,
   Layers,
-  CheckCircle2
+  CheckCircle2,
+  FileText
 } from "lucide-react";
 import { ActivityPresetModal, ActivityPreset } from "@/components/ActivityPresetModal";
 import { fetchWithAuth } from "@/lib/apiClient";
@@ -21,10 +22,14 @@ import { tableTheadClass, ActionButton } from "@/components/shared/TableCard";
 import { KpiCardGrid } from "@/components/shared/KpiCardGrid";
 import { KpiCard } from "@/components/shared/KpiCard";
 
-export function ActivityPresetTable() {
+interface ActivityPresetTableProps {
+  category?: "ACT_INFO" | "ACT_EXPLAIN";
+}
+
+export function ActivityPresetTable({ category }: ActivityPresetTableProps) {
   const [presets, setPresets] = useState<ActivityPreset[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"ALL" | "ACT_INFO" | "ACT_EXPLAIN">("ALL");
+  const [activeTab, setActiveTab] = useState<"ALL" | "ACT_INFO" | "ACT_EXPLAIN">(category || "ALL");
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
@@ -37,10 +42,14 @@ export function ActivityPresetTable() {
   const [deleteCandidate, setDeleteCandidate] = useState<ActivityPreset | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  const effectiveCategory = category || (activeTab === "ALL" ? "" : activeTab);
+  const isDedicated = Boolean(category);
+  const isArmada = category === "ACT_INFO";
+
   const fetchPresets = async () => {
     setLoading(true);
     try {
-      const categoryParam = activeTab === "ALL" ? "" : `&category=${activeTab}`;
+      const categoryParam = effectiveCategory ? `&category=${effectiveCategory}` : "";
       const searchParam = searchTerm ? `&search=${encodeURIComponent(searchTerm.trim())}` : "";
       const res = await fetchWithAuth(`http://localhost:8080/api/v1/activity-presets?page=${page}&limit=100${categoryParam}${searchParam}`);
       const data = await res.json();
@@ -60,14 +69,7 @@ export function ActivityPresetTable() {
 
   useEffect(() => {
     fetchPresets();
-  }, [page, activeTab, searchTerm]);
-
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return "-";
-    return new Date(dateString).toLocaleDateString("id-ID", {
-      day: "2-digit", month: "short", year: "numeric"
-    });
-  };
+  }, [page, activeTab, category, searchTerm]);
 
   const handleOpenCreate = () => {
     setSelectedPreset(null);
@@ -112,42 +114,39 @@ export function ActivityPresetTable() {
   };
 
   const safePresets = Array.isArray(presets) ? presets : [];
-  
-  // KPI Count
-  const countInfo = safePresets.filter(p => p.category === "ACT_INFO").length;
-  const countExplain = safePresets.filter(p => p.category === "ACT_EXPLAIN").length;
+  const currentTotal = total || safePresets.length;
 
   return (
     <>
       <div className="space-y-4">
-        {/* KPI Strip Ringkasan Master Preset */}
+        {/* KPI Strip Ringkasan Master */}
         <KpiCardGrid cols={4}>
           <KpiCard
-            title="Total Pilihan Master"
-            value={`${total || safePresets.length} Pilihan`}
-            subtitle="Standarisasi penulisan transaksi"
-            icon={<Sparkles className="w-5 h-5" />}
-            variant="sky"
+            title={isDedicated ? (isArmada ? "Total Jenis Armada" : "Total Rute Delivery") : "Total Master Pilihan"}
+            value={`${currentTotal} ${isDedicated ? (isArmada ? "Armada" : "Rute") : "Pilihan"}`}
+            subtitle={isDedicated ? (isArmada ? "Preset jenis kendaraan operasional" : "Preset tujuan pengiriman muatan") : "Standarisasi penulisan transaksi"}
+            icon={isDedicated ? (isArmada ? <Truck className="w-5 h-5" /> : <Route className="w-5 h-5" />) : <Sparkles className="w-5 h-5" />}
+            variant={isDedicated ? (isArmada ? "sky" : "success") : "sky"}
           />
           <KpiCard
-            title="Keterangan Armada"
-            value={`${countInfo} Jenis`}
-            subtitle="Preset kategori ACT_INFO"
-            icon={<Truck className="w-5 h-5" />}
+            title="Kelompok Master"
+            value={isDedicated ? (isArmada ? "Keterangan Aktivitas" : "Catatan Tambahan") : "Kombinasi 2 Kategori"}
+            subtitle={isDedicated ? (isArmada ? "Kode: ACT_INFO" : "Kode: ACT_EXPLAIN") : "ACT_INFO & ACT_EXPLAIN"}
+            icon={<Layers className="w-5 h-5" />}
             variant="teal"
           />
           <KpiCard
-            title="Rute & Delivery"
-            value={`${countExplain} Rute`}
-            subtitle="Preset kategori ACT_EXPLAIN"
-            icon={<Route className="w-5 h-5" />}
+            title="Integrasi Transaksi"
+            value="100% Aktif"
+            subtitle="Tersedia di form Shipment & Mobile"
+            icon={<CheckCircle2 className="w-5 h-5" />}
             variant="success"
           />
           <KpiCard
-            title="Status Integrasi"
-            value="100% Aktif"
-            subtitle="Otomatis muncul di modal shipment"
-            icon={<CheckCircle2 className="w-5 h-5" />}
+            title="Metode Input"
+            value="Autocomplete"
+            subtitle="Pilihan resmi + bisa ketik bebas"
+            icon={<Sparkles className="w-5 h-5" />}
             variant="default"
           />
         </KpiCardGrid>
@@ -158,21 +157,38 @@ export function ActivityPresetTable() {
           <div className="px-6 py-4 border-b border-slate-100 flex flex-wrap justify-between items-center gap-4 bg-slate-50/50">
             <div>
               <h1 className="text-xl font-black text-slate-900 flex items-center gap-2.5 tracking-tight">
-                <div className="w-8 h-8 rounded-xl bg-sky-100/80 text-sky-800 flex items-center justify-center shadow-2xs">
-                  <Sparkles className="w-4 h-4" />
+                <div className={`w-8 h-8 rounded-xl flex items-center justify-center shadow-2xs ${
+                  isDedicated 
+                    ? (isArmada ? "bg-sky-100/80 text-sky-800" : "bg-emerald-100/80 text-emerald-800")
+                    : "bg-sky-100/80 text-sky-800"
+                }`}>
+                  {isDedicated ? (isArmada ? <Truck className="w-4 h-4" /> : <Route className="w-4 h-4" />) : <Sparkles className="w-4 h-4" />}
                 </div>
-                <span>Master Keterangan Aktivitas & Rute Armada</span>
+                <span>
+                  {isDedicated 
+                    ? (isArmada ? "Daftar Master Keterangan Aktivitas & Armada" : "Daftar Master Catatan & Rute Pengiriman")
+                    : "Master Keterangan Aktivitas & Rute"}
+                </span>
               </h1>
               <p className="text-xs text-slate-500 font-medium mt-0.5">
-                Kelola daftar pilihan preset armada, biaya operasional, dan rute delivery agar penulisan transaksi 100% seragam
+                {isDedicated 
+                  ? (isArmada 
+                      ? "Kelola pilihan standar jenis armada (Tronton, Fuso, Trailer, CDD, dll) agar data pencatatan shipment seragam" 
+                      : "Kelola pilihan standar rute delivery antar kota & catatan kargo agar penulisan transaksi selalu konsisten")
+                  : "Kelola daftar pilihan preset armada dan rute delivery"}
               </p>
             </div>
             <div className="flex items-center gap-2">
               <button 
                 onClick={handleOpenCreate}
-                className="text-xs bg-sky-700 hover:bg-sky-800 active:scale-95 text-white px-4 py-2 rounded-xl transition-all font-bold shadow-xs flex items-center gap-1.5 cursor-pointer"
+                className={`text-xs text-white px-4 py-2 rounded-xl transition-all font-bold shadow-xs flex items-center gap-1.5 cursor-pointer active:scale-95 ${
+                  isDedicated && !isArmada
+                    ? "bg-emerald-700 hover:bg-emerald-800"
+                    : "bg-sky-700 hover:bg-sky-800"
+                }`}
               >
-                <Plus className="w-4 h-4 stroke-[3]" /> Tambah Pilihan Master
+                <Plus className="w-4 h-4 stroke-[3]" /> 
+                <span>{isDedicated ? (isArmada ? "Tambah Keterangan Armada" : "Tambah Rute Pengiriman") : "Tambah Pilihan Master"}</span>
               </button>
             </div>
           </div>
@@ -180,40 +196,53 @@ export function ActivityPresetTable() {
           {/* Integrated Filter Sub-Header Toolbar */}
           <div className="p-4 pb-3.5 bg-slate-50/40 border-b border-slate-100 space-y-3 transition-all">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              {/* Category Tabs */}
-              <div className="flex items-center gap-1.5 bg-slate-200/60 p-1 rounded-xl">
-                {[
-                  { id: "ALL", label: "Semua Kategori" },
-                  { id: "ACT_INFO", label: "🚛 Keterangan Armada (ACT_INFO)" },
-                  { id: "ACT_EXPLAIN", label: "📍 Rute & Delivery (ACT_EXPLAIN)" },
-                ].map(tab => {
-                  const active = activeTab === tab.id;
-                  return (
-                    <button
-                      key={tab.id}
-                      onClick={() => {
-                        setActiveTab(tab.id as any);
-                        setPage(1);
-                      }}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
-                        active
-                          ? "bg-white text-sky-900 shadow-2xs"
-                          : "text-slate-500 hover:text-slate-800"
-                      }`}
-                    >
-                      {tab.label}
-                    </button>
-                  );
-                })}
-              </div>
+              {/* Category Tabs (Only show if not dedicated single category) */}
+              {!isDedicated ? (
+                <div className="flex items-center gap-1.5 bg-slate-200/60 p-1 rounded-xl">
+                  {[
+                    { id: "ALL", label: "Semua Kategori" },
+                    { id: "ACT_INFO", label: "🚛 Keterangan Armada" },
+                    { id: "ACT_EXPLAIN", label: "📍 Rute & Delivery" },
+                  ].map(tab => {
+                    const active = activeTab === tab.id;
+                    return (
+                      <button
+                        key={tab.id}
+                        onClick={() => {
+                          setActiveTab(tab.id as any);
+                          setPage(1);
+                        }}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+                          active
+                            ? "bg-white text-sky-900 shadow-2xs"
+                            : "text-slate-500 hover:text-slate-800"
+                        }`}
+                      >
+                        {tab.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-extrabold border ${
+                    isArmada
+                      ? "bg-sky-50 text-sky-800 border-sky-200"
+                      : "bg-emerald-50 text-emerald-800 border-emerald-200"
+                  }`}>
+                    {isArmada ? <Truck className="w-3.5 h-3.5" /> : <Route className="w-3.5 h-3.5" />}
+                    <span>{isArmada ? "Kategori: Keterangan Aktivitas (ACT_INFO)" : "Kategori: Catatan Tambahan (ACT_EXPLAIN)"}</span>
+                  </span>
+                </div>
+              )}
 
               {/* Search Bar */}
-              <div className="flex items-center gap-2 flex-1 max-w-xs">
+              <div className="flex items-center gap-2 flex-1 max-w-xs ml-auto">
                 <div className="relative flex-1">
                   <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
-                    placeholder="Cari opsi / nama rute..."
+                    placeholder={isDedicated ? (isArmada ? "Cari nama armada..." : "Cari nama rute delivery...") : "Cari opsi / nama rute..."}
                     value={searchTerm}
                     onChange={e => {
                       setSearchTerm(e.target.value);
@@ -234,56 +263,67 @@ export function ActivityPresetTable() {
             </div>
           </div>
           
-          {/* Presets Table Data */}
+          {/* Table Data */}
           <div className="overflow-x-auto soft-scrollbar scroll-smooth">
             <table className="w-full text-left text-xs text-slate-700 border-collapse">
               <thead className={tableTheadClass}>
                 <tr>
                   <th className="px-6 py-3.5 w-12 text-center">No</th>
-                  <th className="px-6 py-3.5 min-w-[160px]">Kategori Master</th>
-                  <th className="px-6 py-3.5 min-w-[240px]">Nama Keterangan / Rute</th>
-                  <th className="px-6 py-3.5 min-w-[260px]">Deskripsi / Rincian Singkat</th>
+                  {!isDedicated && <th className="px-6 py-3.5 min-w-[160px]">Kategori</th>}
+                  <th className="px-6 py-3.5 min-w-[240px]">
+                    {isDedicated ? (isArmada ? "Nama Keterangan / Armada" : "Nama Rute / Catatan Delivery") : "Nama Opsi Preset"}
+                  </th>
+                  <th className="px-6 py-3.5 min-w-[280px]">
+                    {isDedicated ? (isArmada ? "Deskripsi / Rincian Kapasitas" : "Deskripsi / Rincian Rute") : "Deskripsi / Penjelasan"}
+                  </th>
                   <th className="px-6 py-3.5 text-center w-24">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
                 {loading ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center text-slate-400">
+                    <td colSpan={isDedicated ? 4 : 5} className="px-6 py-12 text-center text-slate-400">
                       <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-sky-700"></div>
-                      <p className="mt-2 text-xs font-semibold">Memuat master keterangan & rute...</p>
+                      <p className="mt-2 text-xs font-semibold">Memuat data master...</p>
                     </td>
                   </tr>
                 ) : safePresets.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center text-slate-400">
-                      {searchTerm ? "Tidak ada preset yang cocok dengan kata kunci pencarian." : "Belum ada preset terdaftar."}
+                    <td colSpan={isDedicated ? 4 : 5} className="px-6 py-12 text-center text-slate-400">
+                      {searchTerm ? "Tidak ada opsi yang cocok dengan pencarian." : "Belum ada data master terdaftar."}
                     </td>
                   </tr>
                 ) : (
                   safePresets.map((preset: ActivityPreset, idx: number) => {
-                    const isArmada = preset.category === "ACT_INFO";
+                    const isRowArmada = preset.category === "ACT_INFO";
 
                     return (
                       <tr key={preset.id} className="hover:bg-slate-50/80 transition-colors group">
                         <td className="px-6 py-4 text-center font-mono text-slate-400 font-bold">
                           {idx + 1}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-extrabold border ${
-                            isArmada
-                              ? "bg-sky-50 text-sky-800 border-sky-200"
-                              : "bg-emerald-50 text-emerald-800 border-emerald-200"
-                          }`}>
-                            {isArmada ? <Truck className="w-3.5 h-3.5" /> : <Route className="w-3.5 h-3.5" />}
-                            <span>{isArmada ? "Keterangan Aktivitas" : "Catatan Tambahan"}</span>
-                          </span>
-                        </td>
+                        {!isDedicated && (
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-extrabold border ${
+                              isRowArmada
+                                ? "bg-sky-50 text-sky-800 border-sky-200"
+                                : "bg-emerald-50 text-emerald-800 border-emerald-200"
+                            }`}>
+                              {isRowArmada ? <Truck className="w-3.5 h-3.5" /> : <Route className="w-3.5 h-3.5" />}
+                              <span>{isRowArmada ? "Keterangan Aktivitas" : "Catatan Tambahan"}</span>
+                            </span>
+                          </td>
+                        )}
                         <td className="px-6 py-4">
                           <div className="font-extrabold text-slate-900 text-xs sm:text-sm flex items-center gap-2">
+                            <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 text-xs ${
+                              isRowArmada ? "bg-sky-100 text-sky-800" : "bg-emerald-100 text-emerald-800"
+                            }`}>
+                              {isRowArmada ? "🚛" : "📍"}
+                            </div>
                             <span>{preset.name}</span>
                           </div>
-                          <div className="text-[10px] text-slate-400 font-mono mt-0.5">ID #{preset.id}</div>
+                          <div className="text-[10px] text-slate-400 font-mono mt-0.5 ml-9">ID #{preset.id}</div>
                         </td>
                         <td className="px-6 py-4 max-w-xs text-slate-600">
                           {preset.description ? (
@@ -319,10 +359,10 @@ export function ActivityPresetTable() {
           {/* Footer Terpadu */}
           <div className="border-t border-slate-100 bg-slate-50/50 px-6 py-3.5 flex flex-wrap justify-between items-center gap-3">
             <span className="text-xs text-slate-500 font-medium">
-              Menampilkan <span className="font-bold text-slate-900">{safePresets.length}</span> dari <span className="font-bold text-slate-900">{total || safePresets.length}</span> pilihan master terdaftar
+              Menampilkan <span className="font-bold text-slate-900">{safePresets.length}</span> dari <span className="font-bold text-slate-900">{currentTotal}</span> data terdaftar
             </span>
             <span className="text-[11px] text-slate-400 font-medium hidden sm:inline">
-              Opsi yang didaftarkan di sini otomatis muncul sebagai saran di form Catat Shipment desktop & mobile PWA
+              Opsi yang didaftarkan di sini otomatis muncul sebagai saran autocomplete di modal Shipment Desktop & Mobile PWA
             </span>
           </div>
         </div>
@@ -332,7 +372,8 @@ export function ActivityPresetTable() {
       <ActivityPresetModal
         isOpen={isModalOpen}
         preset={selectedPreset}
-        defaultCategory={activeTab === "ACT_EXPLAIN" ? "ACT_EXPLAIN" : "ACT_INFO"}
+        defaultCategory={category || (activeTab === "ACT_EXPLAIN" ? "ACT_EXPLAIN" : "ACT_INFO")}
+        lockCategory={isDedicated}
         onClose={() => setIsModalOpen(false)}
         onSuccess={fetchPresets}
       />
@@ -346,7 +387,7 @@ export function ActivityPresetTable() {
                 <AlertTriangle className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="font-bold text-slate-900 text-sm">Hapus Pilihan Master?</h3>
+                <h3 className="font-bold text-slate-900 text-sm">Hapus Opsi Master?</h3>
                 <p className="text-xs text-slate-500">Tindakan ini akan menonaktifkan opsi dari daftar saran (Soft Delete)</p>
               </div>
             </div>
