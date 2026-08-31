@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { X, Calendar, Clock, FileText, CheckCircle2, ShieldCheck, Edit3 } from "lucide-react";
 import { formatThousand, cleanThousand, terbilangRingkas } from "@/hooks/useTerbilang";
 import { fetchWithAuth } from "@/lib/apiClient";
+import { CustomerSelect } from "@/components/CustomerSelect";
 
 interface InvoiceData {
   id: number;
@@ -176,13 +177,11 @@ export function EditInvoiceModal({ isOpen, invoice, onClose, onSuccess }: EditIn
               <label className="block text-xs font-bold text-slate-700 mb-1">
                 Nama Klien / Perusahaan <span className="text-rose-500">*</span>
               </label>
-              <input
-                type="text"
+              <CustomerSelect
                 value={clientName}
-                onChange={e => setClientName(e.target.value)}
-                placeholder="PT Surya Mandiri Abadi"
+                onChange={(val) => setClientName(val)}
                 required
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                placeholder="Pilih dari Master atau ketik nama klien..."
               />
             </div>
           </div>
