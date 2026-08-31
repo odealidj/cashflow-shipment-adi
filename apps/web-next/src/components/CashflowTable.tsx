@@ -24,7 +24,7 @@ import { TopUpModal } from "./TopUpModal";
 import { ShipmentModal } from "./ShipmentModal";
 import { EditEntryModal } from "./EditEntryModal";
 import { EntryDetailModal } from "./EntryDetailModal";
-import { FilterBar, FilterState } from "./FilterBar";
+import { FilterBar, FilterState, getCurrentMonthRange } from "./FilterBar";
 
 interface CashflowTableProps {
   onDataChange?: () => void;
@@ -35,15 +35,18 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
-  const [sortDir, setSortDir] = useState<"ASC" | "DESC">("ASC"); // Default ASC
+  const [sortDir, setSortDir] = useState<"ASC" | "DESC">("ASC"); // Default ASC (urut dari awal bulan/tanggal terlama)
 
-  // Filter State
-  const [filters, setFilters] = useState<FilterState>({
-    date_from: "",
-    date_to: "",
-    entry_type: "",
-    remarks: "",
-    vendor_name: ""
+  // Default Filter: Bulan Ini (Range 1 s/d Akhir Bulan Ini)
+  const [filters, setFilters] = useState<FilterState>(() => {
+    const currentMonth = getCurrentMonthRange();
+    return {
+      date_from: currentMonth.date_from,
+      date_to: currentMonth.date_to,
+      entry_type: "",
+      remarks: "",
+      vendor_name: ""
+    };
   });
 
   // Modal States
@@ -385,18 +388,22 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
           <div className="p-4 pb-0">
             <FilterBar
               filters={filters}
+              sortDir={sortDir}
+              onToggleSort={toggleSort}
               onFilterChange={(f) => {
                 setFilters(f);
                 setPage(1);
               }}
               onReset={() => {
+                const currentMonth = getCurrentMonthRange();
                 setFilters({
-                  date_from: "",
-                  date_to: "",
+                  date_from: currentMonth.date_from,
+                  date_to: currentMonth.date_to,
                   entry_type: "",
                   remarks: "",
                   vendor_name: ""
                 });
+                setSortDir("ASC");
                 setPage(1);
               }}
             />
