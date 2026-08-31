@@ -523,14 +523,9 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
                         {(page - 1) * 15 + idx + 1}
                       </td>
 
-                      {/* 1. Tanggal (dengan Seq No info) */}
-                      <td className="px-4 py-3.5 whitespace-nowrap">
-                        <div className="font-mono font-bold text-slate-900 text-xs">
-                          {formatDate(entry.date_of_entry)}
-                        </div>
-                        <div className="text-[10px] text-slate-400 font-mono mt-0.5">
-                          Seq #{String(entry.sequence_no).padStart(4, "0")}
-                        </div>
+                      {/* 1. Tanggal */}
+                      <td className="px-4 py-3.5 whitespace-nowrap font-mono font-bold text-slate-900 text-xs">
+                        {formatDate(entry.date_of_entry)}
                       </td>
 
                       {/* 2. Vendor & Aktivitas */}
