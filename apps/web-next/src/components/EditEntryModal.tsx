@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, Loader2, Edit3, Trash2 } from "lucide-react";
+import { X, Loader2, Edit3, Trash2, Wallet, ArrowRight, TrendingUp } from "lucide-react";
 import { formatRupiah, calculateProfit, calculateMarginPct, calculateDueDate } from "@/hooks/useAutoCalculate";
 import { VendorSelect } from "@/components/VendorSelect";
 
@@ -32,6 +32,7 @@ interface EditEntryModalProps {
 export function EditEntryModal({ isOpen, entry, onClose, onSuccess }: EditEntryModalProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [currentSaldo, setCurrentSaldo] = useState<number | null>(null);
   const [formData, setFormData] = useState({
     date_of_entry: "",
     vendor_name_raw: "",
@@ -62,7 +63,25 @@ export function EditEntryModal({ isOpen, entry, onClose, onSuccess }: EditEntryM
         remarks: entry.remarks || "UNPAID"
       });
     }
-  }, [entry]);
+
+    if (isOpen) {
+      const fetchSaldo = async () => {
+        try {
+          const token = localStorage.getItem("token");
+          const res = await fetch("http://localhost:8080/api/v1/cashflow/summary", {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          const data = await res.json();
+          if (data.status && data.data) {
+            setCurrentSaldo(data.data.current_saldo || 0);
+          }
+        } catch (e) {
+          console.error("Gagal mengambil saldo:", e);
+        }
+      };
+      fetchSaldo();
+    }
+  }, [entry, isOpen]);
 
   if (!isOpen || !entry) return null;
 
@@ -73,6 +92,9 @@ export function EditEntryModal({ isOpen, entry, onClose, onSuccess }: EditEntryM
   const marginNum = calculateMarginPct(profitNum, sellNum);
   const autoDueDate = calculateDueDate(formData.date_of_entry, parseInt(formData.top_days || "0", 10));
   const effectiveDueDate = formData.due_date || autoDueDate;
+  // Pada mode edit, saldo disesuaikan dengan selisih perubahan debit
+  const originalDebit = entry.debit || 0;
+  const projectedSaldo = (currentSaldo ?? 0) + originalDebit - costNum;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -292,14 +314,63 @@ export function EditEntryModal({ isOpen, entry, onClose, onSuccess }: EditEntryM
               </div>
 
               {/* SEKSI HASIL KALKULASI OTOMATIS SISTEM */}
-              <div className="p-3.5 bg-sky-950/5 border border-sky-200/60 rounded-2xl space-y-2.5">
+              <div className="p-3.5 bg-sky-950/5 border border-sky-200/60 rounded-2xl space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-black text-sky-900 uppercase tracking-wider">
+                  <span className="text-[11px] font-black text-sky-900 uppercase tracking-wider flex items-center gap-1.5">
+                    <TrendingUp className="w-3.5 h-3.5 text-sky-700" />
                     Hasil Kalkulasi Otomatis Sistem
                   </span>
                   <span className="text-[10px] text-sky-700 font-semibold bg-sky-100/70 px-2 py-0.5 rounded-md">
                     Auto-calculated
                   </span>
+                </div>
+
+                {/* LIVE SALDO IMPACT BAR */}
+                <div className="bg-white rounded-xl p-3 border border-slate-200/80 shadow-2xs">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                      <Wallet className="w-3.5 h-3.5 text-sky-700" />
+                      Simulasi Dampak ke Saldo Kas
+                    </span>
+                    {costNum > 0 && (
+                      <span className={`text-[10px] font-black px-2 py-0.5 rounded-full flex items-center gap-1 ${
+                        projectedSaldo >= 0 
+                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
+                          : 'bg-rose-50 text-rose-700 border border-rose-200 animate-pulse'
+                      }`}>
+                        {projectedSaldo >= 0 ? '✓ Saldo Kas Cukup' : '⚠️ Saldo Kas Kurang (Defisit)'}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                    <div className="min-w-0">
+                      <span className="text-[10px] text-slate-400 block font-medium">Saldo Kas Saat Ini</span>
+                      <span className="font-bold text-slate-700 font-mono text-[13px]">
+                        {currentSaldo !== null ? formatRupiah(currentSaldo) : "Memuat..."}
+                      </span>
+                    </div>
+
+                    <div className="text-slate-300 font-bold hidden sm:block">−</div>
+
+                    <div className="min-w-0">
+                      <span className="text-[10px] text-slate-400 block font-medium">Debit Biaya (Shipment)</span>
+                      <span className="font-bold text-rose-600 font-mono text-[13px]">
+                        − {formatRupiah(costNum)}
+                      </span>
+                    </div>
+
+                    <ArrowRight className="w-3.5 h-3.5 text-sky-700 shrink-0 hidden sm:block" />
+
+                    <div className="min-w-0">
+                      <span className="text-[10px] text-slate-400 block font-medium">Estimasi Sisa Saldo</span>
+                      <span className={`font-black font-mono text-[13px] ${
+                        projectedSaldo >= 0 ? 'text-sky-900' : 'text-rose-600'
+                      }`}>
+                        {currentSaldo !== null ? formatRupiah(projectedSaldo) : "-"}
+                      </span>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
