@@ -16,8 +16,7 @@ import {
   Calendar,
   Building,
   ArrowUpDown,
-  Download,
-  Palette
+  Download
 } from "lucide-react";
 import { CreateInvoiceModal } from "@/components/CreateInvoiceModal";
 import { InvoicePrintModal } from "@/components/InvoicePrintModal";
@@ -35,9 +34,6 @@ export default function InvoicesPage() {
   const [dateFrom, setDateFrom] = useState<string>("");
   const [dateTo, setDateTo] = useState<string>("");
   const [sortDir, setSortDir] = useState<"ASC" | "DESC">("ASC");
-
-  // Visual Header Theme Selector: Opsi 1, 2, 3, 4, 5 (Docx Classic Navy #1A365D)
-  const [headerTheme, setHeaderTheme] = useState<"ice-sky" | "pearl-slate" | "ocean-sky" | "deep-navy" | "docx-navy">("ice-sky");
 
   // Modals
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -233,85 +229,13 @@ export default function InvoicesPage() {
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          {/* THEME COLOR TOGGLE SWITCH (OPSI 1 vs OPSI 2) */}
-          <div className="flex items-center bg-white border border-slate-200/90 rounded-xl p-1 shadow-2xs">
-            <div className="flex items-center gap-1 px-2 text-[11px] font-bold text-slate-500 hidden sm:flex">
-              <Palette className="w-3.5 h-3.5 text-sky-700" />
-              <span>Warna Header:</span>
-            </div>
-            <button
-              onClick={() => setHeaderTheme("ice-sky")}
-              className={`px-2.5 py-1 rounded-lg text-xs font-black transition cursor-pointer flex items-center gap-1.5 ${
-                headerTheme === "ice-sky"
-                  ? "bg-[#EAF2F9] text-sky-950 shadow-2xs border border-sky-300/70"
-                  : "text-slate-500 hover:text-slate-800"
-              }`}
-              title="Opsi 1: Soft Ice Sky (Nuansa Biru Soft Logo)"
-            >
-              <span className="w-2.5 h-2.5 rounded-full bg-sky-300 border border-sky-600"></span>
-              <span>Opsi 1 (Soft Ice Sky)</span>
-            </button>
-
-            <button
-              onClick={() => setHeaderTheme("pearl-slate")}
-              className={`px-2.5 py-1 rounded-lg text-xs font-black transition cursor-pointer flex items-center gap-1.5 ${
-                headerTheme === "pearl-slate"
-                  ? "bg-slate-200 text-slate-900 shadow-2xs border border-slate-300"
-                  : "text-slate-500 hover:text-slate-800"
-              }`}
-              title="Opsi 2: Soft Pearl Slate (Nuansa Netral Elegan)"
-            >
-              <span className="w-2.5 h-2.5 rounded-full bg-slate-300 border border-slate-500"></span>
-              <span>Opsi 2 (Soft Pearl)</span>
-            </button>
-
-            <button
-              onClick={() => setHeaderTheme("ocean-sky")}
-              className={`px-2.5 py-1 rounded-lg text-xs font-black transition cursor-pointer flex items-center gap-1.5 ${
-                headerTheme === "ocean-sky"
-                  ? "bg-sky-700 text-white shadow-2xs border border-sky-800"
-                  : "text-slate-500 hover:text-slate-800"
-              }`}
-              title="Opsi 3: Ocean Sky / Button Color (Biru Pekat Tegas Senada Tombol Buat Invoice)"
-            >
-              <span className="w-2.5 h-2.5 rounded-full bg-sky-600 border border-white"></span>
-              <span>Opsi 3 (Ocean Sky)</span>
-            </button>
-
-            <button
-              onClick={() => setHeaderTheme("deep-navy")}
-              className={`px-2.5 py-1 rounded-lg text-xs font-black transition cursor-pointer flex items-center gap-1.5 ${
-                headerTheme === "deep-navy"
-                  ? "bg-[#223249] text-white shadow-2xs border border-slate-700"
-                  : "text-slate-500 hover:text-slate-800"
-              }`}
-              title="Opsi 4: Deep Navy / Sidebar (#223249 - Senada Sidebar Aplikasi)"
-            >
-              <span className="w-2.5 h-2.5 rounded-full bg-[#223249] border border-sky-400"></span>
-              <span>Opsi 4 (Sidebar Navy)</span>
-            </button>
-
-            <button
-              onClick={() => setHeaderTheme("docx-navy")}
-              className={`px-2.5 py-1 rounded-lg text-xs font-black transition cursor-pointer flex items-center gap-1.5 ${
-                headerTheme === "docx-navy"
-                  ? "bg-[#1A365D] text-white shadow-2xs border border-blue-900"
-                  : "text-slate-500 hover:text-slate-800"
-              }`}
-              title="Opsi 5: Dokumen Asli (#1A365D - Midnight Sapphire Navy Asli dari Dokumen Word)"
-            >
-              <span className="w-2.5 h-2.5 rounded-full bg-[#1A365D] border border-sky-300"></span>
-              <span>Opsi 5 (Dokumen Asli #1A365D)</span>
-            </button>
-          </div>
-
+        <div className="flex items-center gap-2">
           <button
             onClick={() => window.print()}
             className="px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-700 text-xs font-bold hover:bg-slate-50 transition shadow-2xs flex items-center gap-1.5 cursor-pointer"
           >
             <Printer className="w-3.5 h-3.5 text-slate-500" />
-            <span className="hidden sm:inline">Cetak Rekapitulasi</span>
+            <span>Cetak Rekapitulasi</span>
           </button>
 
           <button
@@ -410,19 +334,7 @@ export default function InvoicesPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr 
-                className={`border-b tracking-wider uppercase text-[11px] font-black transition-colors duration-200 ${
-                  headerTheme === "docx-navy"
-                    ? "bg-[#1A365D] border-[#0F2442] text-white shadow-xs"
-                    : headerTheme === "deep-navy"
-                    ? "bg-[#223249] border-slate-700/80 text-white shadow-xs"
-                    : headerTheme === "ocean-sky"
-                    ? "bg-sky-700 border-sky-800 text-white shadow-xs"
-                    : headerTheme === "ice-sky"
-                    ? "bg-[#EAF2F9] border-sky-200/80 text-[#1D354B]"
-                    : "bg-[#F1F5F9] border-slate-200 text-[#334155]"
-                }`}
-              >
+              <tr className="bg-[#F1F5F9] border-b border-slate-200 text-[#334155] font-black tracking-wider uppercase text-[11px]">
                 <th className="py-3.5 px-3 text-center w-12">No</th>
                 <th className="py-3.5 px-3">No. Invoice</th>
                 <th className="py-3.5 px-3">Nama Klien / Perusahaan</th>
