@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/cashflow-shipment-app/backend/internal/application/services"
 	"github.com/cashflow-shipment-app/backend/internal/core/domain"
@@ -279,6 +280,11 @@ func (h *CashflowHandler) GetSummary(w http.ResponseWriter, r *http.Request) {
 // @Router       /cashflow/export [get]
 func (h *CashflowHandler) ExportExcel(w http.ResponseWriter, r *http.Request) {
 	filter := extractListFilter(r)
+	formatMode := strings.ToLower(strings.TrimSpace(r.URL.Query().Get("format")))
+	if formatMode == "" {
+		formatMode = "merged" // default: format dokumen asli sebaris
+	}
+
 	entries, _, err := h.cashflowService.GetDashboardData(r.Context(), 1, 100000, filter)
 	if err != nil {
 		response.Error(w, http.StatusInternalServerError, "Failed to retrieve cashflow data")
@@ -384,66 +390,169 @@ func (h *CashflowHandler) ExportExcel(w http.ResponseWriter, r *http.Request) {
 		f.SetCellStyle(sheetName, cell, cell, headerStyle)
 	}
 
-	// Tulis Baris Data
-	for i, entry := range entries {
+	type exportRow struct {
+		Kredit          float64
+		Debit           float64
+		Saldo           float64
+		DateOfEntry     string
+		ActInformation  string
+		ActExplaination string
+		VendorNameRaw   string
+		TopText         string
+		DueDateText     string
+		GrandCost       float64
+		GrandSelling    float64
+		Profit          float64
+		MarginText      string
+		Remarks         string
+	}
+
+	var rows []exportRow
+
+	if formatMode == "merged" {
+		// Logika Auto-Merge: Gabungkan Top-Up ke baris Shipment berikutnya
+		var pendingKredit float64
+
+		for _, entry := range entries {
+			if entry.EntryType == domain.EntryTopUp {
+				pendingKredit += entry.Kredit
+				continue
+			}
+
+			// Entri SHIPMENT
+			kreditVal := pendingKredit
+			pendingKredit = 0
+
+			topStr := "-"
+			if entry.TopDays > 0 {
+				topStr = fmt.Sprintf("%d HARI", entry.TopDays)
+			}
+			dueStr := "-"
+			if entry.DueDate != nil {
+				dueStr = entry.DueDate.Format("02/01/2006")
+			}
+
+			rows = append(rows, exportRow{
+				Kredit:          kreditVal,
+				Debit:           entry.Debit,
+				Saldo:           entry.Saldo,
+				DateOfEntry:     entry.DateOfEntry.Format("02/01/2006"),
+				ActInformation:  entry.ActInformation,
+				ActExplaination: entry.ActExplaination,
+				VendorNameRaw:   entry.VendorNameRaw,
+				TopText:         topStr,
+				DueDateText:     dueStr,
+				GrandCost:       entry.GrandCost,
+				GrandSelling:    entry.GrandSelling,
+				Profit:          entry.Profit,
+				MarginText:      fmt.Sprintf("%.2f%%", entry.MarginPct*100),
+				Remarks:         string(entry.Remarks),
+			})
+		}
+
+		// Jika ada sisa Top-Up di akhir tanpa shipment lanjutan
+		if pendingKredit > 0 {
+			var lastDate string
+			if len(entries) > 0 {
+				lastDate = entries[len(entries)-1].DateOfEntry.Format("02/01/2006")
+			} else {
+				lastDate = time.Now().Format("02/01/2006")
+			}
+			rows = append(rows, exportRow{
+				Kredit:         pendingKredit,
+				Debit:          0,
+				Saldo:          pendingKredit,
+				DateOfEntry:    lastDate,
+				ActInformation: "Top-Up Modal Kas",
+				VendorNameRaw:  "-",
+				TopText:        "-",
+				DueDateText:    "-",
+				Remarks:        "PAID",
+			})
+		}
+	} else {
+		// Format Detail Granular: Tiap transaksi apa adanya
+		for _, entry := range entries {
+			topStr := "-"
+			if entry.TopDays > 0 {
+				topStr = fmt.Sprintf("%d HARI", entry.TopDays)
+			}
+			dueStr := "-"
+			if entry.DueDate != nil {
+				dueStr = entry.DueDate.Format("02/01/2006")
+			}
+
+			rows = append(rows, exportRow{
+				Kredit:          entry.Kredit,
+				Debit:           entry.Debit,
+				Saldo:           entry.Saldo,
+				DateOfEntry:     entry.DateOfEntry.Format("02/01/2006"),
+				ActInformation:  entry.ActInformation,
+				ActExplaination: entry.ActExplaination,
+				VendorNameRaw:   entry.VendorNameRaw,
+				TopText:         topStr,
+				DueDateText:     dueStr,
+				GrandCost:       entry.GrandCost,
+				GrandSelling:    entry.GrandSelling,
+				Profit:          entry.Profit,
+				MarginText:      fmt.Sprintf("%.2f%%", entry.MarginPct*100),
+				Remarks:         string(entry.Remarks),
+			})
+		}
+	}
+
+	// Tulis Baris Data ke File Excel
+	for i, rItem := range rows {
 		row := i + 2
 		f.SetRowHeight(sheetName, row, 20)
 
 		// Nominal Finansial (A, B, C) -> Right Aligned dengan Format #,##0
-		f.SetCellValue(sheetName, fmt.Sprintf("A%d", row), entry.Kredit)
+		f.SetCellValue(sheetName, fmt.Sprintf("A%d", row), rItem.Kredit)
 		f.SetCellStyle(sheetName, fmt.Sprintf("A%d", row), fmt.Sprintf("A%d", row), numStyle)
 
-		f.SetCellValue(sheetName, fmt.Sprintf("B%d", row), entry.Debit)
+		f.SetCellValue(sheetName, fmt.Sprintf("B%d", row), rItem.Debit)
 		f.SetCellStyle(sheetName, fmt.Sprintf("B%d", row), fmt.Sprintf("B%d", row), numStyle)
 
-		f.SetCellValue(sheetName, fmt.Sprintf("C%d", row), entry.Saldo)
+		f.SetCellValue(sheetName, fmt.Sprintf("C%d", row), rItem.Saldo)
 		f.SetCellStyle(sheetName, fmt.Sprintf("C%d", row), fmt.Sprintf("C%d", row), numStyle)
 
 		// Tanggal (D) -> Format dd/mm/yyyy (02/01/2006), Center
-		f.SetCellValue(sheetName, fmt.Sprintf("D%d", row), entry.DateOfEntry.Format("02/01/2006"))
+		f.SetCellValue(sheetName, fmt.Sprintf("D%d", row), rItem.DateOfEntry)
 		f.SetCellStyle(sheetName, fmt.Sprintf("D%d", row), fmt.Sprintf("D%d", row), centerStyle)
 
 		// Teks Informasi & Keterangan (E, F, G) -> Left
-		f.SetCellValue(sheetName, fmt.Sprintf("E%d", row), entry.ActInformation)
+		f.SetCellValue(sheetName, fmt.Sprintf("E%d", row), rItem.ActInformation)
 		f.SetCellStyle(sheetName, fmt.Sprintf("E%d", row), fmt.Sprintf("E%d", row), textStyle)
 
-		f.SetCellValue(sheetName, fmt.Sprintf("F%d", row), entry.ActExplaination)
+		f.SetCellValue(sheetName, fmt.Sprintf("F%d", row), rItem.ActExplaination)
 		f.SetCellStyle(sheetName, fmt.Sprintf("F%d", row), fmt.Sprintf("F%d", row), textStyle)
 
-		f.SetCellValue(sheetName, fmt.Sprintf("G%d", row), entry.VendorNameRaw)
+		f.SetCellValue(sheetName, fmt.Sprintf("G%d", row), rItem.VendorNameRaw)
 		f.SetCellStyle(sheetName, fmt.Sprintf("G%d", row), fmt.Sprintf("G%d", row), textStyle)
 
 		// TOP (H) -> Center
-		if entry.TopDays > 0 {
-			f.SetCellValue(sheetName, fmt.Sprintf("H%d", row), fmt.Sprintf("%d HARI", entry.TopDays))
-		} else {
-			f.SetCellValue(sheetName, fmt.Sprintf("H%d", row), "-")
-		}
+		f.SetCellValue(sheetName, fmt.Sprintf("H%d", row), rItem.TopText)
 		f.SetCellStyle(sheetName, fmt.Sprintf("H%d", row), fmt.Sprintf("H%d", row), centerStyle)
 
 		// Due Date (I) -> Format dd/mm/yyyy (02/01/2006), Center
-		if entry.DueDate != nil {
-			f.SetCellValue(sheetName, fmt.Sprintf("I%d", row), entry.DueDate.Format("02/01/2006"))
-		} else {
-			f.SetCellValue(sheetName, fmt.Sprintf("I%d", row), "-")
-		}
+		f.SetCellValue(sheetName, fmt.Sprintf("I%d", row), rItem.DueDateText)
 		f.SetCellStyle(sheetName, fmt.Sprintf("I%d", row), fmt.Sprintf("I%d", row), centerStyle)
 
 		// Grand Cost, Grand Selling, Profit (J, K, L) -> Right Aligned #,##0
-		f.SetCellValue(sheetName, fmt.Sprintf("J%d", row), entry.GrandCost)
+		f.SetCellValue(sheetName, fmt.Sprintf("J%d", row), rItem.GrandCost)
 		f.SetCellStyle(sheetName, fmt.Sprintf("J%d", row), fmt.Sprintf("J%d", row), numStyle)
 
-		f.SetCellValue(sheetName, fmt.Sprintf("K%d", row), entry.GrandSelling)
+		f.SetCellValue(sheetName, fmt.Sprintf("K%d", row), rItem.GrandSelling)
 		f.SetCellStyle(sheetName, fmt.Sprintf("K%d", row), fmt.Sprintf("K%d", row), numStyle)
 
-		f.SetCellValue(sheetName, fmt.Sprintf("L%d", row), entry.Profit)
+		f.SetCellValue(sheetName, fmt.Sprintf("L%d", row), rItem.Profit)
 		f.SetCellStyle(sheetName, fmt.Sprintf("L%d", row), fmt.Sprintf("L%d", row), numStyle)
 
 		// Margin & Remarks (M, N) -> Center
-		f.SetCellValue(sheetName, fmt.Sprintf("M%d", row), fmt.Sprintf("%.2f%%", entry.MarginPct*100))
+		f.SetCellValue(sheetName, fmt.Sprintf("M%d", row), rItem.MarginText)
 		f.SetCellStyle(sheetName, fmt.Sprintf("M%d", row), fmt.Sprintf("M%d", row), centerStyle)
 
-		f.SetCellValue(sheetName, fmt.Sprintf("N%d", row), entry.Remarks)
+		f.SetCellValue(sheetName, fmt.Sprintf("N%d", row), rItem.Remarks)
 		f.SetCellStyle(sheetName, fmt.Sprintf("N%d", row), fmt.Sprintf("N%d", row), centerStyle)
 	}
 
@@ -457,8 +566,13 @@ func (h *CashflowHandler) ExportExcel(w http.ResponseWriter, r *http.Request) {
 	f.SetColWidth(sheetName, "J", "L", 16)
 	f.SetColWidth(sheetName, "M", "N", 14)
 
+	filename := "Cashflow_Dokumen_Asli.xlsx"
+	if formatMode == "detail" {
+		filename = "Cashflow_Detail_Grid.xlsx"
+	}
+
 	w.Header().Set("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-	w.Header().Set("Content-Disposition", `attachment; filename="Cashflow_Export.xlsx"`)
+	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, filename))
 	
 	if err := f.Write(w); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

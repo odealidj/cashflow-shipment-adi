@@ -132,17 +132,21 @@ export function CashflowReportModal({
     window.print();
   };
 
-  const handleDownloadExcel = async () => {
+  const handleDownloadExcel = async (formatOverride?: "merged" | "detail") => {
+    const activeFormat = formatOverride || (reportVersion === "excel" ? "merged" : "detail");
     try {
       const query = new URLSearchParams();
       if (dateFrom) query.append("date_from", dateFrom);
       if (dateTo) query.append("date_to", dateTo);
+      query.append("format", activeFormat);
+
       const res = await fetchWithAuth(`http://localhost:8080/api/v1/cashflow/export?${query.toString()}`);
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `Laporan_Cashflow_${dateFrom || "awal"}_sd_${dateTo || "akhir"}.xlsx`;
+      const formatLabel = activeFormat === "merged" ? "Dokumen_Asli_Merged" : "Detail_Grid";
+      a.download = `Laporan_Cashflow_${formatLabel}_${dateFrom || "awal"}_sd_${dateTo || "akhir"}.xlsx`;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -168,6 +172,55 @@ export function CashflowReportModal({
     const year = d.getFullYear();
     return `${day}/${month}/${year}`;
   };
+
+  // Transformasi Data Khusus Tab 1 (Versi Dokumen Asli):
+  // Top-Up Kas digabung ke dalam baris Shipment pertama setelahnya (persis baris 7 di file CASHFLOW SHIPMENT CONTROL.xlsx)
+  const mergedEntries = useMemo(() => {
+    const result: any[] = [];
+    let pendingKredit = 0;
+
+    for (const entry of entries) {
+      if (entry.entry_type === "TOP_UP") {
+        pendingKredit += (entry.kredit || 0);
+        continue;
+      }
+
+      // Entri SHIPMENT
+      const kreditVal = pendingKredit;
+      pendingKredit = 0;
+
+      result.push({
+        ...entry,
+        kredit: kreditVal,
+        hasMergedTopUp: kreditVal > 0,
+      });
+    }
+
+    // Jika ada sisa Top-Up di akhir tanpa shipment lanjutan
+    if (pendingKredit > 0) {
+      const lastDate = entries.length > 0 ? entries[entries.length - 1].date_of_entry : new Date().toISOString();
+      result.push({
+        id: "merged-tail-topup",
+        entry_type: "TOP_UP",
+        kredit: pendingKredit,
+        debit: 0,
+        saldo: pendingKredit,
+        date_of_entry: lastDate,
+        act_information: "Top-Up Modal Kas",
+        act_explaination: "Dana modal tersedia",
+        vendor_name_raw: "-",
+        top_days: 0,
+        due_date: null,
+        grand_cost: 0,
+        grand_selling: 0,
+        profit: 0,
+        margin_pct: 0,
+        remarks: "PAID"
+      });
+    }
+
+    return result;
+  }, [entries]);
 
   // Kalkulasi agregat langsung dari daftar entri
   const totalKredit = entries.reduce((acc, curr) => acc + (curr.kredit || 0), 0);
@@ -228,13 +281,14 @@ export function CashflowReportModal({
 
           {/* Action Buttons */}
           <div className="flex items-center gap-2">
+            {/* Tombol Unduh Cerdas (Sesuai Tab Aktif) */}
             <button
-              onClick={handleDownloadExcel}
-              className="px-3 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
-              title="Unduh File Excel Asli"
+              onClick={() => handleDownloadExcel()}
+              className="px-3.5 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
+              title={`Unduh format ${reportVersion === "excel" ? "Dokumen Asli (Top-Up Sebaris)" : "Detail Grid (Granular)"}`}
             >
               <Download className="w-3.5 h-3.5" />
-              <span>Unduh .XLSX</span>
+              <span>Unduh .XLSX ({reportVersion === "excel" ? "Asli" : "Detail"})</span>
             </button>
 
             <button
@@ -377,7 +431,7 @@ export function CashflowReportModal({
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-300 font-mono text-slate-800">
-                    {entries.map((entry, idx) => (
+                    {mergedEntries.map((entry, idx) => (
                       <tr key={entry.id || idx} className="hover:bg-slate-50 transition-colors">
                         {/* Kredit */}
                         <td className="border border-slate-300 px-2 py-1.5 text-right font-bold text-emerald-800">
