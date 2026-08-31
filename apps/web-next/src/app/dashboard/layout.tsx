@@ -233,7 +233,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 p-6 lg:p-8 overflow-y-auto min-w-0">
+      <main className="flex-1 p-6 lg:p-8 overflow-y-auto soft-scrollbar scroll-smooth min-w-0">
         {children}
       </main>
     </div>

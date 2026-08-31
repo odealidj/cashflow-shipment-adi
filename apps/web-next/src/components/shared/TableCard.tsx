@@ -10,7 +10,7 @@ interface TableCardProps {
 export function TableCard({ children, footer }: TableCardProps) {
   return (
     <div className="bg-white rounded-2xl overflow-hidden border border-slate-200/80 shadow-2xs">
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto soft-scrollbar scroll-smooth">
         {children}
       </div>
       {footer && (
