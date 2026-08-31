@@ -467,12 +467,13 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
           <table className="w-full text-left text-xs text-slate-700 border-collapse">
             <thead className={tableTheadClass}>
               <tr>
+                <th className="py-3.5 px-3 text-center w-12">No</th>
                 <th 
                   onClick={toggleSort}
                   className="px-4 py-3.5 cursor-pointer hover:text-sky-900 transition-colors group select-none whitespace-nowrap"
                 >
                   <div className="flex items-center gap-1.5">
-                    <span>Tanggal & Seq</span>
+                    <span>Tanggal</span>
                     {sortDir === "ASC" ? (
                       <ArrowUp className="w-3.5 h-3.5 text-sky-600" />
                     ) : (
@@ -497,19 +498,19 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
             <tbody className="divide-y divide-slate-100">
               {loading ? (
                 <tr>
-                  <td colSpan={9} className="px-6 py-12 text-center text-slate-400">
+                  <td colSpan={10} className="px-6 py-12 text-center text-slate-400">
                     <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-sky-700"></div>
                     <p className="mt-2 text-xs font-semibold">Memuat transaksi...</p>
                   </td>
                 </tr>
               ) : safeEntries.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="px-6 py-12 text-center text-slate-400 font-medium">
+                  <td colSpan={10} className="px-6 py-12 text-center text-slate-400 font-medium">
                     Tidak ada data transaksi pada rentang periode yang dipilih.
                   </td>
                 </tr>
               ) : (
-                safeEntries.map((entry: any) => {
+                safeEntries.map((entry: any, idx: number) => {
                   const isShipment = entry.entry_type === "SHIPMENT";
 
                   return (
@@ -517,13 +518,18 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
                       key={entry.id}
                       className="hover:bg-slate-50/80 transition-colors group"
                     >
-                      {/* 1. Tanggal & Sequence No */}
+                      {/* Kolom No */}
+                      <td className="py-3.5 px-3 text-center font-mono text-slate-400 font-bold">
+                        {(page - 1) * 15 + idx + 1}
+                      </td>
+
+                      {/* 1. Tanggal (dengan Seq No info) */}
                       <td className="px-4 py-3.5 whitespace-nowrap">
                         <div className="font-mono font-bold text-slate-900 text-xs">
                           {formatDate(entry.date_of_entry)}
                         </div>
                         <div className="text-[10px] text-slate-400 font-mono mt-0.5">
-                          #{String(entry.sequence_no).padStart(4, "0")}
+                          Seq #{String(entry.sequence_no).padStart(4, "0")}
                         </div>
                       </td>
 
