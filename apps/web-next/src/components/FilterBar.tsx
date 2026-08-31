@@ -35,30 +35,30 @@ export function FilterBar({ filters, onFilterChange, onReset }: FilterBarProps) 
     Boolean(filters.vendor_name);
 
   return (
-    <div className="mb-4 bg-white/5 border border-white/10 rounded-2xl p-4 transition-all">
+    <div className="mb-4 bg-slate-50 border border-slate-200/80 rounded-2xl p-3.5 transition-all">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className={`px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all border ${
+            className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer border ${
               isOpen || hasActiveFilters
-                ? "bg-brand-500/20 text-brand-300 border-brand-500/30"
-                : "bg-white/5 text-gray-300 border-white/10 hover:bg-white/10"
+                ? "bg-blue-600 text-white border-blue-600 shadow-xs"
+                : "bg-white text-slate-700 border-slate-200 hover:bg-slate-100"
             }`}
           >
             <Filter className="w-3.5 h-3.5" />
-            Filters {hasActiveFilters && "(Active)"}
+            <span>Filter Lanjutan {hasActiveFilters ? "(Aktif)" : ""}</span>
           </button>
 
           {/* Quick Search by Vendor */}
           <div className="relative">
-            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
-              placeholder="Search vendor / activity..."
+              placeholder="Cari vendor / aktivitas..."
               value={filters.vendor_name}
               onChange={(e) => handleChange("vendor_name", e.target.value)}
-              className="glass-input pl-9 pr-3 py-1.5 rounded-xl text-xs w-52 sm:w-64 focus:ring-1 focus:ring-brand-500"
+              className="bg-white border border-slate-200 rounded-xl pl-9 pr-4 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 w-48 sm:w-64"
             />
           </div>
         </div>
@@ -66,56 +66,61 @@ export function FilterBar({ filters, onFilterChange, onReset }: FilterBarProps) 
         {hasActiveFilters && (
           <button
             onClick={onReset}
-            className="text-xs text-gray-400 hover:text-white flex items-center gap-1.5 px-3 py-1.5 rounded-xl hover:bg-white/5 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-xs font-bold text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
           >
-            <RotateCcw className="w-3 h-3" /> Reset Filters
+            <RotateCcw className="w-3.5 h-3.5" />
+            <span>Reset Filter</span>
           </button>
         )}
       </div>
 
+      {/* Expandable Advanced Filters */}
       {isOpen && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mt-4 pt-4 border-t border-white/10 animate-fade-in">
+        <div className="mt-3 pt-3 border-t border-slate-200/80 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 animate-fade-in">
           <div>
-            <label className="block text-xs font-medium text-gray-400 mb-1 ml-1">From Date</label>
+            <label className="block text-[11px] font-bold text-slate-600 mb-1">Dari Tanggal</label>
             <input
               type="date"
               value={filters.date_from}
               onChange={(e) => handleChange("date_from", e.target.value)}
-              className="w-full glass-input rounded-xl py-1.5 px-3 text-xs focus:ring-1 focus:ring-brand-500"
+              className="w-full bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none"
             />
           </div>
+
           <div>
-            <label className="block text-xs font-medium text-gray-400 mb-1 ml-1">To Date</label>
+            <label className="block text-[11px] font-bold text-slate-600 mb-1">Sampai Tanggal</label>
             <input
               type="date"
               value={filters.date_to}
               onChange={(e) => handleChange("date_to", e.target.value)}
-              className="w-full glass-input rounded-xl py-1.5 px-3 text-xs focus:ring-1 focus:ring-brand-500"
+              className="w-full bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none"
             />
           </div>
+
           <div>
-            <label className="block text-xs font-medium text-gray-400 mb-1 ml-1">Type</label>
+            <label className="block text-[11px] font-bold text-slate-600 mb-1">Tipe Transaksi</label>
             <select
               value={filters.entry_type}
               onChange={(e) => handleChange("entry_type", e.target.value)}
-              className="w-full glass-input rounded-xl py-1.5 px-3 text-xs focus:ring-1 focus:ring-brand-500 bg-black/40 text-white"
+              className="w-full bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none font-medium"
             >
-              <option value="">All Types</option>
-              <option value="SHIPMENT">SHIPMENT</option>
-              <option value="TOP_UP">TOP_UP</option>
+              <option value="">Semua Tipe</option>
+              <option value="SHIPMENT">SHIPMENT (Biaya)</option>
+              <option value="TOP_UP">TOP_UP (Modal)</option>
             </select>
           </div>
+
           <div>
-            <label className="block text-xs font-medium text-gray-400 mb-1 ml-1">Payment Status</label>
+            <label className="block text-[11px] font-bold text-slate-600 mb-1">Status Pembayaran</label>
             <select
               value={filters.remarks}
               onChange={(e) => handleChange("remarks", e.target.value)}
-              className="w-full glass-input rounded-xl py-1.5 px-3 text-xs focus:ring-1 focus:ring-brand-500 bg-black/40 text-white"
+              className="w-full bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none font-medium"
             >
-              <option value="">All Statuses</option>
-              <option value="PAID">PAID</option>
-              <option value="UNPAID">UNPAID</option>
-              <option value="PENDING">PENDING</option>
+              <option value="">Semua Status</option>
+              <option value="UNPAID">Belum Lunas (UNPAID)</option>
+              <option value="PENDING">Sebagian (PENDING)</option>
+              <option value="PAID">Lunas (PAID)</option>
             </select>
           </div>
         </div>

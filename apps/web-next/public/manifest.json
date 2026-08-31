@@ -1,0 +1,25 @@
+{
+  "name": "Adijayantara Logistics - Cashflow & Shipment Control",
+  "short_name": "Adijayantara",
+  "description": "Aplikasi Cashflow & Shipment Control PT. Adijayantara Logistics Indonesia",
+  "start_url": "/m",
+  "scope": "/m/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1C2B4A",
+  "theme_color": "#1C2B4A",
+  "icons": [
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

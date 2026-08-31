@@ -2,7 +2,7 @@
 
 > Referensi: `contoh-ui/5.Tambah-Transaksi/` (4 potongan seksi)
 > Aset Terkonsolidasi: [`assets/05-tambah-transaksi-fullpage.png`](./assets/05-tambah-transaksi-fullpage.png)
-> **1 halaman form panjang scrollable dengan 4 seksi terstruktur.**
+> **1 halaman form ringkas scrollable dengan 3 seksi terstruktur.**
 > Dibuka saat user menekan tombol **FAB [+]** di tengah bottom navigation bar.
 
 ---
@@ -31,39 +31,29 @@
 
 ---
 
-## 6.3 Struktur 4 Seksi Form
+## 6.3 Struktur 3 Seksi Form
 
 ```
 ┌──────────────────────────────────────────────┐
-│  📋 Seksi 1: Informasi Dasar                 │
-│  - Tanggal Debit [📅 2026-08-22]             │
-│  - Kredit Awal [💳 Rp 1.000.000]             │
-│  - Debit Keluar [💵 Rp 0]                    │
+│  📋 Seksi 1: Informasi Dasar & Kas           │
+│  - Tanggal Transaksi [📅 2026-08-22]         │
+│  - Kredit Masuk [💳 Rp 1.000.000] (Top-Up)   │
+│  - Debit Keluar [💵 Rp 0] (Shipment)         │
 │  - Saldo Akhir (otomatis) [Rp 1.000.000] (🔵)│
 ├──────────────────────────────────────────────┤
-│  🚚 Seksi 2: Aktivitas                       │
+│  🚚 Seksi 2: Aktivitas & Vendor              │
 │  - Informasi Aktivitas [📄 Deskripsi...]     │
 │  - Detail Aktivitas [≡ Keterangan tambahan]  │
 │  - Vendor [🏢 Pilih Vendor ⇅]                │
-│  - Kategori [🏷️ Pilih Kategori ⇅]             │
 ├──────────────────────────────────────────────┤
-│  $ Seksi 3: Keuangan                         │
+│  $ Seksi 3: Keuangan & Pembayaran            │
 │  - Grand Cost [📉 Rp 0]                      │
 │  - Grand Selling [📈 Rp 0]                   │
-│  - % Profit (otomatis) [📈 Rp 0] (🟢)         │
+│  - Profit (otomatis) [📈 Rp 0] (🟢)          │
 │  - % Margin (otomatis) [0.0%] (🔵)           │
-│  - T.O.P (Nilai) [🕐 0]  Satuan [HARI ▼]     │
+│  - T.O.P (Nilai dalam Hari) [🕐 14]          │
 │  - Due Date (otomatis) [📅 - ✏️] (🟠)         │
 │  - Status Pembayaran [🕐 Belum Lunas ▼]      │
-├──────────────────────────────────────────────┤
-│  📋 Seksi 4: Detail Tambahan (Semua Opsional)│
-│  - Nomor Invoice [🧾 No faktur]              │
-│  - Nomor Kendaraan [🚌 Plat polisi]          │
-│  - Rute Asal-Tujuan [⑂ Mis. DPK-MDN]         │
-│  - Nomor PO [📋 Purchase Order]              │
-│  - PIC [👤 Person in charge]                 │
-│  - Tanggal Pembayaran [💳 Belum ada 📅]      │
-│  - Metode Pembayaran [Pilih metode ▼]        │
 ├──────────────────────────────────────────────┤
 │     [  ✓  Simpan Transaksi  ] (Sticky)       │
 └──────────────────────────────────────────────┘

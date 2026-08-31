@@ -2,6 +2,9 @@ package services
 
 import (
 	"context"
+	"errors"
+	"strings"
+
 	"github.com/cashflow-shipment-app/backend/internal/core/domain"
 	"github.com/cashflow-shipment-app/backend/internal/core/ports"
 )
@@ -15,7 +18,23 @@ func NewVendorService(vendorRepo ports.VendorRepository) *VendorService {
 }
 
 func (s *VendorService) CreateVendor(ctx context.Context, vendor *domain.Vendor) error {
+	vendor.Name = strings.TrimSpace(vendor.Name)
+	if vendor.Name == "" {
+		return errors.New("vendor name cannot be empty")
+	}
 	return s.vendorRepo.Create(ctx, vendor)
+}
+
+func (s *VendorService) UpdateVendor(ctx context.Context, vendor *domain.Vendor) error {
+	vendor.Name = strings.TrimSpace(vendor.Name)
+	if vendor.Name == "" {
+		return errors.New("vendor name cannot be empty")
+	}
+	return s.vendorRepo.Update(ctx, vendor)
+}
+
+func (s *VendorService) DeleteVendor(ctx context.Context, id int) error {
+	return s.vendorRepo.SoftDelete(ctx, id)
 }
 
 func (s *VendorService) GetVendorByID(ctx context.Context, id int) (*domain.Vendor, error) {

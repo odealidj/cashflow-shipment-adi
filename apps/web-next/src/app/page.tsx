@@ -1,13 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { LogIn, Phone, Mail, Lock, Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 export default function LoginPage() {
+  const router = useRouter();
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const user = localStorage.getItem("user");
+    if (token && user) {
+      router.replace("/dashboard");
+    }
+  }, [router]);
   
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,7 +35,7 @@ export default function LoginPage() {
       const data = await res.json();
       
       if (!res.ok) {
-        throw new Error(data.message || "Failed to login");
+        throw new Error(data.message || "Gagal masuk");
       }
       
       // Store token
@@ -41,74 +52,78 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center p-4">
+    <main className="min-h-screen flex items-center justify-center p-4 bg-[#1C2B4A]">
       <div className="w-full max-w-md animate-fade-in">
-        {/* Logo/Brand Section */}
+        {/* Logo / Brand Section */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl glass-panel mb-4 shadow-xl">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-brand-500 to-purple-500 animate-pulse" />
+          <div className="inline-flex items-center justify-center p-3 rounded-2xl bg-white mb-3 shadow-2xl shadow-black/40">
+            <Image
+              src="/logo.png"
+              alt="Adijayantara Logistics Logo"
+              width={96}
+              height={96}
+              className="w-24 h-24 rounded-xl object-contain"
+              priority
+            />
           </div>
-          <h1 className="text-3xl font-bold tracking-tight text-white mb-2">
-            Cashflow Control
+          <h1 className="text-2xl font-black tracking-tight text-white mb-0.5 uppercase">
+            ADIJAYANTARA
           </h1>
-          <p className="text-gray-300 text-sm">
-            Log in to manage your shipments and finances.
+          <p className="text-blue-200 text-xs font-semibold uppercase tracking-wider">
+            Logistics Indonesia • Cashflow Control
           </p>
         </div>
 
         {/* Login Card */}
-        <div className="glass-panel rounded-3xl p-8 relative overflow-hidden">
-          {/* Decorative glow effect */}
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-1/2 bg-brand-500/20 blur-3xl rounded-full -z-10" />
-          
-          <form onSubmit={handleLogin} className="space-y-6">
+        <div className="bg-white rounded-3xl p-8 shadow-2xl border border-slate-100 relative overflow-hidden">
+          <form onSubmit={handleLogin} className="space-y-5">
             {error && (
-              <div className="bg-red-500/10 border border-red-500/50 text-red-200 text-sm p-3 rounded-xl flex items-center gap-2">
+              <div className="bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold p-3 rounded-xl flex items-center gap-2">
                 <span className="shrink-0">⚠️</span> {error}
               </div>
             )}
             
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-200 ml-1">
-                Email or Phone Number
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-700 ml-1">
+                Email atau Nomor Telepon
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                   {identifier.includes('@') ? (
-                    <Mail className="h-5 w-5" />
+                    <Mail className="h-4 w-4" />
                   ) : (
-                    <Phone className="h-5 w-5" />
+                    <Phone className="h-4 w-4" />
                   )}
                 </div>
                 <input
                   type="text"
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
-                  className="w-full glass-input rounded-xl py-3 pl-11 pr-4 focus:ring-2 focus:ring-brand-500"
-                  placeholder="admin@example.com or 0812..."
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-10 pr-4 text-slate-900 text-sm focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all"
+                  placeholder="admin@example.com / 0812..."
                   required
                 />
               </div>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <div className="flex justify-between items-center ml-1">
-                <label className="text-sm font-medium text-gray-200">
+                <label className="text-xs font-bold text-slate-700">
                   Password
                 </label>
-                <a href="#" className="text-xs text-brand-400 hover:text-brand-300 transition-colors">
-                  Forgot?
+                <a href="#" className="text-xs text-blue-600 font-semibold hover:underline">
+                  Lupa?
                 </a>
               </div>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400">
-                  <Lock className="h-5 w-5" />
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                  <Lock className="h-4 w-4" />
                 </div>
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full glass-input rounded-xl py-3 pl-11 pr-4 focus:ring-2 focus:ring-brand-500"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-10 pr-4 text-slate-900 text-sm focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all"
                   placeholder="••••••••"
                   required
                 />
@@ -118,30 +133,25 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full relative group overflow-hidden rounded-xl font-medium p-[1px]"
+              className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-98 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-blue-600/30 transition-all cursor-pointer disabled:opacity-50"
             >
-              <span className="absolute inset-0 bg-gradient-to-r from-brand-500 via-purple-500 to-brand-500 rounded-xl opacity-70 group-hover:opacity-100 transition-opacity duration-300" />
-              <div className="relative flex items-center justify-center gap-2 bg-black/50 backdrop-blur-md px-6 py-3 rounded-xl transition-all duration-300 group-hover:bg-black/20 text-white">
-                {loading ? (
-                  <>
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                    Signing in...
-                  </>
-                ) : (
-                  <>
-                    <LogIn className="h-5 w-5" />
-                    Sign In
-                  </>
-                )}
-              </div>
+              {loading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>Memproses...</span>
+                </>
+              ) : (
+                <>
+                  <LogIn className="h-4 w-4" />
+                  <span>Masuk ke Dashboard</span>
+                </>
+              )}
             </button>
           </form>
           
-          <div className="mt-6 text-center text-sm text-gray-400">
-            Don't have an account?{" "}
-            <a href="#" className="text-white hover:underline transition-all">
-              Contact Admin
-            </a>
+          <div className="mt-6 pt-4 border-t border-slate-100 text-center text-xs text-slate-500">
+            PT. Adijayantara Logistics Indonesia{" "}
+            <div className="text-[11px] text-slate-400 mt-0.5">Sistem Pengendalian Arus Kas & Ekspedisi</div>
           </div>
         </div>
       </div>

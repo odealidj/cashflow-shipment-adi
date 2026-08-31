@@ -1,4 +1,4 @@
-.PHONY: help infra-up infra-down infra-logs run-local-core-go run-local-web-next
+.PHONY: help infra-up infra-down infra-logs run-local-core-go run-local-web-next generate-ui-assets
 
 # Default command
 help:
@@ -6,8 +6,9 @@ help:
 	@echo "  make infra-up            - Start infrastructure containers (PostgreSQL, etc.)"
 	@echo "  make infra-down          - Stop infrastructure containers"
 	@echo "  make infra-logs          - View infrastructure container logs"
-	@echo "  make run-local-core-go   - Run Golang Core API service locally"
-	@echo "  make run-local-web-next  - Run Next.js Web App locally"
+	@echo "  make run-local-core-go   - Run Golang Core API service locally (http://localhost:8080)"
+	@echo "  make run-local-web-next  - Run Next.js App locally (Desktop /dashboard & Mobile PWA /m on http://localhost:3000)"
+	@echo "  make generate-ui-assets  - Generate stitched full-page composite assets for mobile UI docs"
 
 # Infrastructure
 infra-up:
@@ -25,5 +26,12 @@ run-local-core-go:
 	cd services/core-go && go run cmd/api/main.go
 
 run-local-web-next:
-	@echo "Starting Next.js Web App on http://localhost:3000..."
+	@echo "Starting Next.js Web & Mobile PWA on http://localhost:3000..."
+	@echo "  -> Desktop:    http://localhost:3000/dashboard"
+	@echo "  -> Mobile PWA: http://localhost:3000/m"
 	cd apps/web-next && npm run dev
+
+# Utility Scripts
+generate-ui-assets:
+	@echo "Generating mobile UI composite screenshots..."
+	python3 scripts/generate_mobile_ui_assets.py

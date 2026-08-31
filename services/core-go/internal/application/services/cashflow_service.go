@@ -32,6 +32,9 @@ func (s *CashflowService) RecordTopUp(ctx context.Context, entry *domain.Cashflo
 	}
 	entry.EntryType = domain.EntryTopUp
 	entry.Debit = 0
+	if entry.ActInformation == "" {
+		entry.ActInformation = "TOP UP"
+	}
 	if entry.Remarks == "" {
 		entry.Remarks = domain.PaymentPaid
 	}

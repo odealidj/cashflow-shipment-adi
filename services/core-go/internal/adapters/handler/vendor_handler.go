@@ -99,3 +99,60 @@ func (h *VendorHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	response.JSON(w, http.StatusCreated, "Vendor created successfully", vendor)
 }
+
+// Update Vendor godoc
+// @Summary      Update vendor by ID
+// @Tags         vendors
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id path int true "Vendor ID"
+// @Param        request body domain.Vendor true "Vendor Data"
+// @Success      200  {object}  response.APIResponse
+// @Router       /vendors/{id} [put]
+func (h *VendorHandler) Update(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		response.Error(w, http.StatusBadRequest, "Invalid vendor ID")
+		return
+	}
+
+	var vendor domain.Vendor
+	if err := json.NewDecoder(r.Body).Decode(&vendor); err != nil {
+		response.Error(w, http.StatusBadRequest, "Invalid request payload")
+		return
+	}
+	vendor.ID = id
+
+	if err := h.vendorService.UpdateVendor(r.Context(), &vendor); err != nil {
+		response.Error(w, http.StatusInternalServerError, "Failed to update vendor: "+err.Error())
+		return
+	}
+
+	response.JSON(w, http.StatusOK, "Vendor updated successfully", vendor)
+}
+
+// Delete Vendor (Soft Delete) godoc
+// @Summary      Soft delete vendor by ID
+// @Tags         vendors
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id path int true "Vendor ID"
+// @Success      200  {object}  response.APIResponse
+// @Router       /vendors/{id} [delete]
+func (h *VendorHandler) Delete(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		response.Error(w, http.StatusBadRequest, "Invalid vendor ID")
+		return
+	}
+
+	if err := h.vendorService.DeleteVendor(r.Context(), id); err != nil {
+		response.Error(w, http.StatusInternalServerError, "Failed to delete vendor: "+err.Error())
+		return
+	}
+
+	response.JSON(w, http.StatusOK, "Vendor deleted successfully", nil)
+}

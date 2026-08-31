@@ -98,17 +98,10 @@ Tabel ini memetakan seluruh field pada form "Tambah Transaksi" ke kolom database
 | Margin % | `margin_persen` | NUMERIC | Yes | ⚠️ Perlu cek |
 | T.O.P Nilai | `top_nilai` | INTEGER | Yes | ⚠️ Perlu cek |
 | T.O.P Satuan | `top_satuan` | VARCHAR/ENUM | Yes | ⚠️ Perlu cek |
-| Due Date | `due_date` | DATE | Yes | ⚠️ Perlu cek |
-| Status Pembayaran | `payment_status` | VARCHAR/ENUM | No | ✅ Ada |
-| Nomor Invoice | `nomor_invoice` | VARCHAR | Yes | ⚠️ Perlu cek |
-| Nomor Kendaraan | `nomor_kendaraan` | VARCHAR | Yes | ⚠️ Perlu cek |
-| Rute Asal-Tujuan | `rute` | VARCHAR | Yes | ⚠️ Perlu cek |
-| Nomor PO | `nomor_po` | VARCHAR | Yes | ⚠️ Perlu cek |
-| PIC | `pic` | VARCHAR | Yes | ⚠️ Perlu cek |
-| Tanggal Pembayaran | `tanggal_pembayaran` | DATE | Yes | ⚠️ Perlu cek |
-| Metode Pembayaran | `metode_pembayaran` | VARCHAR | Yes | ⚠️ Perlu cek |
+| Due Date | `due_date` | DATE | Yes | ✅ Ada |
+| Status Pembayaran | `remarks` | ENUM ('PAID', 'UNPAID', 'PENDING') | No | ✅ Ada |
 
-> ⚠️ Field dengan status "Perlu cek" kemungkinan sudah ada di schema namun perlu dikonfirmasi dengan memeriksa file migration SQL dan struct Go di `services/core-go`.
+> 💡 Sesuai format standar 14 kolom *CASHFLOW SHIPMENT CONTROL*, informasi spesifik seperti rute, nomor kendaraan, atau invoice dicatat secara fleksibel di dalam `act_information` & `act_explaination`.
 
 ---
 

@@ -132,6 +132,8 @@ func main() {
 				r.Get("/", vendorHandler.List)
 				r.Post("/", vendorHandler.Create)
 				r.Get("/{id}", vendorHandler.Get)
+				r.Put("/{id}", vendorHandler.Update)
+				r.Delete("/{id}", vendorHandler.Delete)
 			})
 		})
 	})

@@ -19,6 +19,7 @@ services/*/target/
 services/*/*.exe
 services/*/server
 services/*/main
+services/*/api
 *.exe
 *.exe~
 *.dll

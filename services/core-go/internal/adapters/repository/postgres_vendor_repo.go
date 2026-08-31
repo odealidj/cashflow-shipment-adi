@@ -32,9 +32,9 @@ func (r *PostgresVendorRepo) Create(ctx context.Context, vendor *domain.Vendor) 
 
 func (r *PostgresVendorRepo) GetByID(ctx context.Context, id int) (*domain.Vendor, error) {
 	query := `
-		SELECT id, name, email, phone, notes, created_at 
+		SELECT id, name, email, phone, notes, created_at, updated_at, deleted_at 
 		FROM vendors 
-		WHERE id = $1
+		WHERE id = $1 AND deleted_at IS NULL
 	`
 	var v domain.Vendor
 	err := r.db.GetContext(ctx, &v, query, id)
@@ -50,9 +50,9 @@ func (r *PostgresVendorRepo) GetByID(ctx context.Context, id int) (*domain.Vendo
 
 func (r *PostgresVendorRepo) GetByName(ctx context.Context, name string) (*domain.Vendor, error) {
 	query := `
-		SELECT id, name, email, phone, notes, created_at 
+		SELECT id, name, email, phone, notes, created_at, updated_at, deleted_at 
 		FROM vendors 
-		WHERE name = $1
+		WHERE name = $1 AND deleted_at IS NULL
 	`
 	var v domain.Vendor
 	err := r.db.GetContext(ctx, &v, query, name)
@@ -66,16 +66,57 @@ func (r *PostgresVendorRepo) GetByName(ctx context.Context, name string) (*domai
 	return &v, nil
 }
 
+func (r *PostgresVendorRepo) Update(ctx context.Context, vendor *domain.Vendor) error {
+	query := `
+		UPDATE vendors 
+		SET name = $1, email = $2, phone = $3, notes = $4, updated_at = CURRENT_TIMESTAMP
+		WHERE id = $5 AND deleted_at IS NULL
+	`
+	res, err := r.db.ExecContext(ctx, query, vendor.Name, vendor.Email, vendor.Phone, vendor.Notes, vendor.ID)
+	if err != nil {
+		return err
+	}
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rows == 0 {
+		return errors.New("vendor not found or already deleted")
+	}
+	return nil
+}
+
+func (r *PostgresVendorRepo) SoftDelete(ctx context.Context, id int) error {
+	query := `
+		UPDATE vendors 
+		SET deleted_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+		WHERE id = $1 AND deleted_at IS NULL
+	`
+	res, err := r.db.ExecContext(ctx, query, id)
+	if err != nil {
+		return err
+	}
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rows == 0 {
+		return errors.New("vendor not found or already deleted")
+	}
+	return nil
+}
+
 func (r *PostgresVendorRepo) ListAll(ctx context.Context, offset, limit int) ([]domain.Vendor, int, error) {
 	var total int
-	err := r.db.GetContext(ctx, &total, `SELECT COUNT(*) FROM vendors`)
+	err := r.db.GetContext(ctx, &total, `SELECT COUNT(*) FROM vendors WHERE deleted_at IS NULL`)
 	if err != nil {
 		return nil, 0, err
 	}
 
 	query := `
-		SELECT id, name, email, phone, notes, created_at 
+		SELECT id, name, email, phone, notes, created_at, updated_at, deleted_at 
 		FROM vendors 
+		WHERE deleted_at IS NULL
 		ORDER BY name ASC
 		LIMIT $1 OFFSET $2
 	`

@@ -1,0 +1,2 @@
+ALTER TABLE vendors DROP COLUMN IF EXISTS deleted_at;
+ALTER TABLE vendors DROP COLUMN IF EXISTS updated_at;

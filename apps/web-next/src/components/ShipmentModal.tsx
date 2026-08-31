@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { X, Loader2 } from "lucide-react";
+import { X, Loader2, Truck, TrendingUp, DollarSign } from "lucide-react";
+import { formatRupiah, calculateProfit, calculateMarginPct, calculateDueDate } from "@/hooks/useAutoCalculate";
+import { VendorSelect } from "@/components/VendorSelect";
 
 interface ShipmentModalProps {
   isOpen: boolean;
@@ -27,6 +29,13 @@ export function ShipmentModal({ isOpen, onClose, onSuccess }: ShipmentModalProps
 
   if (!isOpen) return null;
 
+  const costNum = parseFloat(formData.grand_cost || "0");
+  const sellNum = parseFloat(formData.grand_selling || "0");
+  const profitNum = calculateProfit(sellNum, costNum);
+  const marginNum = calculateMarginPct(profitNum, sellNum);
+  const autoDueDate = calculateDueDate(formData.date_of_entry, parseInt(formData.top_days || "0", 10));
+  const effectiveDueDate = formData.due_date || autoDueDate;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -45,17 +54,17 @@ export function ShipmentModal({ isOpen, onClose, onSuccess }: ShipmentModalProps
           vendor_name_raw: formData.vendor_name_raw,
           act_information: formData.act_information,
           act_explaination: formData.act_explaination,
-          grand_cost: parseFloat(formData.grand_cost || "0"),
-          grand_selling: parseFloat(formData.grand_selling || "0"),
-          debit: parseFloat(formData.debit || "0"),
+          grand_cost: costNum,
+          grand_selling: sellNum,
+          debit: parseFloat(formData.debit || formData.grand_cost || "0"),
           top_days: parseInt(formData.top_days || "0", 10),
-          due_date: formData.due_date ? new Date(formData.due_date).toISOString() : null,
+          due_date: effectiveDueDate ? new Date(effectiveDueDate).toISOString() : null,
           remarks: formData.remarks
         })
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Failed to create Shipment");
+      if (!res.ok) throw new Error(data.message || "Gagal mencatat shipment");
 
       onSuccess();
       onClose();
@@ -67,169 +76,207 @@ export function ShipmentModal({ isOpen, onClose, onSuccess }: ShipmentModalProps
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in overflow-y-auto">
-      <div className="glass-panel w-full max-w-2xl rounded-3xl p-6 relative my-auto border border-white/10 shadow-2xl">
-        <button onClick={onClose} className="absolute top-4 right-4 p-2 rounded-full hover:bg-white/10 text-gray-400 hover:text-white transition-colors">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-fade-in overflow-y-auto">
+      <div className="bg-white w-full max-w-2xl rounded-2xl p-6 relative my-auto border border-slate-100 shadow-2xl">
+        <button 
+          onClick={onClose} 
+          className="absolute top-4 right-4 p-1.5 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors cursor-pointer"
+        >
           <X className="w-5 h-5" />
         </button>
         
-        <h2 className="text-2xl font-bold text-white mb-6">New Shipment Record</h2>
+        <div className="flex items-center gap-2.5 mb-5">
+          <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+            <Truck className="w-5 h-5" />
+          </div>
+          <div>
+            <h2 className="text-lg font-black text-slate-900 tracking-tight">Catat Pengiriman (Shipment)</h2>
+            <p className="text-xs text-slate-500 font-medium">Pencatatan biaya transport, pendapatan, dan jatuh tempo vendor</p>
+          </div>
+        </div>
 
         {error && (
-          <div className="bg-red-500/10 border border-red-500/50 text-red-200 text-sm p-3 rounded-xl mb-6">
+          <div className="bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold p-3 rounded-xl mb-4">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1 ml-1">Date of Entry</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Tanggal Transaksi</label>
               <input
                 type="date"
                 required
                 value={formData.date_of_entry}
                 onChange={e => setFormData({ ...formData, date_of_entry: e.target.value })}
-                className="w-full glass-input rounded-xl py-2.5 px-4 focus:ring-2 focus:ring-brand-500"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs text-slate-800 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none font-medium"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1 ml-1">Vendor Name</label>
-              <input
-                type="text"
-                required
+              <label className="block text-xs font-bold text-slate-700 mb-1">Nama Vendor / Transporter</label>
+              <VendorSelect
                 value={formData.vendor_name_raw}
-                onChange={e => setFormData({ ...formData, vendor_name_raw: e.target.value })}
-                className="w-full glass-input rounded-xl py-2.5 px-4 focus:ring-2 focus:ring-brand-500"
-                placeholder="e.g. CV AIRA"
+                onChange={v => setFormData({ ...formData, vendor_name_raw: v })}
+                required
+                placeholder="Pilih atau ketik vendor..."
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1 ml-1">Act Information</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Act Information</label>
               <input
                 type="text"
                 required
+                placeholder="Mis. Angkut Semen Cibinong-SBY"
                 value={formData.act_information}
                 onChange={e => setFormData({ ...formData, act_information: e.target.value })}
-                className="w-full glass-input rounded-xl py-2.5 px-4 focus:ring-2 focus:ring-brand-500"
-                placeholder="e.g. Tronton Tracking Cost"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs text-slate-800 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1 ml-1">Act Explaination (Route / Detail)</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Act Explaination</label>
               <input
                 type="text"
+                placeholder="Rute, muatan, no referensi..."
                 value={formData.act_explaination}
                 onChange={e => setFormData({ ...formData, act_explaination: e.target.value })}
-                className="w-full glass-input rounded-xl py-2.5 px-4 focus:ring-2 focus:ring-brand-500"
-                placeholder="e.g. DPK-MDN, DELIVERY"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs text-slate-800 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 border-t border-white/10 pt-5 mt-2">
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1 ml-1">Grand Cost (HPP)</label>
-              <input
-                type="number"
-                min="0"
-                required
-                value={formData.grand_cost}
-                onChange={e => setFormData({ ...formData, grand_cost: e.target.value })}
-                className="w-full glass-input rounded-xl py-2.5 px-4 focus:ring-2 focus:ring-brand-500"
-                placeholder="28150000"
-              />
+          <div className="p-4 bg-slate-50 border border-slate-200/80 rounded-2xl space-y-3">
+            <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Rincian Finansial & Kalkulasi Otomatis</h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Grand Cost / HPP</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">Rp</span>
+                  <input
+                    type="number"
+                    required
+                    min="0"
+                    placeholder="28150000"
+                    value={formData.grand_cost}
+                    onChange={e => {
+                      const v = e.target.value;
+                      setFormData({
+                        ...formData,
+                        grand_cost: v,
+                        debit: (!formData.debit || formData.debit === formData.grand_cost) ? v : formData.debit
+                      });
+                    }}
+                    className="w-full bg-white border border-slate-200 rounded-xl py-2 pl-9 pr-3 text-xs text-slate-900 font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Grand Selling (Jual)</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">Rp</span>
+                  <input
+                    type="number"
+                    required
+                    min="0"
+                    placeholder="30000000"
+                    value={formData.grand_selling}
+                    onChange={e => setFormData({ ...formData, grand_selling: e.target.value })}
+                    className="w-full bg-white border border-slate-200 rounded-xl py-2 pl-9 pr-3 text-xs text-slate-900 font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-bold text-slate-700">Debit (Kas Keluar)</label>
+                  <span className="text-[9px] text-slate-400 font-semibold">Kas Riil</span>
+                </div>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">Rp</span>
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder={formData.grand_cost || "0"}
+                    value={formData.debit}
+                    onChange={e => setFormData({ ...formData, debit: e.target.value })}
+                    className="w-full bg-white border border-slate-200 rounded-xl py-2 pl-9 pr-3 text-xs text-rose-600 font-bold focus:ring-2 focus:ring-rose-500 focus:outline-none"
+                  />
+                </div>
+              </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1 ml-1">Grand Selling</label>
-              <input
-                type="number"
-                min="0"
-                required
-                value={formData.grand_selling}
-                onChange={e => setFormData({ ...formData, grand_selling: e.target.value })}
-                className="w-full glass-input rounded-xl py-2.5 px-4 focus:ring-2 focus:ring-brand-500"
-                placeholder="30000000"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1 ml-1">Estimated Profit</label>
-              <div className="w-full glass-input rounded-xl py-2.5 px-4 bg-white/5 text-green-400 font-mono font-medium">
-                {new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR" }).format(
-                  Math.max(0, (parseFloat(formData.grand_selling || "0") - parseFloat(formData.grand_cost || "0")))
-                )}
+
+            {/* Live Auto Profit & Margin Display */}
+            <div className="grid grid-cols-2 gap-3 pt-1">
+              <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-2.5">
+                <span className="text-[11px] text-emerald-700 font-semibold block">Profit Estimasi</span>
+                <span className="text-sm font-black text-emerald-700 font-mono">
+                  {formatRupiah(profitNum)}
+                </span>
+              </div>
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-2.5">
+                <span className="text-[11px] text-blue-700 font-semibold block">Margin Persentase</span>
+                <span className="text-sm font-black text-blue-700 font-mono">
+                  {marginNum}%
+                </span>
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1 ml-1">T.O.P (Days)</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1">T.O.P (Hari)</label>
               <input
                 type="number"
                 min="0"
                 value={formData.top_days}
                 onChange={e => setFormData({ ...formData, top_days: e.target.value })}
-                className="w-full glass-input rounded-xl py-2.5 px-4 focus:ring-2 focus:ring-brand-500"
-                placeholder="14"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs text-slate-800 font-bold focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
               />
             </div>
+
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1 ml-1">Due Date</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Jatuh Tempo (Due Date)</label>
               <input
                 type="date"
-                value={formData.due_date}
+                value={effectiveDueDate}
                 onChange={e => setFormData({ ...formData, due_date: e.target.value })}
-                className="w-full glass-input rounded-xl py-2.5 px-4 focus:ring-2 focus:ring-brand-500"
+                className="w-full bg-amber-50/60 border border-amber-200 rounded-xl py-2 px-3 text-xs text-amber-900 font-bold focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
               />
             </div>
+
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1 ml-1">Payment Status</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Status Pembayaran</label>
               <select
                 value={formData.remarks}
                 onChange={e => setFormData({ ...formData, remarks: e.target.value })}
-                className="w-full glass-input rounded-xl py-2.5 px-4 focus:ring-2 focus:ring-brand-500 bg-black/40 text-white"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs text-slate-800 font-bold focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
               >
-                <option value="UNPAID" className="bg-gray-900 text-red-400">UNPAID</option>
-                <option value="PENDING" className="bg-gray-900 text-yellow-400">PENDING</option>
-                <option value="PAID" className="bg-gray-900 text-green-400">PAID</option>
+                <option value="UNPAID">Belum Lunas (UNPAID)</option>
+                <option value="PENDING">Sebagian (PENDING)</option>
+                <option value="PAID">Lunas (PAID)</option>
               </select>
             </div>
           </div>
 
-          <div className="bg-red-500/5 p-4 rounded-xl border border-red-500/20">
-            <label className="block text-sm font-medium text-red-300 mb-1 ml-1">Immediate Cash Outflow (Debit)</label>
-            <p className="text-xs text-gray-400 mb-3 ml-1">Isi jika uang langsung keluar saat ini untuk memotong rolling saldo.</p>
-            <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">Rp</span>
-              <input
-                type="number"
-                min="0"
-                value={formData.debit}
-                onChange={e => setFormData({ ...formData, debit: e.target.value })}
-                className="w-full glass-input rounded-xl py-2.5 pl-12 pr-4 focus:ring-2 focus:ring-red-500 border-red-500/30 bg-red-500/10"
-                placeholder="20104875"
-              />
-            </div>
-          </div>
-
-          <div className="pt-4 flex gap-3">
+          <div className="pt-3 flex gap-2.5">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-3 rounded-xl font-medium text-gray-300 hover:text-white bg-white/5 hover:bg-white/10 transition-colors"
+              className="flex-1 py-2.5 rounded-xl font-bold text-xs text-slate-600 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
             >
-              Cancel
+              Batal
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 py-3 rounded-xl font-medium text-white bg-gradient-to-r from-brand-600 to-purple-600 hover:opacity-90 shadow-lg shadow-brand-500/30 transition-opacity flex items-center justify-center gap-2"
+              className="flex-1 py-2.5 rounded-xl font-bold text-xs text-white bg-blue-600 hover:bg-blue-700 active:scale-95 shadow-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
             >
-              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Save Shipment"}
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Simpan Shipment"}
             </button>
           </div>
         </form>

@@ -9,7 +9,6 @@ import {
   Activity, 
   Download, 
   Upload, 
-  ArrowUpDown, 
   ArrowUp, 
   ArrowDown,
   Edit2, 
@@ -17,7 +16,8 @@ import {
   Eye,
   CheckCircle2,
   Clock,
-  AlertCircle
+  AlertCircle,
+  Plus
 } from "lucide-react";
 
 import { TopUpModal } from "./TopUpModal";
@@ -35,7 +35,7 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
-  const [sortDir, setSortDir] = useState<"ASC" | "DESC">("ASC"); // Default ASC as requested
+  const [sortDir, setSortDir] = useState<"ASC" | "DESC">("ASC"); // Default ASC
 
   // Filter State
   const [filters, setFilters] = useState<FilterState>({
@@ -60,11 +60,13 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
     params.set("page", String(page));
     params.set("limit", "15");
     params.set("sort", sortDir);
+
     if (filters.date_from) params.set("date_from", filters.date_from);
     if (filters.date_to) params.set("date_to", filters.date_to);
     if (filters.entry_type) params.set("entry_type", filters.entry_type);
     if (filters.remarks) params.set("remarks", filters.remarks);
     if (filters.vendor_name) params.set("vendor_name", filters.vendor_name);
+
     return params.toString();
   }, [page, sortDir, filters]);
 
@@ -72,17 +74,20 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
-      const qs = buildQueryString();
-      const res = await fetch(`http://localhost:8080/api/v1/cashflow?${qs}`, {
+      const query = buildQueryString();
+      const res = await fetch(`http://localhost:8080/api/v1/cashflow?${query}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();
-      if (data.status) {
-        setEntries(data.data.entries || []);
-        setTotal(data.data.total || 0);
+      if (data.status && data.data) {
+        setEntries(data.data.entries || data.data || []);
+        setTotal(data.data.total || (data.data.entries ? data.data.entries.length : 0));
+      } else {
+        setEntries([]);
       }
     } catch (err) {
       console.error("Failed to fetch cashflow", err);
+      setEntries([]);
     } finally {
       setLoading(false);
     }
@@ -92,11 +97,20 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
     fetchCashflow();
   }, [fetchCashflow]);
 
+  const handleDataRefresh = () => {
+    fetchCashflow();
+    if (onDataChange) onDataChange();
+  };
+
+  const toggleSort = () => {
+    setSortDir(s => s === "ASC" ? "DESC" : "ASC");
+  };
+
   const handleExport = async () => {
     try {
       const token = localStorage.getItem("token");
-      const qs = buildQueryString();
-      const res = await fetch(`http://localhost:8080/api/v1/cashflow/export?${qs}`, {
+      const query = buildQueryString();
+      const res = await fetch(`http://localhost:8080/api/v1/cashflow/export?${query}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!res.ok) throw new Error("Failed to export");
@@ -132,15 +146,15 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
       });
       const data = await res.json();
       if (data.status) {
-        alert("Excel imported successfully!");
+        alert("Excel berhasil diimpor!");
         fetchCashflow();
         if (onDataChange) onDataChange();
       } else {
-        alert("Import failed: " + data.message);
+        alert("Import gagal: " + data.message);
       }
     } catch (err) {
       console.error("Import failed", err);
-      alert("Failed to import Excel");
+      alert("Gagal mengimpor file Excel");
     } finally {
       setLoading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -149,7 +163,7 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
 
   const handleDelete = async (entry: any) => {
     const confirmed = window.confirm(
-      `Yakin ingin menghapus transaksi #${entry.sequence_no} (${entry.act_information || entry.entry_type})?\n\n⚠️ Perhatian: Tindakan ini akan menghitung ulang (recalculate) saldo seluruh transaksi setelahnya!`
+      `Yakin ingin menghapus transaksi #${entry.sequence_no} (${entry.act_information || entry.entry_type})?\n\n⚠️ Perhatian: Tindakan ini akan menghitung ulang saldo seluruh transaksi setelahnya!`
     );
     if (!confirmed) return;
 
@@ -178,7 +192,7 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
   const handleStatusChange = async (id: number, nextStatus: string) => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`http://localhost:8080/api/v1/cashflow/${id}/status`, {
+      await fetch(`http://localhost:8080/api/v1/cashflow/${id}/status`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -186,32 +200,19 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
         },
         body: JSON.stringify({ remarks: nextStatus })
       });
-      const data = await res.json();
-      if (data.status) {
-        fetchCashflow();
-        if (onDataChange) onDataChange();
-        if (selectedEntry && selectedEntry.id === id) {
-          setSelectedEntry({ ...selectedEntry, remarks: nextStatus });
-        }
-      }
+      fetchCashflow();
+      if (onDataChange) onDataChange();
     } catch (err) {
       console.error("Failed to update status", err);
     }
   };
 
-  const toggleSort = () => {
-    setSortDir(prev => prev === "ASC" ? "DESC" : "ASC");
-    setPage(1);
-  };
-
-  const handleDataRefresh = () => {
-    fetchCashflow();
-    if (onDataChange) onDataChange();
-  };
-
   const formatCurrency = (amount: number) => {
-    if (!amount || amount === 0) return "-";
-    return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(amount);
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      maximumFractionDigits: 0
+    }).format(amount || 0);
   };
 
   const formatDate = (dateString: string) => {
@@ -223,59 +224,56 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
 
   const renderRemarksBadge = (entry: any) => {
     const status = entry.remarks;
-    if (entry.entry_type === "TOP_UP") {
-      return (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-green-500/10 text-green-400 border border-green-500/20">
-          <CheckCircle2 className="w-3 h-3" /> PAID
-        </span>
-      );
-    }
-
-    if (status === "PAID") {
+    if (entry.entry_type === "TOP_UP" || status === "PAID") {
       return (
         <button
           onClick={() => handleStatusChange(entry.id, "UNPAID")}
-          title="Click to toggle UNPAID"
-          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-green-500/10 text-green-400 border border-green-500/20 hover:bg-green-500/20 transition-colors"
+          title="Klik untuk ubah ke Belum Lunas"
+          className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition-colors cursor-pointer"
         >
-          <CheckCircle2 className="w-3 h-3" /> PAID
+          <CheckCircle2 className="w-3 h-3" /> Lunas
         </button>
       );
     } else if (status === "PENDING") {
       return (
         <button
           onClick={() => handleStatusChange(entry.id, "PAID")}
-          title="Click to mark PAID"
-          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 hover:bg-yellow-500/20 transition-colors"
+          title="Klik untuk tandai Lunas"
+          className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-700 border border-slate-300 hover:bg-slate-200 transition-colors cursor-pointer"
         >
-          <Clock className="w-3 h-3" /> PENDING
+          <Clock className="w-3 h-3" /> Sebagian
         </button>
       );
     } else {
       return (
         <button
           onClick={() => handleStatusChange(entry.id, "PAID")}
-          title="Click to mark PAID"
-          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-colors"
+          title="Klik untuk tandai Lunas"
+          className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition-colors cursor-pointer"
         >
-          <AlertCircle className="w-3 h-3" /> UNPAID
+          <AlertCircle className="w-3 h-3" /> Belum Lunas
         </button>
       );
     }
   };
 
+  const safeEntries = Array.isArray(entries) ? entries : [];
+
   return (
     <>
-      <div className="glass-panel rounded-3xl overflow-hidden border border-white/5 animate-fade-in shadow-2xl">
-        <div className="px-6 py-5 border-b border-white/10 flex flex-wrap justify-between items-center gap-4 bg-white/5">
+      <div className="bg-white rounded-2xl overflow-hidden border border-slate-200/80 shadow-xs">
+        {/* Top Actions Bar */}
+        <div className="px-6 py-4 border-b border-slate-100 flex flex-wrap justify-between items-center gap-4 bg-slate-50/50">
           <div>
-            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-              <Activity className="w-5 h-5 text-brand-400" />
-              Cashflow Shipment Control
-            </h3>
-            <p className="text-sm text-gray-400 mt-1">Continuous rolling cashbook ledger</p>
+            <h1 className="text-xl font-black text-slate-900 flex items-center gap-2.5 tracking-tight">
+              <Activity className="w-5 h-5 text-blue-600" />
+              <span>Transaksi Cashflow & Shipment</span>
+            </h1>
+            <p className="text-xs text-slate-500 font-medium mt-0.5">
+              Pencatatan kas rolling, tracking biaya pengiriman, T.O.P vendor, serta impor/ekspor data Excel
+            </p>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <input 
               type="file" 
               accept=".xlsx, .xls" 
@@ -285,33 +283,33 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
             />
             <button 
               onClick={() => fileInputRef.current?.click()}
-              className="text-xs bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 px-3.5 py-2 rounded-xl transition-colors font-medium border border-blue-500/20 flex items-center gap-1.5"
+              className="text-xs bg-white hover:bg-slate-100 text-slate-700 px-3 py-1.5 rounded-xl transition-colors font-bold border border-slate-200 flex items-center gap-1.5 shadow-xs cursor-pointer"
             >
-              <Upload className="w-3.5 h-3.5" /> Import Excel
+              <Upload className="w-3.5 h-3.5 text-blue-600" /> Impor Excel
             </button>
             <button 
               onClick={handleExport}
-              className="text-xs bg-green-500/10 hover:bg-green-500/20 text-green-400 px-3.5 py-2 rounded-xl transition-colors font-medium border border-green-500/20 flex items-center gap-1.5"
+              className="text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded-xl transition-colors font-bold border border-emerald-200 flex items-center gap-1.5 shadow-xs cursor-pointer"
             >
-              <Download className="w-3.5 h-3.5" /> Export Excel
+              <Download className="w-3.5 h-3.5 text-emerald-600" /> Ekspor Excel
             </button>
             <button 
               onClick={() => setIsTopUpOpen(true)}
-              className="text-xs bg-white/10 hover:bg-white/20 text-white px-3.5 py-2 rounded-xl transition-colors font-medium border border-white/10 flex items-center gap-1.5"
+              className="text-xs bg-white hover:bg-slate-100 text-slate-700 px-3 py-1.5 rounded-xl transition-colors font-bold border border-slate-200 flex items-center gap-1.5 shadow-xs cursor-pointer"
             >
-              <Wallet className="w-3.5 h-3.5" /> Add Top-Up
+              <Wallet className="w-3.5 h-3.5 text-slate-600" /> Tambah Modal
             </button>
             <button 
               onClick={() => setIsShipmentOpen(true)}
-              className="text-xs bg-gradient-to-r from-brand-600 to-purple-600 hover:opacity-90 text-white px-3.5 py-2 rounded-xl transition-all font-medium shadow-lg shadow-brand-500/30 flex items-center gap-1.5"
+              className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-1.5 rounded-xl transition-all font-bold shadow-xs flex items-center gap-1.5 cursor-pointer"
             >
-              <ArrowRight className="w-3.5 h-3.5" /> New Shipment
+              <Plus className="w-3.5 h-3.5 stroke-[3]" /> Catat Shipment
             </button>
           </div>
         </div>
 
         {/* Filter Bar Component */}
-        <div className="p-6 pb-2">
+        <div className="p-4 pb-0">
           <FilterBar
             filters={filters}
             onFilterChange={(f) => {
@@ -332,98 +330,97 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
         </div>
         
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-gray-300">
-            <thead className="text-[11px] uppercase bg-black/40 text-gray-400 border-y border-white/10">
+          <table className="w-full text-left text-xs text-slate-700">
+            <thead className="text-[11px] uppercase bg-slate-50 text-slate-500 border-y border-slate-200/80">
               <tr>
                 <th 
                   onClick={toggleSort}
-                  className="px-4 py-3.5 font-semibold cursor-pointer hover:text-white transition-colors group select-none whitespace-nowrap"
+                  className="px-4 py-3.5 font-bold cursor-pointer hover:text-blue-600 transition-colors group select-none whitespace-nowrap"
                 >
                   <div className="flex items-center gap-1">
-                    <span>Date & Seq</span>
+                    <span>Tanggal & Seq</span>
                     {sortDir === "ASC" ? (
-                      <ArrowUp className="w-3 h-3 text-brand-400" />
+                      <ArrowUp className="w-3 h-3 text-blue-600" />
                     ) : (
-                      <ArrowDown className="w-3 h-3 text-brand-400" />
+                      <ArrowDown className="w-3 h-3 text-blue-600" />
                     )}
                   </div>
                 </th>
-                <th className="px-3 py-3.5 font-semibold">Type</th>
-                <th className="px-4 py-3.5 font-semibold min-w-[200px]">Vendor & Route</th>
-                <th className="px-3 py-3.5 font-semibold text-right">Cost (HPP)</th>
-                <th className="px-3 py-3.5 font-semibold text-right">Selling</th>
-                <th className="px-3 py-3.5 font-semibold text-right">Profit / Margin</th>
-                <th className="px-3 py-3.5 font-semibold text-center">T.O.P / Due</th>
-                <th className="px-4 py-3.5 font-semibold text-right text-red-400">Debit (Out)</th>
-                <th className="px-4 py-3.5 font-semibold text-right text-green-400">Kredit (In)</th>
-                <th className="px-4 py-3.5 font-semibold text-right text-white">Saldo</th>
-                <th className="px-3 py-3.5 font-semibold text-center">Status</th>
-                <th className="px-4 py-3.5 font-semibold text-right">Actions</th>
+                <th className="px-3 py-3.5 font-bold">Tipe</th>
+                <th className="px-4 py-3.5 font-bold min-w-[200px]">Vendor & Aktivitas</th>
+                <th className="px-3 py-3.5 font-bold text-right">Grand Cost (HPP)</th>
+                <th className="px-3 py-3.5 font-bold text-right">Grand Selling</th>
+                <th className="px-3 py-3.5 font-bold text-right">Profit / Margin</th>
+                <th className="px-3 py-3.5 font-bold text-center">T.O.P / Due</th>
+                <th className="px-4 py-3.5 font-bold text-right text-rose-600">Debit (Keluar)</th>
+                <th className="px-4 py-3.5 font-bold text-right text-emerald-600">Kredit (Masuk)</th>
+                <th className="px-4 py-3.5 font-bold text-right text-blue-700">Rolling Saldo</th>
+                <th className="px-3 py-3.5 font-bold text-center">Status</th>
+                <th className="px-4 py-3.5 font-bold text-right">Aksi</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5">
+            <tbody className="divide-y divide-slate-100">
               {loading ? (
                 <tr>
-                  <td colSpan={12} className="px-6 py-12 text-center">
-                    <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-brand-500"></div>
+                  <td colSpan={12} className="px-6 py-12 text-center text-slate-400">
+                    <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                   </td>
                 </tr>
-              ) : entries.length === 0 ? (
+              ) : safeEntries.length === 0 ? (
                 <tr>
-                  <td colSpan={12} className="px-6 py-12 text-center text-gray-500">
-                    No transactions found.
+                  <td colSpan={12} className="px-6 py-12 text-center text-slate-400">
+                    Tidak ada transaksi yang sesuai.
                   </td>
                 </tr>
               ) : (
-                entries.map((entry: any) => (
+                safeEntries.map((entry: any) => (
                   <tr 
                     key={entry.id} 
-                    className="hover:bg-white/[0.04] transition-colors group cursor-pointer"
+                    className="hover:bg-slate-50/80 transition-colors group cursor-pointer"
                     onClick={(e) => {
-                      // Don't open detail if clicked on actions or status toggle
                       if ((e.target as HTMLElement).closest("button")) return;
                       setSelectedEntry(entry);
                       setIsDetailOpen(true);
                     }}
                   >
-                    <td className="px-4 py-3.5 whitespace-nowrap">
+                    <td className="px-4 py-3 whitespace-nowrap">
                       <div className="flex items-center gap-1.5">
-                        <span className="font-mono text-gray-500 text-[10px]">#{entry.sequence_no}</span>
-                        <span className="font-medium text-white">{formatDate(entry.date_of_entry)}</span>
+                        <span className="font-mono text-slate-400 text-[10px]">#{entry.sequence_no}</span>
+                        <span className="font-bold text-slate-900">{formatDate(entry.date_of_entry)}</span>
                       </div>
                     </td>
-                    <td className="px-3 py-3.5 whitespace-nowrap">
-                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                    <td className="px-3 py-3 whitespace-nowrap">
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${
                         entry.entry_type === "TOP_UP" 
-                          ? "bg-green-500/10 text-green-400 border border-green-500/20" 
-                          : "bg-blue-500/10 text-blue-400 border border-blue-500/20"
+                          ? "bg-emerald-50 text-emerald-700 border border-emerald-200" 
+                          : "bg-blue-50 text-blue-700 border border-blue-200"
                       }`}>
                         {entry.entry_type === "TOP_UP" ? <ArrowUpRight className="w-2.5 h-2.5" /> : <ArrowDownRight className="w-2.5 h-2.5" />}
                         {entry.entry_type}
                       </span>
                     </td>
-                    <td className="px-4 py-3.5">
-                      <div className="font-medium text-white text-xs">
+                    <td className="px-4 py-3">
+                      <div className="font-bold text-slate-900 text-xs truncate max-w-xs">
                         {entry.vendor_name_raw || entry.act_information || "-"}
                       </div>
-                      <div className="text-[11px] text-gray-400 flex items-center gap-1">
+                      <div className="text-[11px] text-slate-500 flex items-center gap-1 truncate max-w-xs">
                         <span>{entry.act_information}</span>
                         {entry.act_explaination && (
-                          <span className="text-gray-500">({entry.act_explaination})</span>
+                          <span className="text-slate-400">({entry.act_explaination})</span>
                         )}
                       </div>
                     </td>
-                    <td className="px-3 py-3.5 text-right font-mono text-gray-300">
+                    <td className="px-3 py-3 text-right font-mono font-medium text-slate-600">
                       {entry.entry_type === "SHIPMENT" ? formatCurrency(entry.grand_cost) : "-"}
                     </td>
-                    <td className="px-3 py-3.5 text-right font-mono text-blue-300">
+                    <td className="px-3 py-3 text-right font-mono font-medium text-blue-600">
                       {entry.entry_type === "SHIPMENT" ? formatCurrency(entry.grand_selling) : "-"}
                     </td>
-                    <td className="px-3 py-3.5 text-right font-mono whitespace-nowrap">
+                    <td className="px-3 py-3 text-right font-mono whitespace-nowrap">
                       {entry.entry_type === "SHIPMENT" ? (
                         <div>
-                          <span className="text-green-400 font-semibold">{formatCurrency(entry.profit)}</span>
-                          <span className="text-[10px] text-purple-300 block">
+                          <span className="text-emerald-600 font-bold">{formatCurrency(entry.profit)}</span>
+                          <span className="text-[10px] text-blue-600 font-semibold block">
                             {(entry.margin_pct * 100).toFixed(1)}%
                           </span>
                         </div>
@@ -431,39 +428,39 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
                         "-"
                       )}
                     </td>
-                    <td className="px-3 py-3.5 text-center whitespace-nowrap">
+                    <td className="px-3 py-3 text-center whitespace-nowrap">
                       {entry.entry_type === "SHIPMENT" ? (
                         <div>
-                          <span className="text-gray-300 text-xs">{entry.top_days ? `${entry.top_days}d` : "-"}</span>
+                          <span className="text-slate-700 text-xs font-semibold">{entry.top_days ? `${entry.top_days}h` : "-"}</span>
                           {entry.due_date && (
-                            <span className="text-[10px] text-amber-300/80 block">{formatDate(entry.due_date)}</span>
+                            <span className="text-[10px] text-amber-700 font-semibold block">{formatDate(entry.due_date)}</span>
                           )}
                         </div>
                       ) : (
                         "-"
                       )}
                     </td>
-                    <td className="px-4 py-3.5 text-right font-mono text-red-400 font-medium">
+                    <td className="px-4 py-3 text-right font-mono text-rose-600 font-bold">
                       {entry.debit > 0 ? formatCurrency(entry.debit) : "-"}
                     </td>
-                    <td className="px-4 py-3.5 text-right font-mono text-green-400 font-medium">
+                    <td className="px-4 py-3 text-right font-mono text-emerald-600 font-bold">
                       {entry.kredit > 0 ? formatCurrency(entry.kredit) : "-"}
                     </td>
-                    <td className="px-4 py-3.5 text-right font-mono font-bold text-white text-xs">
+                    <td className="px-4 py-3 text-right font-mono font-black text-blue-700 text-xs">
                       {new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(entry.saldo)}
                     </td>
-                    <td className="px-3 py-3.5 text-center whitespace-nowrap">
+                    <td className="px-3 py-3 text-center whitespace-nowrap">
                       {renderRemarksBadge(entry)}
                     </td>
-                    <td className="px-4 py-3.5 text-right whitespace-nowrap">
+                    <td className="px-4 py-3 text-right whitespace-nowrap">
                       <div className="flex items-center justify-end gap-1">
                         <button
                           onClick={() => {
                             setSelectedEntry(entry);
                             setIsDetailOpen(true);
                           }}
-                          className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
-                          title="View Details"
+                          className="p-1 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer"
+                          title="Lihat Detail"
                         >
                           <Eye className="w-3.5 h-3.5" />
                         </button>
@@ -472,15 +469,15 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
                             setSelectedEntry(entry);
                             setIsEditOpen(true);
                           }}
-                          className="p-1.5 rounded-lg text-gray-400 hover:text-blue-400 hover:bg-blue-500/10 transition-colors"
-                          title="Edit Entry"
+                          className="p-1 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer"
+                          title="Edit"
                         >
                           <Edit2 className="w-3.5 h-3.5" />
                         </button>
                         <button
                           onClick={() => handleDelete(entry)}
-                          className="p-1.5 rounded-lg text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
-                          title="Delete Entry"
+                          className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                          title="Hapus"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -494,25 +491,25 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
         </div>
         
         {/* Pagination Controls */}
-        <div className="px-6 py-4 border-t border-white/10 flex flex-wrap justify-between items-center gap-3 bg-black/20">
-          <span className="text-xs text-gray-400">
-            Showing <span className="font-semibold text-white">{entries.length}</span> of <span className="font-semibold text-white">{total}</span> entries (Sorted {sortDir})
+        <div className="px-6 py-3.5 border-t border-slate-100 flex flex-wrap justify-between items-center gap-3 bg-slate-50/50">
+          <span className="text-xs text-slate-500 font-medium">
+            Menampilkan <span className="font-bold text-slate-900">{safeEntries.length}</span> dari <span className="font-bold text-slate-900">{total}</span> transaksi (Urut {sortDir})
           </span>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
             <button 
               disabled={page === 1}
               onClick={() => setPage(p => Math.max(1, p - 1))}
-              className="px-3 py-1.5 rounded-xl bg-white/5 text-gray-300 hover:bg-white/10 disabled:opacity-40 transition-colors text-xs font-medium"
+              className="px-3 py-1 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 disabled:opacity-40 transition-colors text-xs font-bold shadow-xs cursor-pointer"
             >
-              Previous
+              Sebelumnya
             </button>
-            <span className="px-3 py-1.5 text-xs text-gray-400">Page {page}</span>
+            <span className="px-2 py-1 text-xs font-bold text-slate-600">Hal {page}</span>
             <button 
-              disabled={entries.length < 15}
+              disabled={safeEntries.length < 15}
               onClick={() => setPage(p => p + 1)}
-              className="px-3 py-1.5 rounded-xl bg-white/5 text-gray-300 hover:bg-white/10 disabled:opacity-40 transition-colors text-xs font-medium"
+              className="px-3 py-1 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 disabled:opacity-40 transition-colors text-xs font-bold shadow-xs cursor-pointer"
             >
-              Next
+              Selanjutnya
             </button>
           </div>
         </div>
