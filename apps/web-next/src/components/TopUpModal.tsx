@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { X, Loader2, Wallet } from "lucide-react";
+import { formatThousand, cleanThousand, terbilangRingkas } from "@/hooks/useTerbilang";
 
 interface TopUpModalProps {
   isOpen: boolean;
@@ -93,20 +94,33 @@ export function TopUpModal({ isOpen, onClose, onSuccess }: TopUpModalProps) {
             />
           </div>
 
+          {/* Nominal Kredit (Kas Masuk) */}
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">Nominal Kredit (Masuk)</label>
+            <label className="block text-xs font-bold text-slate-700 mb-1">
+              Nominal Kredit (Masuk) *
+            </label>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">Rp</span>
               <input
-                type="number"
+                type="text"
+                inputMode="numeric"
                 required
-                min="0"
-                value={formData.kredit}
-                onChange={e => setFormData({ ...formData, kredit: e.target.value })}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 pl-9 pr-3 text-xs text-slate-900 font-bold focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                placeholder="10000000"
+                placeholder="10.000.000"
+                value={formatThousand(formData.kredit)}
+                onChange={e => {
+                  const clean = cleanThousand(e.target.value);
+                  setFormData({ ...formData, kredit: clean });
+                }}
+                className="w-full bg-white border border-slate-200 rounded-xl py-2 pl-9 pr-3 text-xs text-slate-900 font-bold focus:ring-2 focus:ring-sky-600 focus:outline-none"
               />
             </div>
+            {/* Indikator Terbilang Ringkas */}
+            {formData.kredit && Number(formData.kredit) > 0 && (
+              <div className="mt-1 flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-emerald-50/80 border border-emerald-100 text-[10px] text-emerald-900 font-bold animate-fade-in">
+                <span className="text-emerald-500 font-normal">Terbaca:</span>
+                <span>{terbilangRingkas(formData.kredit)}</span>
+              </div>
+            )}
           </div>
 
           <div>
