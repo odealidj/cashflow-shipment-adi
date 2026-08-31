@@ -7,6 +7,7 @@ import {
   Truck, 
   Receipt, 
   FileText,
+  Building2,
   Smartphone, 
   ChevronLeft, 
   ChevronRight 
@@ -52,8 +53,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const isDashboardActive = pathname === "/dashboard";
   const isTransactionsActive = pathname.startsWith("/dashboard/transactions");
-  const isVendorsActive = pathname.startsWith("/dashboard/vendors");
   const isInvoicesActive = pathname.startsWith("/dashboard/invoices");
+  const isCustomersActive = pathname.startsWith("/dashboard/customers");
+  const isVendorsActive = pathname.startsWith("/dashboard/vendors");
 
   return (
     <div className="min-h-screen flex bg-[#F4F6F9] text-slate-900 font-sans antialiased">
@@ -170,6 +172,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             >
               <FileText className="w-5 h-5 shrink-0" />
               {!isCollapsed && <span className="truncate">Monitoring Invoice</span>}
+            </Link>
+
+            <Link 
+              href="/dashboard/customers" 
+              title="Daftar Customer"
+              className={`flex items-center gap-3 rounded-xl transition-all text-xs font-bold ${
+                isCollapsed ? "justify-center p-3" : "px-3.5 py-2.5"
+              } ${
+                isCustomersActive 
+                ? "bg-sky-700/80 text-white shadow-xs" 
+                : "text-slate-300 hover:text-white hover:bg-white/10"
+              }`}
+            >
+              <Building2 className="w-5 h-5 shrink-0" />
+              {!isCollapsed && <span className="truncate">Daftar Customer</span>}
             </Link>
 
             <Link 

@@ -65,18 +65,21 @@ func main() {
 	// Initialize Repositories
 	userRepo := repository.NewPostgresUserRepo(dbPool)
 	vendorRepo := repository.NewPostgresVendorRepo(dbPool)
+	customerRepo := repository.NewPostgresCustomerRepo(dbPool)
 	cashflowRepo := repository.NewPostgresCashflowRepo(dbPool)
 	invoiceRepo := repository.NewPostgresInvoiceRepo(dbPool)
 	
 	// Initialize Services
 	authService := services.NewAuthService(userRepo, jwtSecret)
 	vendorService := services.NewVendorService(vendorRepo)
+	customerService := services.NewCustomerService(customerRepo)
 	cashflowService := services.NewCashflowService(cashflowRepo, vendorService)
 	invoiceService := services.NewInvoiceService(invoiceRepo)
 
 	// Initialize Handlers
 	authHandler := handler.NewAuthHandler(authService)
 	vendorHandler := handler.NewVendorHandler(vendorService)
+	customerHandler := handler.NewCustomerHandler(customerService)
 	cashflowHandler := handler.NewCashflowHandler(cashflowService)
 	invoiceHandler := handler.NewInvoiceHandler(invoiceService)
 
@@ -130,13 +133,22 @@ func main() {
 				r.Patch("/{id}/status", cashflowHandler.UpdateStatus)
 			})
 			
-			// Vendor Routes
+			// Vendor Routes (Mitra Armada & Transporter)
 			r.Route("/vendors", func(r chi.Router) {
 				r.Get("/", vendorHandler.List)
 				r.Post("/", vendorHandler.Create)
 				r.Get("/{id}", vendorHandler.Get)
 				r.Put("/{id}", vendorHandler.Update)
 				r.Delete("/{id}", vendorHandler.Delete)
+			})
+
+			// Customer Routes (Klien / Pemilik Muatan)
+			r.Route("/customers", func(r chi.Router) {
+				r.Get("/", customerHandler.List)
+				r.Post("/", customerHandler.Create)
+				r.Get("/{id}", customerHandler.Get)
+				r.Put("/{id}", customerHandler.Update)
+				r.Delete("/{id}", customerHandler.Delete)
 			})
 
 			// Invoice Routes (Monitoring Piutang Klien)
