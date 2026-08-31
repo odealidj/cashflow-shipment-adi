@@ -17,7 +17,8 @@ import {
   CheckCircle2,
   Clock,
   AlertCircle,
-  Plus
+  Plus,
+  TrendingUp
 } from "lucide-react";
 
 import { TopUpModal } from "./TopUpModal";
@@ -283,52 +284,69 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
   return (
     <>
       <div className="space-y-4">
-        {/* MINI SUMMARY STRIP (KPI SNAPSHOT REAL-TIME) */}
+        {/* MINI SUMMARY STRIP (KPI SNAPSHOT REAL-TIME: 5 KARTU SEJAJAR) */}
         {summary && (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            {/* Saldo Kas */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+            {/* 1. Saldo Kas */}
             <div className="bg-white rounded-2xl p-3.5 border border-slate-200/80 shadow-2xs">
               <div className="flex items-center justify-between text-slate-500 text-[11px] font-bold uppercase tracking-wider">
                 <span>Saldo Kas</span>
                 <Wallet className="w-4 h-4 text-sky-700" />
               </div>
-              <div className="mt-1.5 font-mono text-lg font-black text-sky-950">
+              <div className="mt-1.5 font-mono text-base lg:text-lg font-black text-sky-950 truncate">
                 {formatCurrency(summary.current_saldo)}
               </div>
               <div className="text-[10px] text-slate-400 mt-0.5">Posisi kas operasional</div>
             </div>
 
-            {/* Total Pengeluaran (Debit) */}
+            {/* 2. Total Profit & Margin */}
+            <div className="bg-white rounded-2xl p-3.5 border border-teal-200/80 shadow-2xs bg-gradient-to-b from-white to-teal-50/20">
+              <div className="flex items-center justify-between text-slate-500 text-[11px] font-bold uppercase tracking-wider">
+                <span>Total Profit</span>
+                <TrendingUp className="w-4 h-4 text-teal-600" />
+              </div>
+              <div className="mt-1.5 font-mono text-base lg:text-lg font-black text-teal-700 truncate">
+                {formatCurrency(summary.total_profit || 0)}
+              </div>
+              <div className="text-[10px] text-teal-600 font-bold mt-0.5 flex items-center gap-1">
+                <span className="bg-teal-50 text-teal-700 px-1.5 py-0.2 rounded border border-teal-200/60 font-mono">
+                  {summary.avg_margin_pct ? `${(summary.avg_margin_pct * 100).toFixed(1)}%` : "0%"}
+                </span>
+                <span className="text-slate-400 font-normal">avg margin</span>
+              </div>
+            </div>
+
+            {/* 3. Total Pengeluaran (Debit) */}
             <div className="bg-white rounded-2xl p-3.5 border border-slate-200/80 shadow-2xs">
               <div className="flex items-center justify-between text-slate-500 text-[11px] font-bold uppercase tracking-wider">
-                <span>Total Pengeluaran</span>
+                <span>Pengeluaran</span>
                 <ArrowDownRight className="w-4 h-4 text-rose-600" />
               </div>
-              <div className="mt-1.5 font-mono text-lg font-black text-rose-600">
+              <div className="mt-1.5 font-mono text-base lg:text-lg font-black text-rose-600 truncate">
                 {formatCurrency(summary.total_debit)}
               </div>
               <div className="text-[10px] text-slate-400 mt-0.5">Akumulasi kas keluar</div>
             </div>
 
-            {/* Total Modal Masuk (Kredit) */}
+            {/* 4. Total Modal Masuk (Kredit) */}
             <div className="bg-white rounded-2xl p-3.5 border border-slate-200/80 shadow-2xs">
               <div className="flex items-center justify-between text-slate-500 text-[11px] font-bold uppercase tracking-wider">
-                <span>Total Modal Masuk</span>
+                <span>Modal Masuk</span>
                 <ArrowUpRight className="w-4 h-4 text-emerald-600" />
               </div>
-              <div className="mt-1.5 font-mono text-lg font-black text-emerald-700">
+              <div className="mt-1.5 font-mono text-base lg:text-lg font-black text-emerald-700 truncate">
                 {formatCurrency(summary.total_kredit)}
               </div>
               <div className="text-[10px] text-slate-400 mt-0.5">Top-up & kas masuk</div>
             </div>
 
-            {/* Tagihan Belum Lunas */}
-            <div className="bg-white rounded-2xl p-3.5 border border-slate-200/80 shadow-2xs">
+            {/* 5. Tagihan Belum Lunas */}
+            <div className="bg-white rounded-2xl p-3.5 border border-slate-200/80 shadow-2xs col-span-2 sm:col-span-1">
               <div className="flex items-center justify-between text-slate-500 text-[11px] font-bold uppercase tracking-wider">
                 <span>Belum Dibayar</span>
                 <Clock className="w-4 h-4 text-amber-600" />
               </div>
-              <div className="mt-1.5 font-mono text-lg font-black text-amber-700 flex items-baseline gap-1.5">
+              <div className="mt-1.5 font-mono text-base lg:text-lg font-black text-amber-700 flex items-baseline gap-1.5 truncate">
                 <span>{summary.unpaid_count}</span>
                 <span className="text-xs font-bold text-slate-400 font-sans">
                   ({formatCurrency(summary.unpaid_amount)})
