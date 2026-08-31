@@ -19,7 +19,8 @@ import {
   AlertCircle,
   Plus,
   TrendingUp,
-  Calendar
+  Calendar,
+  Printer
 } from "lucide-react";
 
 import { TopUpModal } from "./TopUpModal";
@@ -27,6 +28,7 @@ import { ShipmentModal } from "./ShipmentModal";
 import { EditEntryModal } from "./EditEntryModal";
 import { EntryDetailModal } from "./EntryDetailModal";
 import { DeleteConfirmModal } from "./DeleteConfirmModal";
+import { CashflowReportModal } from "./CashflowReportModal";
 import { FilterBar, FilterState, getCurrentMonthRange, formatActivePeriod } from "./FilterBar";
 import { fetchWithAuth } from "@/lib/apiClient";
 import { TableCard, tableTheadClass, ActionButton } from "@/components/shared/TableCard";
@@ -60,6 +62,7 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [isReportOpen, setIsReportOpen] = useState(false);
   const [entryToDelete, setEntryToDelete] = useState<any>(null);
   const [selectedEntry, setSelectedEntry] = useState<any>(null);
 
@@ -387,10 +390,17 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
               onChange={handleImport} 
             />
             <button 
+              onClick={() => setIsReportOpen(true)}
+              className="text-xs bg-sky-50 hover:bg-sky-100 text-sky-800 px-3.5 py-2 rounded-xl transition-colors font-bold border border-sky-200 flex items-center gap-1.5 shadow-2xs cursor-pointer"
+              title="Buka Pratinjau & Cetak Laporan (Excel Asli / Grid Modern)"
+            >
+              <Printer className="w-3.5 h-3.5 text-sky-700" /> Cetak Laporan
+            </button>
+            <button 
               onClick={() => fileInputRef.current?.click()}
               className="text-xs bg-white hover:bg-slate-50 text-slate-700 px-3.5 py-2 rounded-xl transition-colors font-bold border border-slate-200 flex items-center gap-1.5 shadow-2xs cursor-pointer"
             >
-              <Upload className="w-3.5 h-3.5 text-sky-700" /> Impor Excel
+              <Upload className="w-3.5 h-3.5 text-slate-600" /> Impor Excel
             </button>
             <button 
               onClick={handleExport}
@@ -724,6 +734,13 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
           setEntryToDelete(null);
         }}
         onConfirm={handleDeleteConfirm}
+      />
+
+      <CashflowReportModal
+        isOpen={isReportOpen}
+        onClose={() => setIsReportOpen(false)}
+        defaultDateFrom={filters.date_from}
+        defaultDateTo={filters.date_to}
       />
     </>
   );
