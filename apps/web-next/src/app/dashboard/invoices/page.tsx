@@ -36,8 +36,8 @@ export default function InvoicesPage() {
   const [dateTo, setDateTo] = useState<string>("");
   const [sortDir, setSortDir] = useState<"ASC" | "DESC">("ASC");
 
-  // Visual Header Theme Selector: Opsi 1 (Soft Ice Sky) vs Opsi 2 (Soft Pearl Slate)
-  const [headerTheme, setHeaderTheme] = useState<"ice-sky" | "pearl-slate">("ice-sky");
+  // Visual Header Theme Selector: Opsi 1 (Soft Ice Sky), Opsi 2 (Soft Pearl Slate), Opsi 3 (Ocean Navy/Sky)
+  const [headerTheme, setHeaderTheme] = useState<"ice-sky" | "pearl-slate" | "ocean-sky">("ice-sky");
 
   // Modals
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -263,7 +263,20 @@ export default function InvoicesPage() {
               title="Opsi 2: Soft Pearl Slate (Nuansa Netral Elegan)"
             >
               <span className="w-2.5 h-2.5 rounded-full bg-slate-300 border border-slate-500"></span>
-              <span>Opsi 2 (Soft Pearl Slate)</span>
+              <span>Opsi 2 (Soft Pearl)</span>
+            </button>
+
+            <button
+              onClick={() => setHeaderTheme("ocean-sky")}
+              className={`px-2.5 py-1 rounded-lg text-xs font-black transition cursor-pointer flex items-center gap-1.5 ${
+                headerTheme === "ocean-sky"
+                  ? "bg-sky-700 text-white shadow-2xs border border-sky-800"
+                  : "text-slate-500 hover:text-slate-800"
+              }`}
+              title="Opsi 3: Ocean Sky / Button Color (Biru Pekat Tegas Senada Tombol Buat Invoice)"
+            >
+              <span className="w-2.5 h-2.5 rounded-full bg-sky-600 border border-white"></span>
+              <span>Opsi 3 (Ocean Sky)</span>
             </button>
           </div>
 
@@ -373,7 +386,9 @@ export default function InvoicesPage() {
             <thead>
               <tr 
                 className={`border-b tracking-wider uppercase text-[11px] font-black transition-colors duration-200 ${
-                  headerTheme === "ice-sky"
+                  headerTheme === "ocean-sky"
+                    ? "bg-sky-700 border-sky-800 text-white shadow-xs"
+                    : headerTheme === "ice-sky"
                     ? "bg-[#EAF2F9] border-sky-200/80 text-[#1D354B]"
                     : "bg-[#F1F5F9] border-slate-200 text-[#334155]"
                 }`}
