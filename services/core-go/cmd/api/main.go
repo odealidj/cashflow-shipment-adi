@@ -66,6 +66,7 @@ func main() {
 	userRepo := repository.NewPostgresUserRepo(dbPool)
 	vendorRepo := repository.NewPostgresVendorRepo(dbPool)
 	customerRepo := repository.NewPostgresCustomerRepo(dbPool)
+	activityPresetRepo := repository.NewPostgresActivityPresetRepo(dbPool)
 	cashflowRepo := repository.NewPostgresCashflowRepo(dbPool)
 	invoiceRepo := repository.NewPostgresInvoiceRepo(dbPool)
 	
@@ -73,6 +74,7 @@ func main() {
 	authService := services.NewAuthService(userRepo, jwtSecret)
 	vendorService := services.NewVendorService(vendorRepo)
 	customerService := services.NewCustomerService(customerRepo)
+	activityPresetService := services.NewActivityPresetService(activityPresetRepo)
 	cashflowService := services.NewCashflowService(cashflowRepo, vendorService)
 	invoiceService := services.NewInvoiceService(invoiceRepo)
 
@@ -80,6 +82,7 @@ func main() {
 	authHandler := handler.NewAuthHandler(authService)
 	vendorHandler := handler.NewVendorHandler(vendorService)
 	customerHandler := handler.NewCustomerHandler(customerService)
+	activityPresetHandler := handler.NewActivityPresetHandler(activityPresetService)
 	cashflowHandler := handler.NewCashflowHandler(cashflowService)
 	invoiceHandler := handler.NewInvoiceHandler(invoiceService)
 
@@ -149,6 +152,15 @@ func main() {
 				r.Get("/{id}", customerHandler.Get)
 				r.Put("/{id}", customerHandler.Update)
 				r.Delete("/{id}", customerHandler.Delete)
+			})
+
+			// Activity Presets Routes (Master Keterangan Aktivitas & Rute Armada)
+			r.Route("/activity-presets", func(r chi.Router) {
+				r.Get("/", activityPresetHandler.List)
+				r.Post("/", activityPresetHandler.Create)
+				r.Get("/{id}", activityPresetHandler.GetByID)
+				r.Put("/{id}", activityPresetHandler.Update)
+				r.Delete("/{id}", activityPresetHandler.Delete)
 			})
 
 			// Invoice Routes (Monitoring Piutang Klien)

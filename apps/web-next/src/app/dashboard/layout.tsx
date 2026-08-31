@@ -8,6 +8,7 @@ import {
   Receipt, 
   FileText,
   Building2,
+  Sparkles,
   Smartphone, 
   ChevronLeft, 
   ChevronRight 
@@ -56,6 +57,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const isInvoicesActive = pathname.startsWith("/dashboard/invoices");
   const isCustomersActive = pathname.startsWith("/dashboard/customers");
   const isVendorsActive = pathname.startsWith("/dashboard/vendors");
+  const isActivityPresetsActive = pathname.startsWith("/dashboard/activity-presets");
 
   return (
     <div className="min-h-screen flex bg-[#F4F6F9] text-slate-900 font-sans antialiased">
@@ -230,6 +232,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 >
                   <Truck className="w-5 h-5 shrink-0" />
                   {!isCollapsed && <span className="truncate">Daftar Vendor</span>}
+                </Link>
+
+                <Link 
+                  href="/dashboard/activity-presets" 
+                  title="Master Keterangan Aktivitas & Rute"
+                  className={`flex items-center gap-3 rounded-xl transition-all text-xs font-bold ${
+                    isCollapsed ? "justify-center p-3" : "px-3.5 py-2.5"
+                  } ${
+                    isActivityPresetsActive 
+                    ? "bg-sky-700/80 text-white shadow-xs" 
+                    : "text-slate-300 hover:text-white hover:bg-white/10"
+                  }`}
+                >
+                  <Sparkles className="w-5 h-5 shrink-0" />
+                  {!isCollapsed && <span className="truncate">Keterangan & Rute</span>}
                 </Link>
               </div>
             </div>

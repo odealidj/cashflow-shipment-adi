@@ -19,6 +19,7 @@ import { MobileHeader } from '@/components/mobile/MobileHeader';
 import { useCashflowMobile } from '@/hooks/useCashflowMobile';
 import { useAutoCalculate, formatRupiah } from '@/hooks/useAutoCalculate';
 import { VendorSelect } from '@/components/VendorSelect';
+import { ActivityPresetSelect } from '@/components/shared/ActivityPresetSelect';
 
 export default function TambahTransaksiPage() {
   const router = useRouter();
@@ -243,32 +244,24 @@ export default function TambahTransaksiPage() {
 
           {/* Keterangan Aktivitas */}
           <div>
-            <label className="block text-[12px] font-bold text-slate-700 mb-1">Keterangan Aktivitas</label>
-            <div className="relative">
-              <FileText className="w-4 h-4 text-blue-600 absolute left-3 top-3" />
-              <input
-                type="text"
-                value={actInformation}
-                onChange={(e) => setActInformation(e.target.value)}
-                placeholder="Mis. Kirim Tronton Cibinong-SBY"
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-3 py-2 text-[13px] text-slate-800 font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none"
-              />
-            </div>
+            <label className="block text-[12px] font-bold text-slate-700 mb-1">Keterangan Aktivitas / Armada</label>
+            <ActivityPresetSelect
+              category="ACT_INFO"
+              value={actInformation}
+              onChange={setActInformation}
+              placeholder="Pilih atau ketik jenis armada..."
+            />
           </div>
 
           {/* Rincian / Catatan Tambahan */}
           <div>
-            <label className="block text-[12px] font-bold text-slate-700 mb-1">Rincian / Catatan Tambahan</label>
-            <div className="relative">
-              <AlignLeft className="w-4 h-4 text-blue-600 absolute left-3 top-3" />
-              <textarea
-                rows={2}
-                value={actExplaination}
-                onChange={(e) => setActExplaination(e.target.value)}
-                placeholder="Keterangan rute, muatan, atau catatan tambahan"
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-3 py-2 text-[13px] text-slate-800 font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none"
-              />
-            </div>
+            <label className="block text-[12px] font-bold text-slate-700 mb-1">Rincian / Catatan Tambahan (Rute)</label>
+            <ActivityPresetSelect
+              category="ACT_EXPLAIN"
+              value={actExplaination}
+              onChange={setActExplaination}
+              placeholder="Pilih atau ketik rute delivery..."
+            />
           </div>
 
           {/* Vendor */}

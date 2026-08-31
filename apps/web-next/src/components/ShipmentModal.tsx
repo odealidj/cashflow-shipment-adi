@@ -5,6 +5,7 @@ import { X, Loader2, Truck, TrendingUp, DollarSign, Wallet, ArrowRight, AlertTri
 import { formatRupiah, calculateProfit, calculateMarginPct, calculateDueDate } from "@/hooks/useAutoCalculate";
 import { formatThousand, cleanThousand, terbilangRingkas } from "@/hooks/useTerbilang";
 import { VendorSelect } from "@/components/VendorSelect";
+import { ActivityPresetSelect } from "@/components/shared/ActivityPresetSelect";
 
 interface ShipmentModalProps {
   isOpen: boolean;
@@ -151,24 +152,22 @@ export function ShipmentModal({ isOpen, onClose, onSuccess }: ShipmentModalProps
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Keterangan Aktivitas *</label>
-                <input
-                  type="text"
+                <label className="block text-xs font-bold text-slate-700 mb-1">Keterangan Aktivitas / Armada *</label>
+                <ActivityPresetSelect
+                  category="ACT_INFO"
                   required
-                  placeholder="Mis. Angkut Semen Cibinong-SBY"
+                  placeholder="Pilih atau ketik armada (mis. Tronton Bak)..."
                   value={formData.act_information}
-                  onChange={e => setFormData({ ...formData, act_information: e.target.value })}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs text-slate-800 focus:bg-white focus:ring-2 focus:ring-sky-600 focus:outline-none"
+                  onChange={v => setFormData({ ...formData, act_information: v })}
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Rincian / Catatan Tambahan</label>
-                <input
-                  type="text"
-                  placeholder="Rute, muatan, no surat jalan..."
+                <label className="block text-xs font-bold text-slate-700 mb-1">Rincian / Catatan Tambahan (Rute)</label>
+                <ActivityPresetSelect
+                  category="ACT_EXPLAIN"
+                  placeholder="Pilih atau ketik rute (mis. CIBINONG - SBY)..."
                   value={formData.act_explaination}
-                  onChange={e => setFormData({ ...formData, act_explaination: e.target.value })}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs text-slate-800 focus:bg-white focus:ring-2 focus:ring-sky-600 focus:outline-none"
+                  onChange={v => setFormData({ ...formData, act_explaination: v })}
                 />
               </div>
             </div>
