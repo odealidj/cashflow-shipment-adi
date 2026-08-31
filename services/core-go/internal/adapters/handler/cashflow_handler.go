@@ -282,7 +282,7 @@ func (h *CashflowHandler) ExportExcel(w http.ResponseWriter, r *http.Request) {
 	filter := extractListFilter(r)
 	formatMode := strings.ToLower(strings.TrimSpace(r.URL.Query().Get("format")))
 	if formatMode == "" {
-		formatMode = "merged" // default: format dokumen asli sebaris
+		formatMode = "separated" // default: Versi 1 (Kolom Top-Up Terpisah)
 	}
 
 	entries, _, err := h.cashflowService.GetDashboardData(r.Context(), 1, 100000, filter)
@@ -409,19 +409,33 @@ func (h *CashflowHandler) ExportExcel(w http.ResponseWriter, r *http.Request) {
 
 	var rows []exportRow
 
-	if formatMode == "merged" {
-		// Logika Auto-Merge: Gabungkan Top-Up ke baris Shipment berikutnya
-		var pendingKredit float64
+	if formatMode == "merged" || formatMode == "rolling" {
+		// FORMAT 2: TOP-UP + SALDO SEBELUMNYA (PERSIS DOKUMEN EXCEL ASLI KANTOR BARIS 7 & 8)
+		// Row 7: Kredit = TopUp (100jt), Debit = 28.15jt, Saldo = 71.85jt
+		// Row 8: Kredit = Saldo Sebelumnya (71.85jt) + TopUp baru jika ada, Debit = 7.5jt, Saldo = 64.35jt
+		var previousSaldo *float64
+		var pendingTopUp float64
 
 		for _, entry := range entries {
 			if entry.EntryType == domain.EntryTopUp {
-				pendingKredit += entry.Kredit
+				pendingTopUp += entry.Kredit
+				if previousSaldo == nil {
+					val := entry.Saldo - entry.Kredit
+					previousSaldo = &val
+				}
 				continue
 			}
 
 			// Entri SHIPMENT
-			kreditVal := pendingKredit
-			pendingKredit = 0
+			var kreditCell float64
+			if previousSaldo == nil {
+				kreditCell = entry.Saldo + entry.Debit
+			} else {
+				kreditCell = *previousSaldo + pendingTopUp
+			}
+			pendingTopUp = 0
+			saldoCell := kreditCell - entry.Debit
+			previousSaldo = &saldoCell
 
 			topStr := "-"
 			if entry.TopDays > 0 {
@@ -433,9 +447,9 @@ func (h *CashflowHandler) ExportExcel(w http.ResponseWriter, r *http.Request) {
 			}
 
 			rows = append(rows, exportRow{
-				Kredit:          kreditVal,
+				Kredit:          kreditCell,
 				Debit:           entry.Debit,
-				Saldo:           entry.Saldo,
+				Saldo:           saldoCell,
 				DateOfEntry:     entry.DateOfEntry.Format("02/01/2006"),
 				ActInformation:  entry.ActInformation,
 				ActExplaination: entry.ActExplaination,
@@ -450,8 +464,13 @@ func (h *CashflowHandler) ExportExcel(w http.ResponseWriter, r *http.Request) {
 			})
 		}
 
-		// Jika ada sisa Top-Up di akhir tanpa shipment lanjutan
-		if pendingKredit > 0 {
+		// Jika ada sisa Top-Up di akhir periode tanpa shipment lanjutan
+		if pendingTopUp > 0 {
+			var base float64
+			if previousSaldo != nil {
+				base = *previousSaldo
+			}
+			kreditCell := base + pendingTopUp
 			var lastDate string
 			if len(entries) > 0 {
 				lastDate = entries[len(entries)-1].DateOfEntry.Format("02/01/2006")
@@ -459,9 +478,9 @@ func (h *CashflowHandler) ExportExcel(w http.ResponseWriter, r *http.Request) {
 				lastDate = time.Now().Format("02/01/2006")
 			}
 			rows = append(rows, exportRow{
-				Kredit:         pendingKredit,
+				Kredit:         kreditCell,
 				Debit:          0,
-				Saldo:          pendingKredit,
+				Saldo:          kreditCell,
 				DateOfEntry:    lastDate,
 				ActInformation: "Top-Up Modal Kas",
 				VendorNameRaw:  "-",
@@ -471,7 +490,8 @@ func (h *CashflowHandler) ExportExcel(w http.ResponseWriter, r *http.Request) {
 			})
 		}
 	} else {
-		// Format Detail Granular: Tiap transaksi apa adanya
+		// FORMAT 1: KOLOM TOP-UP TERPISAH (STANDAR TRANSAKSI INDEPENDEN / BUKU KAS)
+		// Top-Up kas berdiri di baris mandiri, shipment berdiri di baris mandiri
 		for _, entry := range entries {
 			topStr := "-"
 			if entry.TopDays > 0 {
@@ -566,9 +586,9 @@ func (h *CashflowHandler) ExportExcel(w http.ResponseWriter, r *http.Request) {
 	f.SetColWidth(sheetName, "J", "L", 16)
 	f.SetColWidth(sheetName, "M", "N", 14)
 
-	filename := "Cashflow_Dokumen_Asli.xlsx"
-	if formatMode == "detail" {
-		filename = "Cashflow_Detail_Grid.xlsx"
+	filename := "Cashflow_Versi1_TopUp_Terpisah.xlsx"
+	if formatMode == "merged" || formatMode == "rolling" {
+		filename = "Cashflow_Versi2_TopUp_Plus_Saldo_Asli.xlsx"
 	}
 
 	w.Header().Set("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")

@@ -6,7 +6,6 @@ import {
   Printer, 
   Download, 
   FileSpreadsheet, 
-  LayoutGrid, 
   Calendar, 
   ChevronLeft, 
   ChevronRight, 
@@ -33,8 +32,8 @@ export function CashflowReportModal({
   defaultDateFrom,
   defaultDateTo
 }: CashflowReportModalProps) {
-  // Mode Tampilan: "excel" (Format Excel Asli Dokumen) | "grid" (Format Grid Modern Dashboard)
-  const [reportVersion, setReportVersion] = useState<"excel" | "grid">("excel");
+  // Mode Tampilan: "separated" (Versi 1: Kolom Top-Up Terpisah) | "rolling" (Versi 2: Kolom Top-Up + Saldo Sebelumnya)
+  const [reportVersion, setReportVersion] = useState<"separated" | "rolling">("separated");
 
   // State Periode
   const currentMonth = useMemo(() => getCurrentMonthRange(), []);
@@ -97,38 +96,54 @@ export function CashflowReportModal({
     fetchReportData();
   }, [isOpen, dateFrom, dateTo]);
 
-  // Transformasi Data Khusus Tab 1 (Versi Dokumen Asli):
-  // Top-Up Kas digabung ke dalam baris Shipment pertama setelahnya (persis baris 7 di file CASHFLOW SHIPMENT CONTROL.xlsx)
-  const mergedEntries = useMemo(() => {
+  // Transformasi Data Khusus Tab 2 (Versi Dokumen Asli Kantor - Top-Up + Saldo Sebelumnya):
+  // Persis baris 7 & 8 di file CASHFLOW SHIPMENT CONTROL.xlsx:
+  // Row 7: Kredit = TopUp (100jt), Debit = 28.15jt, Saldo = 71.85jt
+  // Row 8: Kredit = Saldo Sebelumnya (71.85jt) + TopUp baru jika ada, Debit = 7.5jt, Saldo = 64.35jt
+  const rollingMergedEntries = useMemo(() => {
     const result: any[] = [];
-    let pendingKredit = 0;
+    let previousSaldo: number | null = null;
+    let pendingTopUp = 0;
 
     for (const entry of entries) {
       if (entry.entry_type === "TOP_UP") {
-        pendingKredit += (entry.kredit || 0);
+        pendingTopUp += (entry.kredit || 0);
+        if (previousSaldo === null) {
+          previousSaldo = (entry.saldo || 0) - (entry.kredit || 0);
+        }
         continue;
       }
 
       // Entri SHIPMENT
-      const kreditVal = pendingKredit;
-      pendingKredit = 0;
+      let kreditCell: number;
+      if (previousSaldo === null) {
+        kreditCell = (entry.saldo || 0) + (entry.debit || 0);
+      } else {
+        kreditCell = previousSaldo + pendingTopUp;
+      }
+      pendingTopUp = 0;
+      const saldoCell = kreditCell - (entry.debit || 0);
+      previousSaldo = saldoCell;
 
       result.push({
         ...entry,
-        kredit: kreditVal,
-        hasMergedTopUp: kreditVal > 0,
+        kredit: kreditCell,
+        saldo: saldoCell,
+        hasMergedTopUp: kreditCell > 0,
       });
     }
 
     // Jika ada sisa Top-Up di akhir tanpa shipment lanjutan
-    if (pendingKredit > 0) {
+    if (pendingTopUp > 0) {
+      const base = previousSaldo !== null ? previousSaldo : 0;
+      const kreditCell = base + pendingTopUp;
       const lastDate = entries.length > 0 ? entries[entries.length - 1].date_of_entry : new Date().toISOString();
       result.push({
         id: "merged-tail-topup",
         entry_type: "TOP_UP",
-        kredit: pendingKredit,
+        kredit: kreditCell,
         debit: 0,
-        saldo: pendingKredit,
+        saldo: kreditCell,
         date_of_entry: lastDate,
         act_information: "Top-Up Modal Kas",
         act_explaination: "Dana modal tersedia",
@@ -181,8 +196,8 @@ export function CashflowReportModal({
     window.print();
   };
 
-  const handleDownloadExcel = async (formatOverride?: "merged" | "detail") => {
-    const activeFormat = formatOverride || (reportVersion === "excel" ? "merged" : "detail");
+  const handleDownloadExcel = async (formatOverride?: "separated" | "rolling") => {
+    const activeFormat = formatOverride || reportVersion;
     try {
       const query = new URLSearchParams();
       if (dateFrom) query.append("date_from", dateFrom);
@@ -194,7 +209,9 @@ export function CashflowReportModal({
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      const formatLabel = activeFormat === "merged" ? "Dokumen_Asli_Merged" : "Detail_Grid";
+      const formatLabel = activeFormat === "rolling" 
+        ? "Versi2_TopUp_Plus_Saldo_Asli" 
+        : "Versi1_TopUp_Terpisah";
       a.download = `Laporan_Cashflow_${formatLabel}_${dateFrom || "awal"}_sd_${dateTo || "akhir"}.xlsx`;
       document.body.appendChild(a);
       a.click();
@@ -253,47 +270,66 @@ export function CashflowReportModal({
             </div>
           </div>
 
-          {/* Switcher Versi Tampilan */}
-          <div className="flex items-center bg-slate-800/80 p-1 rounded-xl border border-white/10">
+          {/* Switcher 2 Versi Tampilan Excel Dokumen */}
+          <div className="flex items-center bg-slate-800/90 p-1 rounded-xl border border-white/10 shadow-inner">
             <button
-              onClick={() => setReportVersion("excel")}
+              onClick={() => setReportVersion("separated")}
               className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
-                reportVersion === "excel"
+                reportVersion === "separated"
+                  ? "bg-sky-600 text-white shadow-xs"
+                  : "text-slate-300 hover:text-white"
+              }`}
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5" />
+              <span>1. Excel (Top-Up Terpisah)</span>
+            </button>
+            <button
+              onClick={() => setReportVersion("rolling")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
+                reportVersion === "rolling"
                   ? "bg-emerald-600 text-white shadow-xs"
                   : "text-slate-300 hover:text-white"
               }`}
             >
               <FileSpreadsheet className="w-3.5 h-3.5" />
-              <span>1. Versi Excel Asli Dokumen</span>
-            </button>
-            <button
-              onClick={() => setReportVersion("grid")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
-                reportVersion === "grid"
-                  ? "bg-sky-600 text-white shadow-xs"
-                  : "text-slate-300 hover:text-white"
-              }`}
-            >
-              <LayoutGrid className="w-3.5 h-3.5" />
-              <span>2. Versi Modern Grid Table</span>
+              <span>2. Excel (Top-Up + Saldo Sebelumnya)</span>
             </button>
           </div>
 
-          {/* Action Buttons */}
+          {/* Action Buttons: Unduh 2 Versi & Print */}
           <div className="flex items-center gap-2">
-            {/* Tombol Unduh Cerdas (Sesuai Tab Aktif) */}
+            {/* Tombol Unduh Versi 1: Top-Up Terpisah */}
             <button
-              onClick={() => handleDownloadExcel()}
-              className="px-3.5 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
-              title={`Unduh format ${reportVersion === "excel" ? "Dokumen Asli (Top-Up Sebaris)" : "Detail Grid (Granular)"}`}
+              onClick={() => handleDownloadExcel("separated")}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer border ${
+                reportVersion === "separated"
+                  ? "bg-sky-500 text-white border-sky-400 shadow-xs"
+                  : "bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border-sky-500/40"
+              }`}
+              title="Unduh format Excel Versi 1: Top-Up di baris tersendiri (Standar Akuntansi)"
             >
               <Download className="w-3.5 h-3.5" />
-              <span>Unduh .XLSX ({reportVersion === "excel" ? "Asli" : "Detail"})</span>
+              <span>Unduh V1 (Top-Up Terpisah)</span>
+            </button>
+
+            {/* Tombol Unduh Versi 2: Top-Up + Saldo Sebelumnya */}
+            <button
+              onClick={() => handleDownloadExcel("rolling")}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer border ${
+                reportVersion === "rolling"
+                  ? "bg-emerald-600 text-white border-emerald-500 shadow-xs"
+                  : "bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border-emerald-500/40"
+              }`}
+              title="Unduh format Excel Versi 2: Top-Up + Saldo Sebelumnya (Persis Asli Kantor)"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Unduh V2 (Top-Up + Saldo)</span>
             </button>
 
             <button
               onClick={handlePrint}
-              className="px-4 py-1.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-white text-xs font-black flex items-center gap-1.5 transition cursor-pointer shadow-xs active:scale-95"
+              className="px-3.5 py-1.5 rounded-xl bg-slate-700 hover:bg-slate-600 text-white text-xs font-black flex items-center gap-1.5 transition cursor-pointer shadow-xs active:scale-95"
+              title="Cetak Dokumen atau Simpan ke PDF"
             >
               <Printer className="w-4 h-4" />
               <span>Cetak / PDF</span>
@@ -381,10 +417,10 @@ export function CashflowReportModal({
               <p className="font-bold text-slate-700">Tidak ada transaksi pada periode ini.</p>
               <p className="text-xs text-slate-500 mt-1">Silakan pilih bulan lain atau ubah rentang tanggal.</p>
             </div>
-          ) : reportVersion === "excel" ? (
+          ) : (
             
             /* ==================================================== */
-            /* VERSI 1: FORMAT EXCEL ASLI (CASHFLOW SHIPMENT CONTROL)*/
+            /* TAMPILAN PRATINJAU CETAK DOKUMEN RESMI EXCEL         */
             /* ==================================================== */
             <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200 print:border-none print:shadow-none print:p-0 mx-auto max-w-[1300px]">
               {/* Header Dokumen Excel */}
@@ -394,8 +430,19 @@ export function CashflowReportModal({
                     <h1 className="text-base sm:text-lg font-black tracking-wider uppercase text-slate-900 font-mono">
                       PT ADIJAYANTARA LOGISTIC INDONESIA
                     </h1>
-                    <div className="inline-block bg-emerald-700 text-white text-xs font-black px-3 py-1 rounded mt-1 font-mono tracking-wider uppercase">
-                      CASHFLOW SHIPMENT CONTROL
+                    <div className="flex items-center gap-2 mt-1">
+                      <div className="inline-block bg-emerald-700 text-white text-xs font-black px-3 py-1 rounded font-mono tracking-wider uppercase">
+                        CASHFLOW SHIPMENT CONTROL
+                      </div>
+                      <span className={`text-[11px] font-bold px-2 py-0.5 rounded border ${
+                        reportVersion === "separated"
+                          ? "bg-sky-50 text-sky-700 border-sky-200"
+                          : "bg-emerald-50 text-emerald-800 border-emerald-200"
+                      }`}>
+                        {reportVersion === "separated"
+                          ? "Versi 1: Kolom Top-Up Terpisah"
+                          : "Versi 2: Top-Up + Saldo Sebelumnya"}
+                      </span>
                     </div>
                   </div>
                   <div className="text-right">
@@ -414,7 +461,9 @@ export function CashflowReportModal({
                 <table className="w-full text-left text-[11px] border-collapse border border-slate-400">
                   <thead>
                     <tr className="bg-[#E2EFDA] text-[#276A3C] font-black uppercase text-center border-b border-slate-400">
-                      <th className="border border-slate-400 px-2 py-2 w-28 text-right">KREDIT</th>
+                      <th className="border border-slate-400 px-2 py-2 w-28 text-right">
+                        {reportVersion === "rolling" ? "TOPUP+SALDO" : "KREDIT"}
+                      </th>
                       <th className="border border-slate-400 px-2 py-2 w-28 text-right">DEBIT</th>
                       <th className="border border-slate-400 px-2 py-2 w-28 text-right bg-[#C6E0B4]">SALDO</th>
                       <th className="border border-slate-400 px-2 py-2 w-24">DATE OF DEBIT</th>
@@ -431,7 +480,7 @@ export function CashflowReportModal({
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-300 font-mono text-slate-800">
-                    {mergedEntries.map((entry, idx) => (
+                    {(reportVersion === "rolling" ? rollingMergedEntries : entries).map((entry, idx) => (
                       <tr key={entry.id || idx} className="hover:bg-slate-50 transition-colors">
                         {/* Kredit */}
                         <td className="border border-slate-300 px-2 py-1.5 text-right font-bold text-emerald-800">
@@ -545,179 +594,6 @@ export function CashflowReportModal({
                   <p className="text-slate-500">Disetujui Oleh:</p>
                   <div className="h-16"></div>
                   <p className="font-bold text-slate-900 border-t border-slate-300 pt-1">Direktur Operasional</p>
-                </div>
-              </div>
-            </div>
-
-          ) : (
-
-            /* ==================================================== */
-            /* VERSI 2: FORMAT GRID MODERN APLIKASI (DASHBOARD STYLE)*/
-            /* ==================================================== */
-            <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200 print:border-none print:shadow-none print:p-0 mx-auto max-w-[1250px] space-y-6">
-              {/* Header Modern dengan Logo & Ringkasan */}
-              <div className="border-b border-slate-200 pb-5 flex flex-wrap justify-between items-start gap-4">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-xl bg-sky-900 text-white flex items-center justify-center font-black text-sm">
-                      AJ
-                    </div>
-                    <div>
-                      <h1 className="text-base font-black text-slate-900 uppercase tracking-tight">
-                        PT ADIJAYANTARA LOGISTIC INDONESIA
-                      </h1>
-                      <p className="text-xs font-bold text-sky-700">Laporan Rekapitulasi Transaksi Cashflow & Shipment</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="text-right">
-                  <span className="inline-block bg-sky-100 text-sky-900 text-xs font-black px-3 py-1 rounded-lg border border-sky-200">
-                    PERIODE: {formatActivePeriod(dateFrom, dateTo)}
-                  </span>
-                  <p className="text-[11px] text-slate-400 mt-1 font-mono">
-                    Total: {entries.length} Transaksi Tercatat
-                  </p>
-                </div>
-              </div>
-
-              {/* Strip KPI Ringkasan Cepat */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                <div className="p-3.5 bg-emerald-50/50 border border-emerald-200 rounded-xl">
-                  <span className="text-[10px] uppercase font-bold text-emerald-700 block">Total Kas Masuk</span>
-                  <span className="text-sm font-black font-mono text-emerald-800 mt-0.5 block">
-                    + {formatCurrency(totalKredit)}
-                  </span>
-                </div>
-                <div className="p-3.5 bg-rose-50/50 border border-rose-200 rounded-xl">
-                  <span className="text-[10px] uppercase font-bold text-rose-700 block">Total Kas Keluar</span>
-                  <span className="text-sm font-black font-mono text-rose-800 mt-0.5 block">
-                    - {formatCurrency(totalDebit)}
-                  </span>
-                </div>
-                <div className="p-3.5 bg-sky-50/50 border border-sky-200 rounded-xl">
-                  <span className="text-[10px] uppercase font-bold text-sky-700 block">Total Estimasi Profit</span>
-                  <span className="text-sm font-black font-mono text-sky-900 mt-0.5 block">
-                    {formatCurrency(totalProfit)} ({avgMargin.toFixed(1)}%)
-                  </span>
-                </div>
-                <div className="p-3.5 bg-slate-100/80 border border-slate-200 rounded-xl">
-                  <span className="text-[10px] uppercase font-bold text-slate-600 block">Saldo Kas Akhir</span>
-                  <span className="text-sm font-black font-mono text-slate-900 mt-0.5 block">
-                    {formatCurrency(endingSaldo)}
-                  </span>
-                </div>
-              </div>
-
-              {/* Grid Modern Table */}
-              <div className="rounded-2xl border border-sky-200/80 overflow-hidden shadow-2xs">
-                <table className="w-full text-left text-xs border-collapse">
-                  <thead className="bg-[#EBF3FA] text-[#223249] border-b border-sky-200/70 uppercase text-[11px] font-black tracking-wider">
-                    <tr>
-                      <th className="py-3 px-3 text-center w-12">No</th>
-                      <th className="py-3 px-3">Tanggal</th>
-                      <th className="py-3 px-3 min-w-[200px]">Vendor & Aktivitas</th>
-                      <th className="py-3 px-3 text-right">Penjualan & Biaya</th>
-                      <th className="py-3 px-3 text-right">Profit & Margin</th>
-                      <th className="py-3 px-3 text-center">T.O.P / Due</th>
-                      <th className="py-3 px-3 text-right">Arus Kas</th>
-                      <th className="py-3 px-3 text-right bg-sky-100/50">Rolling Saldo</th>
-                      <th className="py-3 px-3 text-center">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
-                    {entries.map((entry, idx) => {
-                      const isShipment = entry.entry_type === "SHIPMENT";
-                      return (
-                        <tr key={entry.id || idx} className="hover:bg-slate-50/80 transition-colors">
-                          <td className="py-2.5 px-3 text-center font-mono text-slate-400 font-bold">
-                            {idx + 1}
-                          </td>
-                          <td className="py-2.5 px-3 whitespace-nowrap font-mono font-bold text-slate-900">
-                            {formatDate(entry.date_of_entry)}
-                          </td>
-                          <td className="py-2.5 px-3">
-                            <div className="flex items-center gap-1.5">
-                              <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase ${
-                                isShipment ? "bg-sky-100 text-sky-800" : "bg-emerald-100 text-emerald-800"
-                              }`}>
-                                {entry.entry_type}
-                              </span>
-                              <span className="font-extrabold text-slate-900 text-xs truncate max-w-[200px]">
-                                {entry.vendor_name_raw || "-"}
-                              </span>
-                            </div>
-                            <div className="text-[11px] text-slate-500 mt-0.5 truncate max-w-xs">
-                              {entry.act_information || "-"}
-                            </div>
-                          </td>
-                          <td className="py-2.5 px-3 text-right font-mono whitespace-nowrap">
-                            {isShipment ? (
-                              <div>
-                                <div className="font-bold text-slate-800 text-xs">{formatCurrency(entry.grand_selling)}</div>
-                                <div className="text-[10px] text-slate-400">HPP: {formatCurrency(entry.grand_cost)}</div>
-                              </div>
-                            ) : "-"}
-                          </td>
-                          <td className="py-2.5 px-3 text-right font-mono whitespace-nowrap">
-                            {isShipment ? (
-                              <div>
-                                <div className={`font-bold text-xs ${entry.profit >= 0 ? "text-emerald-700" : "text-rose-600"}`}>
-                                  {formatCurrency(entry.profit)}
-                                </div>
-                                <div className="text-[10px] text-slate-500">{(entry.margin_pct * 100).toFixed(1)}%</div>
-                              </div>
-                            ) : "-"}
-                          </td>
-                          <td className="py-2.5 px-3 text-center whitespace-nowrap">
-                            {entry.top_days ? (
-                              <div>
-                                <span className="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded font-bold text-[10px]">
-                                  {entry.top_days} H
-                                </span>
-                                <div className="text-[10px] text-amber-700 font-bold mt-0.5">{formatDate(entry.due_date)}</div>
-                              </div>
-                            ) : "-"}
-                          </td>
-                          <td className="py-2.5 px-3 text-right font-mono whitespace-nowrap">
-                            {entry.debit > 0 ? (
-                              <span className="text-rose-600 font-bold">- {formatCurrency(entry.debit)}</span>
-                            ) : entry.kredit > 0 ? (
-                              <span className="text-emerald-700 font-bold">+ {formatCurrency(entry.kredit)}</span>
-                            ) : "-"}
-                          </td>
-                          <td className="py-2.5 px-3 text-right font-mono font-black text-slate-900 bg-sky-50/40">
-                            {formatCurrency(entry.saldo)}
-                          </td>
-                          <td className="py-2.5 px-3 text-center whitespace-nowrap">
-                            <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                              entry.remarks === "PAID" 
-                                ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                                : entry.remarks === "PENDING"
-                                ? "bg-slate-100 text-slate-700 border border-slate-300"
-                                : "bg-amber-50 text-amber-700 border border-amber-200"
-                            }`}>
-                              {entry.remarks === "PAID" ? "Lunas" : entry.remarks === "PENDING" ? "Sebagian" : "Belum Lunas"}
-                            </span>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Tanda Tangan */}
-              <div className="grid grid-cols-2 gap-8 pt-6 text-center text-xs font-sans">
-                <div>
-                  <p className="text-slate-500">Dibuat Oleh:</p>
-                  <div className="h-14"></div>
-                  <p className="font-bold text-slate-900 border-t border-slate-300 pt-1">Finance Administrasi</p>
-                </div>
-                <div>
-                  <p className="text-slate-500">Mengetahui & Menyetujui:</p>
-                  <div className="h-14"></div>
-                  <p className="font-bold text-slate-900 border-t border-slate-300 pt-1">Pimpinan / Direksi</p>
                 </div>
               </div>
             </div>
