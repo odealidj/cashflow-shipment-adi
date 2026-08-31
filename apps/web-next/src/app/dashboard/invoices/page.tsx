@@ -475,7 +475,7 @@ export default function InvoicesPage() {
                         </span>
                       </td>
                       <td className="py-3 px-4 text-right font-mono font-black text-slate-900 text-xs">
-                        {formatCurrency(inv.total_amount)}
+                        {formatCurrency(inv.amount ?? inv.total_amount)}
                       </td>
                       <td className="py-3 px-3 text-center">
                         <span
