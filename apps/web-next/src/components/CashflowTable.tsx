@@ -333,86 +333,83 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
           </div>
         )}
 
-        {/* MAIN DATA TABLE CARD */}
-        <div className="bg-white rounded-2xl overflow-hidden border border-slate-200/80 shadow-2xs">
-          {/* Top Actions Bar */}
-          <div className="px-6 py-4 border-b border-slate-100 flex flex-wrap justify-between items-center gap-4 bg-slate-50/60">
-            <div>
-              <h1 className="text-lg font-black text-slate-900 flex items-center gap-2.5 tracking-tight">
-                <div className="w-8 h-8 rounded-xl bg-sky-100/70 text-sky-800 flex items-center justify-center shadow-2xs">
-                  <Activity className="w-4 h-4" />
-                </div>
-                <span>Transaksi Cashflow & Shipment</span>
-              </h1>
-              <p className="text-xs text-slate-500 font-medium mt-0.5">
-                Monitoring arus kas, biaya shipment, jatuh tempo, serta histori operasional
-              </p>
-            </div>
-            
-            <div className="flex flex-wrap items-center gap-2">
-              <input 
-                type="file" 
-                accept=".xlsx, .xls" 
-                hidden 
-                ref={fileInputRef} 
-                onChange={handleImport} 
-              />
-              <button 
-                onClick={() => fileInputRef.current?.click()}
-                className="text-xs bg-white hover:bg-slate-100 text-slate-700 px-3 py-1.5 rounded-xl transition-colors font-bold border border-slate-200 flex items-center gap-1.5 shadow-2xs cursor-pointer"
-              >
-                <Upload className="w-3.5 h-3.5 text-sky-700" /> Impor Excel
-              </button>
-              <button 
-                onClick={handleExport}
-                className="text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-800 px-3 py-1.5 rounded-xl transition-colors font-bold border border-emerald-200 flex items-center gap-1.5 shadow-2xs cursor-pointer"
-              >
-                <Download className="w-3.5 h-3.5 text-emerald-700" /> Ekspor Excel
-              </button>
-              <button 
-                onClick={() => setIsTopUpOpen(true)}
-                className="text-xs bg-white hover:bg-slate-100 text-slate-700 px-3 py-1.5 rounded-xl transition-colors font-bold border border-slate-200 flex items-center gap-1.5 shadow-2xs cursor-pointer"
-              >
-                <Wallet className="w-3.5 h-3.5 text-slate-600" /> Tambah Modal
-              </button>
-              <button 
-                onClick={() => setIsShipmentOpen(true)}
-                className="text-xs bg-sky-700 hover:bg-sky-800 text-white px-4 py-2 rounded-xl transition-all font-bold shadow-2xs flex items-center gap-1.5 cursor-pointer active:scale-95"
-              >
-                <Plus className="w-4 h-4 stroke-[3]" /> Catat Shipment
-              </button>
-            </div>
-          </div>
-
-          {/* Filter Bar Component */}
-          <div className="p-4 pb-0">
-            <FilterBar
-              filters={filters}
-              sortDir={sortDir}
-              onToggleSort={toggleSort}
-              onFilterChange={(f) => {
-                setFilters(f);
-                setPage(1);
-              }}
-              onReset={() => {
-                const currentMonth = getCurrentMonthRange();
-                setFilters({
-                  date_from: currentMonth.date_from,
-                  date_to: currentMonth.date_to,
-                  entry_type: "",
-                  remarks: "",
-                  vendor_name: ""
-                });
-                setSortDir("ASC");
-                setPage(1);
-              }}
-            />
+        {/* LAYER 1: TOP HEADER & ACTION BUTTONS (CLEAN HEADER TANPA KOTAK CARD) */}
+        <div className="flex flex-wrap justify-between items-center gap-4 py-1">
+          <div>
+            <h1 className="text-xl font-black text-slate-900 flex items-center gap-2.5 tracking-tight">
+              <div className="w-8 h-8 rounded-xl bg-sky-100/80 text-sky-800 flex items-center justify-center shadow-2xs">
+                <Activity className="w-4 h-4" />
+              </div>
+              <span>Transaksi Cashflow & Shipment</span>
+            </h1>
+            <p className="text-xs text-slate-500 font-medium mt-0.5">
+              Monitoring arus kas, biaya shipment, jatuh tempo, serta histori operasional
+            </p>
           </div>
           
-          {/* Table Container */}
+          <div className="flex flex-wrap items-center gap-2">
+            <input 
+              type="file" 
+              accept=".xlsx, .xls" 
+              hidden 
+              ref={fileInputRef} 
+              onChange={handleImport} 
+            />
+            <button 
+              onClick={() => fileInputRef.current?.click()}
+              className="text-xs bg-white hover:bg-slate-50 text-slate-700 px-3.5 py-2 rounded-xl transition-colors font-bold border border-slate-200 flex items-center gap-1.5 shadow-2xs cursor-pointer"
+            >
+              <Upload className="w-3.5 h-3.5 text-sky-700" /> Impor Excel
+            </button>
+            <button 
+              onClick={handleExport}
+              className="text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-800 px-3.5 py-2 rounded-xl transition-colors font-bold border border-emerald-200 flex items-center gap-1.5 shadow-2xs cursor-pointer"
+            >
+              <Download className="w-3.5 h-3.5 text-emerald-700" /> Ekspor Excel
+            </button>
+            <button 
+              onClick={() => setIsTopUpOpen(true)}
+              className="text-xs bg-white hover:bg-slate-50 text-slate-700 px-3.5 py-2 rounded-xl transition-colors font-bold border border-slate-200 flex items-center gap-1.5 shadow-2xs cursor-pointer"
+            >
+              <Wallet className="w-3.5 h-3.5 text-slate-600" /> Tambah Modal
+            </button>
+            <button 
+              onClick={() => setIsShipmentOpen(true)}
+              className="text-xs bg-sky-700 hover:bg-sky-800 text-white px-4 py-2 rounded-xl transition-all font-bold shadow-2xs flex items-center gap-1.5 cursor-pointer active:scale-95"
+            >
+              <Plus className="w-4 h-4 stroke-[3]" /> Catat Shipment
+            </button>
+          </div>
+        </div>
+
+        {/* LAYER 2: FILTER TOOLBAR (CARD MANDIRI) */}
+        <FilterBar
+          filters={filters}
+          sortDir={sortDir}
+          onToggleSort={toggleSort}
+          onFilterChange={(f) => {
+            setFilters(f);
+            setPage(1);
+          }}
+          onReset={() => {
+            const currentMonth = getCurrentMonthRange();
+            setFilters({
+              date_from: currentMonth.date_from,
+              date_to: currentMonth.date_to,
+              entry_type: "",
+              remarks: "",
+              vendor_name: ""
+            });
+            setSortDir("ASC");
+            setPage(1);
+          }}
+        />
+
+        {/* LAYER 3: DATA TABLE CONTAINER (CARD MANDIRI) */}
+        <div className="bg-white rounded-2xl overflow-hidden border border-slate-200/80 shadow-2xs">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs text-slate-700 border-collapse">
-              <thead className="text-[11px] uppercase bg-slate-50/90 text-slate-600 border-y border-slate-200/80">
+              <thead className="text-[11px] uppercase bg-slate-50/90 text-slate-600 border-b border-slate-200/80">
                 <tr>
                   <th 
                     onClick={toggleSort}

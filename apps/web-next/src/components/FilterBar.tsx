@@ -252,7 +252,7 @@ export function FilterBar({
     (!isCurrentMonthActive && (Boolean(filters.date_from) || Boolean(filters.date_to)));
 
   return (
-    <div className="mb-3.5 bg-slate-50/80 border border-slate-200/80 rounded-2xl p-3 space-y-2.5 transition-all shadow-2xs">
+    <div className="bg-white border border-slate-200/80 rounded-2xl p-3.5 space-y-3 transition-all shadow-2xs">
       {/* BARIS UTAMA: SEARCH, MONTH SELECTOR, QUICK ACTION */}
       <div className="flex flex-wrap items-center justify-between gap-2.5">
         <div className="flex flex-wrap items-center gap-2">
