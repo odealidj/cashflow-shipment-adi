@@ -292,38 +292,170 @@ func (h *CashflowHandler) ExportExcel(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 	sheetName := "Sheet1"
-	
+
+	// 1. Style Header (Navy Blue #223249, Bold Putih, Center, Border)
+	headerStyle, _ := f.NewStyle(&excelize.Style{
+		Font: &excelize.Font{
+			Bold:   true,
+			Color:  "FFFFFF",
+			Size:   10,
+			Family: "Calibri",
+		},
+		Fill: excelize.Fill{
+			Type:    "pattern",
+			Color:   []string{"223249"},
+			Pattern: 1,
+		},
+		Alignment: &excelize.Alignment{
+			Horizontal: "center",
+			Vertical:   "center",
+			WrapText:   true,
+		},
+		Border: []excelize.Border{
+			{Type: "left", Color: "CBD5E1", Style: 1},
+			{Type: "top", Color: "CBD5E1", Style: 1},
+			{Type: "bottom", Color: "CBD5E1", Style: 1},
+			{Type: "right", Color: "CBD5E1", Style: 1},
+		},
+	})
+
+	// 2. Style Nominal Finansial (Rata Kanan, Indikator Ribuan #,##0, Border)
+	numStyle, _ := f.NewStyle(&excelize.Style{
+		CustomNumFmt: func() *string { s := "#,##0"; return &s }(),
+		Font: &excelize.Font{
+			Family: "Calibri",
+			Size:   10,
+		},
+		Alignment: &excelize.Alignment{
+			Horizontal: "right",
+			Vertical:   "center",
+		},
+		Border: []excelize.Border{
+			{Type: "left", Color: "E2E8F0", Style: 1},
+			{Type: "top", Color: "E2E8F0", Style: 1},
+			{Type: "bottom", Color: "E2E8F0", Style: 1},
+			{Type: "right", Color: "E2E8F0", Style: 1},
+		},
+	})
+
+	// 3. Style Tanggal & Status (Center Aligned, Border)
+	centerStyle, _ := f.NewStyle(&excelize.Style{
+		Font: &excelize.Font{
+			Family: "Calibri",
+			Size:   10,
+		},
+		Alignment: &excelize.Alignment{
+			Horizontal: "center",
+			Vertical:   "center",
+		},
+		Border: []excelize.Border{
+			{Type: "left", Color: "E2E8F0", Style: 1},
+			{Type: "top", Color: "E2E8F0", Style: 1},
+			{Type: "bottom", Color: "E2E8F0", Style: 1},
+			{Type: "right", Color: "E2E8F0", Style: 1},
+		},
+	})
+
+	// 4. Style Teks Biasa (Rata Kiri, Border)
+	textStyle, _ := f.NewStyle(&excelize.Style{
+		Font: &excelize.Font{
+			Family: "Calibri",
+			Size:   10,
+		},
+		Alignment: &excelize.Alignment{
+			Horizontal: "left",
+			Vertical:   "center",
+		},
+		Border: []excelize.Border{
+			{Type: "left", Color: "E2E8F0", Style: 1},
+			{Type: "top", Color: "E2E8F0", Style: 1},
+			{Type: "bottom", Color: "E2E8F0", Style: 1},
+			{Type: "right", Color: "E2E8F0", Style: 1},
+		},
+	})
+
+	// Set Headers
 	headers := []string{"KREDIT", "DEBIT", "SALDO", "DATE OF DEBIT", "ACT INFORMATION", "ACT EXPLAINATION", "VENDOR", "T O P", "DUE DATE", "GRAND COST", "GRAND SELLING", "PROFIT", "MARGIN IN %", "REMARKS"}
+	f.SetRowHeight(sheetName, 1, 26)
+
 	for i, header := range headers {
 		cell, _ := excelize.CoordinatesToCellName(i+1, 1)
 		f.SetCellValue(sheetName, cell, header)
+		f.SetCellStyle(sheetName, cell, cell, headerStyle)
 	}
 
+	// Tulis Baris Data
 	for i, entry := range entries {
 		row := i + 2
+		f.SetRowHeight(sheetName, row, 20)
+
+		// Nominal Finansial (A, B, C) -> Right Aligned dengan Format #,##0
 		f.SetCellValue(sheetName, fmt.Sprintf("A%d", row), entry.Kredit)
+		f.SetCellStyle(sheetName, fmt.Sprintf("A%d", row), fmt.Sprintf("A%d", row), numStyle)
+
 		f.SetCellValue(sheetName, fmt.Sprintf("B%d", row), entry.Debit)
+		f.SetCellStyle(sheetName, fmt.Sprintf("B%d", row), fmt.Sprintf("B%d", row), numStyle)
+
 		f.SetCellValue(sheetName, fmt.Sprintf("C%d", row), entry.Saldo)
-		f.SetCellValue(sheetName, fmt.Sprintf("D%d", row), entry.DateOfEntry.Format("2006-01-02"))
+		f.SetCellStyle(sheetName, fmt.Sprintf("C%d", row), fmt.Sprintf("C%d", row), numStyle)
+
+		// Tanggal (D) -> Format dd/mm/yyyy (02/01/2006), Center
+		f.SetCellValue(sheetName, fmt.Sprintf("D%d", row), entry.DateOfEntry.Format("02/01/2006"))
+		f.SetCellStyle(sheetName, fmt.Sprintf("D%d", row), fmt.Sprintf("D%d", row), centerStyle)
+
+		// Teks Informasi & Keterangan (E, F, G) -> Left
 		f.SetCellValue(sheetName, fmt.Sprintf("E%d", row), entry.ActInformation)
+		f.SetCellStyle(sheetName, fmt.Sprintf("E%d", row), fmt.Sprintf("E%d", row), textStyle)
+
 		f.SetCellValue(sheetName, fmt.Sprintf("F%d", row), entry.ActExplaination)
+		f.SetCellStyle(sheetName, fmt.Sprintf("F%d", row), fmt.Sprintf("F%d", row), textStyle)
+
 		f.SetCellValue(sheetName, fmt.Sprintf("G%d", row), entry.VendorNameRaw)
+		f.SetCellStyle(sheetName, fmt.Sprintf("G%d", row), fmt.Sprintf("G%d", row), textStyle)
+
+		// TOP (H) -> Center
 		if entry.TopDays > 0 {
 			f.SetCellValue(sheetName, fmt.Sprintf("H%d", row), fmt.Sprintf("%d HARI", entry.TopDays))
 		} else {
 			f.SetCellValue(sheetName, fmt.Sprintf("H%d", row), "-")
 		}
+		f.SetCellStyle(sheetName, fmt.Sprintf("H%d", row), fmt.Sprintf("H%d", row), centerStyle)
+
+		// Due Date (I) -> Format dd/mm/yyyy (02/01/2006), Center
 		if entry.DueDate != nil {
-			f.SetCellValue(sheetName, fmt.Sprintf("I%d", row), entry.DueDate.Format("2006-01-02"))
+			f.SetCellValue(sheetName, fmt.Sprintf("I%d", row), entry.DueDate.Format("02/01/2006"))
 		} else {
 			f.SetCellValue(sheetName, fmt.Sprintf("I%d", row), "-")
 		}
+		f.SetCellStyle(sheetName, fmt.Sprintf("I%d", row), fmt.Sprintf("I%d", row), centerStyle)
+
+		// Grand Cost, Grand Selling, Profit (J, K, L) -> Right Aligned #,##0
 		f.SetCellValue(sheetName, fmt.Sprintf("J%d", row), entry.GrandCost)
+		f.SetCellStyle(sheetName, fmt.Sprintf("J%d", row), fmt.Sprintf("J%d", row), numStyle)
+
 		f.SetCellValue(sheetName, fmt.Sprintf("K%d", row), entry.GrandSelling)
+		f.SetCellStyle(sheetName, fmt.Sprintf("K%d", row), fmt.Sprintf("K%d", row), numStyle)
+
 		f.SetCellValue(sheetName, fmt.Sprintf("L%d", row), entry.Profit)
+		f.SetCellStyle(sheetName, fmt.Sprintf("L%d", row), fmt.Sprintf("L%d", row), numStyle)
+
+		// Margin & Remarks (M, N) -> Center
 		f.SetCellValue(sheetName, fmt.Sprintf("M%d", row), fmt.Sprintf("%.2f%%", entry.MarginPct*100))
+		f.SetCellStyle(sheetName, fmt.Sprintf("M%d", row), fmt.Sprintf("M%d", row), centerStyle)
+
 		f.SetCellValue(sheetName, fmt.Sprintf("N%d", row), entry.Remarks)
+		f.SetCellStyle(sheetName, fmt.Sprintf("N%d", row), fmt.Sprintf("N%d", row), centerStyle)
 	}
+
+	// Atur Lebar Kolom yang Proporsional dan Rapi
+	f.SetColWidth(sheetName, "A", "C", 16)
+	f.SetColWidth(sheetName, "D", "D", 14)
+	f.SetColWidth(sheetName, "E", "F", 28)
+	f.SetColWidth(sheetName, "G", "G", 22)
+	f.SetColWidth(sheetName, "H", "H", 12)
+	f.SetColWidth(sheetName, "I", "I", 14)
+	f.SetColWidth(sheetName, "J", "L", 16)
+	f.SetColWidth(sheetName, "M", "N", 14)
 
 	w.Header().Set("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 	w.Header().Set("Content-Disposition", `attachment; filename="Cashflow_Export.xlsx"`)
