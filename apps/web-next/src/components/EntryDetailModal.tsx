@@ -84,11 +84,11 @@ export function EntryDetailModal({ isOpen, entry, onClose, onEdit, onStatusChang
           <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <span className="text-[11px] font-bold text-slate-500 block mb-0.5">Act Information</span>
+                <span className="text-[11px] font-bold text-slate-500 block mb-0.5">Keterangan Aktivitas</span>
                 <span className="text-sm font-bold text-slate-900">{entry.act_information || "-"}</span>
               </div>
               <div>
-                <span className="text-[11px] font-bold text-slate-500 block mb-0.5">Act Explaination</span>
+                <span className="text-[11px] font-bold text-slate-500 block mb-0.5">Rincian / Catatan Tambahan</span>
                 <span className="text-sm text-slate-700">{entry.act_explaination || "-"}</span>
               </div>
             </div>

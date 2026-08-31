@@ -220,10 +220,11 @@ export function EditEntryModal({ isOpen, entry, onClose, onSuccess }: EditEntryM
               </div>
             )}
             <div className={!isShipment ? "md:col-span-2" : ""}>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Act Information</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Keterangan Aktivitas</label>
               <input
                 type="text"
                 required
+                placeholder="Contoh: Muatan Logistik Jakarta - Surabaya"
                 value={formData.act_information}
                 onChange={e => setFormData({ ...formData, act_information: e.target.value })}
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs text-slate-800 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
@@ -232,9 +233,10 @@ export function EditEntryModal({ isOpen, entry, onClose, onSuccess }: EditEntryM
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">Act Explaination</label>
+            <label className="block text-xs font-bold text-slate-700 mb-1">Rincian / Catatan Tambahan</label>
             <input
               type="text"
+              placeholder="Contoh: No. Kontainer / No. Polisi Truk / Keterangan rute"
               value={formData.act_explaination}
               onChange={e => setFormData({ ...formData, act_explaination: e.target.value })}
               className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs text-slate-800 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"

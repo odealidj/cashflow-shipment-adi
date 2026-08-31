@@ -241,9 +241,9 @@ export default function TambahTransaksiPage() {
             <h3 className="font-bold text-[14px] text-slate-900">Aktivitas & Vendor</h3>
           </div>
 
-          {/* Act Information */}
+          {/* Keterangan Aktivitas */}
           <div>
-            <label className="block text-[12px] font-bold text-slate-700 mb-1">Act Information</label>
+            <label className="block text-[12px] font-bold text-slate-700 mb-1">Keterangan Aktivitas</label>
             <div className="relative">
               <FileText className="w-4 h-4 text-blue-600 absolute left-3 top-3" />
               <input
@@ -256,9 +256,9 @@ export default function TambahTransaksiPage() {
             </div>
           </div>
 
-          {/* Act Explaination */}
+          {/* Rincian / Catatan Tambahan */}
           <div>
-            <label className="block text-[12px] font-bold text-slate-700 mb-1">Act Explaination</label>
+            <label className="block text-[12px] font-bold text-slate-700 mb-1">Rincian / Catatan Tambahan</label>
             <div className="relative">
               <AlignLeft className="w-4 h-4 text-blue-600 absolute left-3 top-3" />
               <textarea

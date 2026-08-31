@@ -110,7 +110,7 @@ export function TopUpModal({ isOpen, onClose, onSuccess }: TopUpModalProps) {
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">Act Information (Opsional)</label>
+            <label className="block text-xs font-bold text-slate-700 mb-1">Keterangan Aktivitas (Opsional)</label>
             <input
               type="text"
               value={formData.act_information}
@@ -121,7 +121,7 @@ export function TopUpModal({ isOpen, onClose, onSuccess }: TopUpModalProps) {
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">Act Explaination (Opsional)</label>
+            <label className="block text-xs font-bold text-slate-700 mb-1">Rincian / Catatan Tambahan (Opsional)</label>
             <textarea
               value={formData.act_explaination}
               onChange={e => setFormData({ ...formData, act_explaination: e.target.value })}

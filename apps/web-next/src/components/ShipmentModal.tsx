@@ -151,7 +151,7 @@ export function ShipmentModal({ isOpen, onClose, onSuccess }: ShipmentModalProps
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Act Information (Aktivitas) *</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Keterangan Aktivitas *</label>
                 <input
                   type="text"
                   required
@@ -162,7 +162,7 @@ export function ShipmentModal({ isOpen, onClose, onSuccess }: ShipmentModalProps
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Act Explaination (Keterangan/Rute)</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Rincian / Catatan Tambahan</label>
                 <input
                   type="text"
                   placeholder="Rute, muatan, no surat jalan..."
