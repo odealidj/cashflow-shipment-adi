@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Truck, Plus, Mail, Phone, Calendar, Edit, Trash2, Search, RotateCcw, AlertTriangle } from "lucide-react";
 import { VendorModal } from "@/components/VendorModal";
+import { fetchWithAuth } from "@/lib/apiClient";
 
 interface Vendor {
   id: number;
@@ -31,10 +32,7 @@ export function VendorTable() {
   const fetchVendors = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
-      const res = await fetch(`http://localhost:8080/api/v1/vendors?page=${page}&limit=50`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await fetchWithAuth(`http://localhost:8080/api/v1/vendors?page=${page}&limit=50`);
       const data = await res.json();
       if (data.status && data.data) {
         setVendors(data.data.entries || data.data || []);

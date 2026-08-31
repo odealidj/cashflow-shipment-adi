@@ -16,6 +16,7 @@ import { KPICards, SummaryData } from "@/components/KPICards";
 import { RecentTransactions } from "@/components/RecentTransactions";
 import { TopUpModal } from "@/components/TopUpModal";
 import { ShipmentModal } from "@/components/ShipmentModal";
+import { fetchWithAuth } from "@/lib/apiClient";
 
 export default function Dashboard() {
   const [user, setUser] = useState<any>(null);
@@ -38,22 +39,15 @@ export default function Dashboard() {
   const fetchDashboardData = useCallback(async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
-      if (!token) return;
-
       // 1. Fetch Summary KPI
-      const resSummary = await fetch("http://localhost:8080/api/v1/cashflow/summary", {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const resSummary = await fetchWithAuth("http://localhost:8080/api/v1/cashflow/summary");
       const dataSummary = await resSummary.json();
       if (dataSummary.status) {
         setSummary(dataSummary.data);
       }
 
       // 2. Fetch Recent Transactions (limit 5, sorted DESC for recent activity)
-      const resEntries = await fetch("http://localhost:8080/api/v1/cashflow?page=1&limit=5&sort=DESC", {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const resEntries = await fetchWithAuth("http://localhost:8080/api/v1/cashflow?page=1&limit=5&sort=DESC");
       const dataEntries = await resEntries.json();
       if (dataEntries.status && dataEntries.data) {
         setRecentEntries(dataEntries.data.entries || dataEntries.data || []);

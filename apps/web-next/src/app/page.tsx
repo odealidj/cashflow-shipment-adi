@@ -18,6 +18,13 @@ export default function LoginPage() {
     if (token && user) {
       router.replace("/dashboard");
     }
+
+    if (typeof window !== "undefined") {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get("expired") === "true") {
+        setError("Sesi Anda telah berakhir demi keamanan. Silakan login kembali.");
+      }
+    }
   }, [router]);
   
   const handleLogin = async (e: React.FormEvent) => {

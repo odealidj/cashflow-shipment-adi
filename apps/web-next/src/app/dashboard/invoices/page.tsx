@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { CreateInvoiceModal } from "@/components/CreateInvoiceModal";
 import { InvoicePrintModal } from "@/components/InvoicePrintModal";
+import { fetchWithAuth } from "@/lib/apiClient";
 
 export default function InvoicesPage() {
   const [invoices, setInvoices] = useState<any[]>([]);
@@ -41,7 +42,6 @@ export default function InvoicesPage() {
   const fetchInvoices = useCallback(async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
       const params = new URLSearchParams();
       if (statusFilter !== "ALL") params.set("status", statusFilter);
       if (searchQuery.trim()) params.set("client_name", searchQuery.trim());
@@ -50,9 +50,7 @@ export default function InvoicesPage() {
       params.set("sort_dir", sortDir);
       params.set("limit", "100");
 
-      const res = await fetch(`http://localhost:8080/api/v1/invoices?${params.toString()}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await fetchWithAuth(`http://localhost:8080/api/v1/invoices?${params.toString()}`);
       const data = await res.json();
       if (data.status && data.data) {
         setInvoices(data.data.entries || []);
@@ -71,16 +69,13 @@ export default function InvoicesPage() {
 
   const fetchSummary = useCallback(async () => {
     try {
-      const token = localStorage.getItem("token");
       const params = new URLSearchParams();
       if (dateFrom) params.set("date_from", dateFrom);
       if (dateTo) params.set("date_to", dateTo);
 
       const q = params.toString();
       const url = q ? `http://localhost:8080/api/v1/invoices/summary?${q}` : "http://localhost:8080/api/v1/invoices/summary";
-      const res = await fetch(url, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await fetchWithAuth(url);
       const data = await res.json();
       if (data.status && data.data) {
         setSummary(data.data);
@@ -98,10 +93,8 @@ export default function InvoicesPage() {
   const handleMarkPaid = async (id: number) => {
     if (!window.confirm("Tandai invoice ini sebagai LUNAS?")) return;
     try {
-      const token = localStorage.getItem("token");
-      const res = await fetch(`http://localhost:8080/api/v1/invoices/${id}/pay`, {
-        method: "PATCH",
-        headers: { Authorization: `Bearer ${token}` }
+      const res = await fetchWithAuth(`http://localhost:8080/api/v1/invoices/${id}/pay`, {
+        method: "PATCH"
       });
       const data = await res.json();
       if (data.status) {
@@ -118,10 +111,8 @@ export default function InvoicesPage() {
   const handleDeleteInvoice = async (id: number, invNo: string) => {
     if (!window.confirm(`Hapus invoice ${invNo}? Data akan diarsipkan (soft delete).`)) return;
     try {
-      const token = localStorage.getItem("token");
-      const res = await fetch(`http://localhost:8080/api/v1/invoices/${id}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` }
+      const res = await fetchWithAuth(`http://localhost:8080/api/v1/invoices/${id}`, {
+        method: "DELETE"
       });
       const data = await res.json();
       if (data.status) {

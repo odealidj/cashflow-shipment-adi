@@ -28,6 +28,7 @@ import { EditEntryModal } from "./EditEntryModal";
 import { EntryDetailModal } from "./EntryDetailModal";
 import { DeleteConfirmModal } from "./DeleteConfirmModal";
 import { FilterBar, FilterState, getCurrentMonthRange, formatActivePeriod } from "./FilterBar";
+import { fetchWithAuth } from "@/lib/apiClient";
 
 interface CashflowTableProps {
   onDataChange?: () => void;
@@ -81,11 +82,8 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
   const fetchCashflow = useCallback(async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
       const query = buildQueryString();
-      const res = await fetch(`http://localhost:8080/api/v1/cashflow?${query}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await fetchWithAuth(`http://localhost:8080/api/v1/cashflow?${query}`);
       const data = await res.json();
       if (data.status && data.data) {
         setEntries(data.data.entries || data.data || []);
@@ -105,16 +103,13 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
 
   const fetchSummary = useCallback(async () => {
     try {
-      const token = localStorage.getItem("token");
       const params = new URLSearchParams();
       if (filters.date_from) params.set("date_from", filters.date_from);
       if (filters.date_to) params.set("date_to", filters.date_to);
 
       const q = params.toString();
       const url = q ? `http://localhost:8080/api/v1/cashflow/summary?${q}` : "http://localhost:8080/api/v1/cashflow/summary";
-      const res = await fetch(url, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await fetchWithAuth(url);
       const data = await res.json();
       if (data.status && data.data) {
         setSummary(data.data);
@@ -141,22 +136,16 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
 
   const handleExport = async () => {
     try {
-      const token = localStorage.getItem("token");
       const query = buildQueryString();
-      const res = await fetch(`http://localhost:8080/api/v1/cashflow/export?${query}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (!res.ok) throw new Error("Failed to export");
-      
+      const res = await fetchWithAuth(`http://localhost:8080/api/v1/cashflow/export?${query}`);
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `Cashflow_Export_${sortDir}.xlsx`;
+      a.download = `cashflow_export_${new Date().toISOString().slice(0, 10)}.xlsx`;
       document.body.appendChild(a);
       a.click();
       a.remove();
-      window.URL.revokeObjectURL(url);
     } catch (err) {
       console.error("Export failed", err);
     }
@@ -170,42 +159,29 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
     formData.append("file", file);
 
     try {
-      setLoading(true);
-      const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:8080/api/v1/cashflow/import", {
+      const res = await fetchWithAuth("http://localhost:8080/api/v1/cashflow/import", {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
         body: formData
       });
       const data = await res.json();
       if (data.status) {
-        alert("Excel berhasil diimpor!");
-        fetchCashflow();
-        fetchSummary();
-        if (onDataChange) onDataChange();
+        alert(data.message);
+        handleDataRefresh();
       } else {
-        alert(`Gagal impor: ${data.message}`);
+        alert("Import failed: " + data.message);
       }
     } catch (err) {
-      console.error("Import error", err);
-      alert("Terjadi kesalahan saat mengunggah file");
-    } finally {
-      setLoading(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
+      console.error("Import failed", err);
     }
   };
 
   const handleDeleteConfirm = async (entry: any) => {
     try {
-      const token = localStorage.getItem("token");
-      const res = await fetch(`http://localhost:8080/api/v1/cashflow/${entry.id}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` }
+      const res = await fetchWithAuth(`http://localhost:8080/api/v1/cashflow/${entry.id}`, {
+        method: "DELETE"
       });
       if (!res.ok) throw new Error("Gagal menghapus transaksi");
-      fetchCashflow();
-      fetchSummary();
-      if (onDataChange) onDataChange();
+      handleDataRefresh();
     } catch (err) {
       console.error("Delete failed", err);
       alert("Gagal menghapus transaksi dari database.");
@@ -219,18 +195,12 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
 
   const handleStatusChange = async (entryId: any, nextStatus: string) => {
     try {
-      const token = localStorage.getItem("token");
-      await fetch(`http://localhost:8080/api/v1/cashflow/${entryId}/status`, {
+      await fetchWithAuth(`http://localhost:8080/api/v1/cashflow/${entryId}/status`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ remarks: nextStatus })
       });
-      fetchCashflow();
-      fetchSummary();
-      if (onDataChange) onDataChange();
+      handleDataRefresh();
     } catch (err) {
       console.error("Failed to update status", err);
     }
