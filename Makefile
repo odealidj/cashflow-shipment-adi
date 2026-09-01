@@ -3,7 +3,7 @@
 # Default command
 help:
 	@echo "Available commands:"
-	@echo "  make infra-up            - Start infrastructure containers (PostgreSQL, etc.)"
+	@echo "  make infra-up            - Start infrastructure containers (PostgreSQL 15 & Redis 7)"
 	@echo "  make infra-down          - Stop infrastructure containers"
 	@echo "  make infra-logs          - View infrastructure container logs"
 	@echo "  make run-local-core-go   - Run Golang Core API service locally (http://localhost:8080)"
