@@ -83,6 +83,28 @@ func main() {
 	cashflowService := services.NewCashflowService(cashflowRepo, vendorService)
 	invoiceService := services.NewInvoiceService(invoiceRepo)
 
+	// Auto-bootstrap Super Admin IT account from Environment Variables if not present
+	superAdminEmail := os.Getenv("SUPERADMIN_EMAIL")
+	if superAdminEmail == "" {
+		superAdminEmail = "admin@example.com"
+	}
+	superAdminPassword := os.Getenv("SUPERADMIN_PASSWORD")
+	if superAdminPassword == "" {
+		superAdminPassword = "password123"
+	}
+	superAdminName := os.Getenv("SUPERADMIN_NAME")
+	if superAdminName == "" {
+		superAdminName = "IT Super Admin"
+	}
+	superAdminPhone := os.Getenv("SUPERADMIN_PHONE")
+	if superAdminPhone == "" {
+		superAdminPhone = "08123456789"
+	}
+
+	if err := authService.BootstrapSuperAdmin(ctx, superAdminEmail, superAdminPassword, superAdminName, superAdminPhone); err != nil {
+		log.Printf("[Warning] Failed to auto-bootstrap Super Admin: %v\n", err)
+	}
+
 	// Initialize Handlers
 	authHandler := handler.NewAuthHandler(authService)
 	userHandler := handler.NewUserHandler(userService)

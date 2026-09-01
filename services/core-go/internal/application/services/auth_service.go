@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"errors"
+	"log"
 
 	"github.com/cashflow-shipment-app/backend/internal/core/domain"
 	"github.com/cashflow-shipment-app/backend/internal/core/ports"
@@ -36,7 +37,7 @@ func (s *AuthService) Login(ctx context.Context, identifier, password string) (*
 		return nil, "", errors.New("kredensial tidak valid")
 	}
 
-	// Update last login timestamp asynchronously / synchronously
+	// Update last login timestamp
 	_ = s.userRepo.UpdateLastLogin(ctx, user.ID)
 
 	// Create Two-Tier Session (L1 Memory + L2 Redis)
@@ -70,4 +71,48 @@ func (s *AuthService) Register(ctx context.Context, user *domain.User, plainPass
 	}
 
 	return s.userRepo.Create(ctx, user)
+}
+
+// BootstrapSuperAdmin auto-initializes the initial Super Admin account from Environment Variables if not present
+func (s *AuthService) BootstrapSuperAdmin(ctx context.Context, email, password, fullName, phone string) error {
+	if email == "" || password == "" {
+		return nil // No env configuration provided, skip
+	}
+
+	// Check if user with this email already exists
+	existingUser, _ := s.userRepo.GetByEmailOrPhone(ctx, email)
+	if existingUser != nil {
+		return nil // Already initialized, skip
+	}
+
+	if fullName == "" {
+		fullName = "IT Super Admin"
+	}
+
+	var phonePtr *string
+	if phone != "" {
+		phonePtr = &phone
+	}
+
+	hashedPassword, err := hash.HashPassword(password)
+	if err != nil {
+		return err
+	}
+
+	user := &domain.User{
+		ID:           uuid.New(),
+		Email:        email,
+		Phone:        phonePtr,
+		FullName:     fullName,
+		PasswordHash: hashedPassword,
+		Role:         domain.RoleSuperAdmin,
+		Status:       domain.StatusActive,
+	}
+
+	if err := s.userRepo.Create(ctx, user); err != nil {
+		return err
+	}
+
+	log.Printf("[Bootstrap] Akun IT Super Admin berhasil diinisialisasi otomatis dari .env untuk: %s\n", email)
+	return nil
 }

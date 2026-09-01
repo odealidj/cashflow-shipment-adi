@@ -109,6 +109,22 @@ Sistem membagi pengguna ke dalam **2 Lapisan Utama**:
 
 ---
 
+### 1.5 Inisialisasi Akun Super Admin IT via Environment Variables (`.env`)
+
+Untuk menjaga keamanan kredensial dan menghindari *hardcoded secrets* di repositori Git:
+- Akun root `super_admin` **tidak di-hardcode** dalam file migrasi database SQL.
+- Saat backend Go pertama kali dijalankan, sistem secara otomatis memeriksa keberadaan akun `super_admin` dan melakukan *auto-bootstrap* menggunakan variabel lingkungan (*Environment Variables*):
+  ```env
+  SUPERADMIN_EMAIL=admin@example.com
+  SUPERADMIN_PASSWORD=password123
+  SUPERADMIN_NAME=IT Super Admin
+  SUPERADMIN_PHONE=08123456789
+  ```
+- Backend Go melakukan *hashing bcrypt* secara dinamis dan menyimpannya ke database dengan status `ACTIVE`.
+- Di server production, kredensial ini dapat diatur melalui *Environment Secret Manager* tanpa ada jejak password di kode sumber.
+
+---
+
 ## BAGIAN 2: SPESIFIKASI ARSITEKTUR TEKNIS (TECHNICAL SPECIFICATIONS)
 
 ### 2.1 Arsitektur Autentikasi Two-Tier High-Performance
