@@ -12,6 +12,7 @@ import {
   Smartphone, 
   ChevronLeft, 
   ChevronRight,
+  ChevronDown,
   Users,
   ShieldCheck
 } from "lucide-react";
@@ -23,6 +24,8 @@ import { useAuth } from "@/hooks/useAuth";
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, logout, canManageUsers, isSuperAdmin } = useAuth();
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
+  const [isMasterRekananOpen, setIsMasterRekananOpen] = useState<boolean>(true);
+  const [isPresetAktivitasOpen, setIsPresetAktivitasOpen] = useState<boolean>(true);
   const pathname = usePathname();
 
   useEffect(() => {
@@ -48,6 +51,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const isActInfoActive = pathname.startsWith("/dashboard/activity-info");
   const isActRoutesActive = pathname.startsWith("/dashboard/activity-routes");
   const isUsersActive = pathname.startsWith("/dashboard/users");
+
+  // Auto expand parent group when active child route is selected
+  useEffect(() => {
+    if (isCustomersActive || isVendorsActive) {
+      setIsMasterRekananOpen(true);
+    }
+    if (isActInfoActive || isActRoutesActive) {
+      setIsPresetAktivitasOpen(true);
+    }
+  }, [isCustomersActive, isVendorsActive, isActInfoActive, isActRoutesActive]);
 
   const getRoleLabel = (role?: string) => {
     switch (role) {
@@ -210,84 +223,102 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </div>
             </div>
 
-            {/* GRUP 2: MASTER REKANAN */}
+            {/* GRUP 2: MASTER REKANAN (Expandable / Collapsible) */}
             <div className="pt-2 border-t border-white/10">
-              {!isCollapsed && (
-                <div className="px-3 pb-1 text-[10px] font-black text-slate-400/90 uppercase tracking-widest">
-                  Master Rekanan
+              {!isCollapsed ? (
+                <button
+                  type="button"
+                  onClick={() => setIsMasterRekananOpen(prev => !prev)}
+                  className="w-full px-3 pb-1.5 flex items-center justify-between text-[10px] font-black text-slate-400/90 uppercase tracking-widest hover:text-white transition-colors cursor-pointer select-none group"
+                  title={isMasterRekananOpen ? "Tutup grup Master Rekanan" : "Buka grup Master Rekanan"}
+                >
+                  <span>Master Rekanan</span>
+                  <ChevronDown className={`w-3.5 h-3.5 text-slate-400 group-hover:text-white transition-transform duration-200 ${isMasterRekananOpen ? "rotate-0" : "-rotate-90"}`} />
+                </button>
+              ) : null}
+              
+              {(!isCollapsed && isMasterRekananOpen || isCollapsed) && (
+                <div className="space-y-1 animate-fade-in">
+                  <Link 
+                    href="/dashboard/customers" 
+                    title="Klien / Perusahaan"
+                    className={`flex items-center gap-3 rounded-xl transition-all text-xs font-bold ${
+                      isCollapsed ? "justify-center p-3" : "px-3.5 py-2.5"
+                    } ${
+                      isCustomersActive 
+                      ? "bg-sky-600 text-white shadow-xs" 
+                      : "text-slate-300 hover:text-white hover:bg-white/10"
+                    }`}
+                  >
+                    <Building2 className="w-5 h-5 shrink-0" />
+                    {!isCollapsed && <span className="truncate">Klien / Perusahaan</span>}
+                  </Link>
+
+                  <Link 
+                    href="/dashboard/vendors" 
+                    title="Mitra Armada & Transporter"
+                    className={`flex items-center gap-3 rounded-xl transition-all text-xs font-bold ${
+                      isCollapsed ? "justify-center p-3" : "px-3.5 py-2.5"
+                    } ${
+                      isVendorsActive 
+                      ? "bg-sky-600 text-white shadow-xs" 
+                      : "text-slate-300 hover:text-white hover:bg-white/10"
+                    }`}
+                  >
+                    <Truck className="w-5 h-5 shrink-0" />
+                    {!isCollapsed && <span className="truncate">Mitra Armada (Vendor)</span>}
+                  </Link>
                 </div>
               )}
-              <div className="space-y-1">
-                <Link 
-                  href="/dashboard/customers" 
-                  title="Klien / Perusahaan"
-                  className={`flex items-center gap-3 rounded-xl transition-all text-xs font-bold ${
-                    isCollapsed ? "justify-center p-3" : "px-3.5 py-2.5"
-                  } ${
-                    isCustomersActive 
-                    ? "bg-sky-600 text-white shadow-xs" 
-                    : "text-slate-300 hover:text-white hover:bg-white/10"
-                  }`}
-                >
-                  <Building2 className="w-5 h-5 shrink-0" />
-                  {!isCollapsed && <span className="truncate">Klien / Perusahaan</span>}
-                </Link>
-
-                <Link 
-                  href="/dashboard/vendors" 
-                  title="Mitra Armada & Transporter"
-                  className={`flex items-center gap-3 rounded-xl transition-all text-xs font-bold ${
-                    isCollapsed ? "justify-center p-3" : "px-3.5 py-2.5"
-                  } ${
-                    isVendorsActive 
-                    ? "bg-sky-600 text-white shadow-xs" 
-                    : "text-slate-300 hover:text-white hover:bg-white/10"
-                  }`}
-                >
-                  <Truck className="w-5 h-5 shrink-0" />
-                  {!isCollapsed && <span className="truncate">Mitra Armada (Vendor)</span>}
-                </Link>
-              </div>
             </div>
 
-            {/* GRUP 3: MASTER AKTIVITAS */}
+            {/* GRUP 3: PRESET AKTIVITAS (Expandable / Collapsible) */}
             <div className="pt-2 border-t border-white/10">
-              {!isCollapsed && (
-                <div className="px-3 pb-1 text-[10px] font-black text-slate-400/90 uppercase tracking-widest">
-                  Preset Aktivitas
+              {!isCollapsed ? (
+                <button
+                  type="button"
+                  onClick={() => setIsPresetAktivitasOpen(prev => !prev)}
+                  className="w-full px-3 pb-1.5 flex items-center justify-between text-[10px] font-black text-slate-400/90 uppercase tracking-widest hover:text-white transition-colors cursor-pointer select-none group"
+                  title={isPresetAktivitasOpen ? "Tutup grup Preset Aktivitas" : "Buka grup Preset Aktivitas"}
+                >
+                  <span>Preset Aktivitas</span>
+                  <ChevronDown className={`w-3.5 h-3.5 text-slate-400 group-hover:text-white transition-transform duration-200 ${isPresetAktivitasOpen ? "rotate-0" : "-rotate-90"}`} />
+                </button>
+              ) : null}
+              
+              {(!isCollapsed && isPresetAktivitasOpen || isCollapsed) && (
+                <div className="space-y-1 animate-fade-in">
+                  <Link 
+                    href="/dashboard/activity-info" 
+                    title="Master Keterangan Aktivitas (Armada)"
+                    className={`flex items-center gap-3 rounded-xl transition-all text-xs font-bold ${
+                      isCollapsed ? "justify-center p-3" : "px-3.5 py-2.5"
+                    } ${
+                      isActInfoActive 
+                      ? "bg-sky-700/80 text-white shadow-xs" 
+                      : "text-slate-300 hover:text-white hover:bg-white/10"
+                    }`}
+                  >
+                    <Sparkles className="w-5 h-5 shrink-0" />
+                    {!isCollapsed && <span className="truncate">Keterangan Aktivitas</span>}
+                  </Link>
+
+                  <Link 
+                    href="/dashboard/activity-routes" 
+                    title="Master Catatan & Rute Pengiriman"
+                    className={`flex items-center gap-3 rounded-xl transition-all text-xs font-bold ${
+                      isCollapsed ? "justify-center p-3" : "px-3.5 py-2.5"
+                    } ${
+                      isActRoutesActive 
+                      ? "bg-emerald-700/80 text-white shadow-xs" 
+                      : "text-slate-300 hover:text-white hover:bg-white/10"
+                    }`}
+                  >
+                    <Route className="w-5 h-5 shrink-0" />
+                    {!isCollapsed && <span className="truncate">Catatan & Rute</span>}
+                  </Link>
                 </div>
               )}
-              <div className="space-y-1">
-                <Link 
-                  href="/dashboard/activity-info" 
-                  title="Master Keterangan Aktivitas (Armada)"
-                  className={`flex items-center gap-3 rounded-xl transition-all text-xs font-bold ${
-                    isCollapsed ? "justify-center p-3" : "px-3.5 py-2.5"
-                  } ${
-                    isActInfoActive 
-                    ? "bg-sky-700/80 text-white shadow-xs" 
-                    : "text-slate-300 hover:text-white hover:bg-white/10"
-                  }`}
-                >
-                  <Sparkles className="w-5 h-5 shrink-0" />
-                  {!isCollapsed && <span className="truncate">Keterangan Aktivitas</span>}
-                </Link>
-
-                <Link 
-                  href="/dashboard/activity-routes" 
-                  title="Master Catatan & Rute Pengiriman"
-                  className={`flex items-center gap-3 rounded-xl transition-all text-xs font-bold ${
-                    isCollapsed ? "justify-center p-3" : "px-3.5 py-2.5"
-                  } ${
-                    isActRoutesActive 
-                    ? "bg-emerald-700/80 text-white shadow-xs" 
-                    : "text-slate-300 hover:text-white hover:bg-white/10"
-                  }`}
-                >
-                  <Route className="w-5 h-5 shrink-0" />
-                  {!isCollapsed && <span className="truncate">Catatan & Rute</span>}
-                </Link>
-              </div>
             </div>
 
             {/* GRUP 4: PENGATURAN SISTEM (Admin & Super Admin only) */}
