@@ -232,7 +232,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   className="w-full px-3 pb-1.5 flex items-center justify-between text-[10px] font-black text-slate-400/90 uppercase tracking-widest hover:text-white transition-colors cursor-pointer select-none group"
                   title={isMasterRekananOpen ? "Tutup grup Master Rekanan" : "Buka grup Master Rekanan"}
                 >
-                  <span>Master Rekanan</span>
+                  <div className="flex items-center gap-1.5">
+                    <span>Master Rekanan</span>
+                    <span className="px-1.5 py-0.5 text-[9px] font-black rounded-md bg-sky-950/70 text-sky-300 border border-sky-400/30 group-hover:border-sky-400/60 leading-none">
+                      2
+                    </span>
+                  </div>
                   <ChevronDown className={`w-3.5 h-3.5 text-slate-400 group-hover:text-white transition-transform duration-200 ${isMasterRekananOpen ? "rotate-0" : "-rotate-90"}`} />
                 </button>
               ) : null}
@@ -281,7 +286,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   className="w-full px-3 pb-1.5 flex items-center justify-between text-[10px] font-black text-slate-400/90 uppercase tracking-widest hover:text-white transition-colors cursor-pointer select-none group"
                   title={isPresetAktivitasOpen ? "Tutup grup Preset Aktivitas" : "Buka grup Preset Aktivitas"}
                 >
-                  <span>Preset Aktivitas</span>
+                  <div className="flex items-center gap-1.5">
+                    <span>Preset Aktivitas</span>
+                    <span className="px-1.5 py-0.5 text-[9px] font-black rounded-md bg-sky-950/70 text-sky-300 border border-sky-400/30 group-hover:border-sky-400/60 leading-none">
+                      2
+                    </span>
+                  </div>
                   <ChevronDown className={`w-3.5 h-3.5 text-slate-400 group-hover:text-white transition-transform duration-200 ${isPresetAktivitasOpen ? "rotate-0" : "-rotate-90"}`} />
                 </button>
               ) : null}
