@@ -25,8 +25,11 @@ func (r *PostgresUserRepo) Create(ctx context.Context, user *domain.User) error 
 	if user.ID == uuid.Nil {
 		user.ID = uuid.New()
 	}
+	if user.Role == "" {
+		user.Role = domain.RoleFinance
+	}
 	if user.Status == "" {
-		user.Status = domain.StatusActive
+		user.Status = domain.StatusInactive
 	}
 
 	query := `

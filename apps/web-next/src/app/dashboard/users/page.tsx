@@ -13,6 +13,7 @@ import {
   RefreshCw, 
   CheckCircle2, 
   XCircle,
+  Clock,
   Briefcase,
   UserCheck,
   Building,
@@ -96,9 +97,9 @@ export default function UsersManagementPage() {
 
   // KPI Calculations
   const totalUsers = total;
+  const pendingCount = users.filter((u) => u.status === "INACTIVE").length;
   const adminCount = users.filter((u) => u.role === "admin" || u.role === "super_admin").length;
   const financeCount = users.filter((u) => u.role === "finance" || u.role === "operator").length;
-  const execCount = users.filter((u) => u.role === "direktur" || u.role === "owner" || u.role === "viewer").length;
 
   const handleOpenAdd = () => {
     setSelectedUserForEdit(null);
@@ -219,7 +220,7 @@ export default function UsersManagementPage() {
                 Manajemen Pengguna & Hak Akses
               </h1>
               <p className="text-xs text-slate-500 font-medium">
-                Kelola akun pengguna, peran otorisasi, kredensial, dan status operasional sistem
+                Kelola akun pengguna, persetujuan pendaftaran, peran otorisasi, dan status sistem
               </p>
             </div>
           </div>
@@ -250,7 +251,35 @@ export default function UsersManagementPage() {
           <p className="text-[10px] text-slate-500 mt-0.5">Akun terdaftar di sistem</p>
         </div>
 
-        {/* Card 2: Admin Bisnis */}
+        {/* Card 2: Menunggu Persetujuan (Pending Approval) */}
+        <div className={`p-5 rounded-2xl border shadow-xs transition-all ${
+          pendingCount > 0 
+            ? "bg-amber-50/70 border-amber-300 ring-2 ring-amber-400/30" 
+            : "bg-white border-slate-200/80"
+        }`}>
+          <div className="flex items-center justify-between">
+            <span className={`text-[11px] font-bold uppercase tracking-wider ${
+              pendingCount > 0 ? "text-amber-800 font-extrabold" : "text-slate-500"
+            }`}>
+              Menunggu Approval
+            </span>
+            <div className={`w-8 h-8 rounded-xl flex items-center justify-center border ${
+              pendingCount > 0 
+                ? "bg-amber-500 text-white border-amber-600 animate-pulse" 
+                : "bg-amber-50 text-amber-600 border-amber-100"
+            }`}>
+              <Clock className="w-4 h-4" />
+            </div>
+          </div>
+          <p className={`text-2xl font-black mt-2 ${pendingCount > 0 ? "text-amber-900" : "text-slate-800"}`}>
+            {pendingCount}
+          </p>
+          <p className="text-[10px] text-slate-500 mt-0.5">
+            {pendingCount > 0 ? "Perlu verifikasi & aktivasi" : "Tidak ada antrean approval"}
+          </p>
+        </div>
+
+        {/* Card 3: Admin Bisnis */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
@@ -264,7 +293,7 @@ export default function UsersManagementPage() {
           <p className="text-[10px] text-slate-500 mt-0.5">Otoritas operasional penuh</p>
         </div>
 
-        {/* Card 3: Finance & Akuntansi */}
+        {/* Card 4: Finance & Akuntansi */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
@@ -276,20 +305,6 @@ export default function UsersManagementPage() {
           </div>
           <p className="text-2xl font-black text-teal-800 mt-2">{financeCount}</p>
           <p className="text-[10px] text-slate-500 mt-0.5">Entri transaksi & invoice</p>
-        </div>
-
-        {/* Card 4: Direktur & Owner */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-              Direktur & Owner
-            </span>
-            <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center border border-amber-100">
-              <Building className="w-4 h-4" />
-            </div>
-          </div>
-          <p className="text-2xl font-black text-amber-800 mt-2">{execCount}</p>
-          <p className="text-[10px] text-slate-500 mt-0.5">Monitoring & Executive</p>
         </div>
       </div>
 
@@ -346,7 +361,8 @@ export default function UsersManagementPage() {
             >
               <option value="ALL">Semua Status</option>
               <option value="ACTIVE">🟢 Aktif</option>
-              <option value="INACTIVE">🔴 Non-Aktif</option>
+              <option value="INACTIVE">🟡 Menunggu Approval</option>
+              <option value="SUSPENDED">🔴 Ditangguhkan</option>
             </select>
           </div>
 
@@ -368,15 +384,16 @@ export default function UsersManagementPage() {
             <thead>
               {/* Header Standardized: bg-[#EBF3FA] text-[#223249] border-sky-200/70 */}
               <tr className="bg-[#EBF3FA] text-[#223249] text-xs font-bold border-b border-sky-200/70 select-none">
-                <th className="py-3 px-4 w-12 text-center">No</th>
-                <th className="py-3 px-4">Pengguna</th>
-                <th className="py-3 px-4">Kontak & Email</th>
-                <th className="py-3 px-4">Peran (Role)</th>
-                <th className="py-3 px-4 text-center">Status</th>
-                <th className="py-3 px-4">Terakhir Login</th>
-                <th className="py-3 px-4 text-center w-36">Aksi</th>
+                <th className="py-3 px-4 text-center w-12">No</th>
+                <th className="py-3 px-4 min-w-[200px]">Pengguna</th>
+                <th className="py-3 px-4 min-w-[180px]">Email & Kontak</th>
+                <th className="py-3 px-4 min-w-[160px]">Peran (Role)</th>
+                <th className="py-3 px-4 text-center min-w-[150px]">Status Akun</th>
+                <th className="py-3 px-4 min-w-[160px]">Login Terakhir</th>
+                <th className="py-3 px-4 text-center min-w-[140px]">Aksi</th>
               </tr>
             </thead>
+
             <tbody className="divide-y divide-slate-100 text-xs font-medium text-slate-700">
               {loading ? (
                 <tr>
@@ -400,11 +417,14 @@ export default function UsersManagementPage() {
                 users.map((u, idx) => {
                   const isCurrentUser = currentUser?.user_id === u.id;
                   const isTargetSuperAdmin = u.role === "super_admin";
+                  const isPending = u.status === "INACTIVE";
 
                   return (
                     <tr
                       key={u.id}
-                      className="hover:bg-sky-50/40 transition-colors group"
+                      className={`hover:bg-sky-50/40 transition-colors group ${
+                        isPending ? "bg-amber-50/30" : ""
+                      }`}
                     >
                       {/* No */}
                       <td className="py-3 px-4 text-center font-bold text-slate-400">
@@ -447,10 +467,15 @@ export default function UsersManagementPage() {
                             <CheckCircle2 className="w-3 h-3 text-emerald-600" />
                             Aktif
                           </span>
+                        ) : u.status === "INACTIVE" ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-amber-50 text-amber-800 border border-amber-300">
+                            <Clock className="w-3 h-3 text-amber-600" />
+                            Menunggu Approval
+                          </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-rose-50 text-rose-700 border border-rose-200">
                             <XCircle className="w-3 h-3 text-rose-600" />
-                            Non-Aktif
+                            Ditangguhkan
                           </span>
                         )}
                       </td>
@@ -463,12 +488,24 @@ export default function UsersManagementPage() {
                       {/* Aksi */}
                       <td className="py-3 px-4 text-center">
                         <div className="flex items-center justify-center gap-1">
+                          {/* Quick Approve Button if Inactive */}
+                          {isPending && (
+                            <button
+                              onClick={() => handleOpenEdit(u)}
+                              className="px-2.5 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-bold text-[11px] flex items-center gap-1 shadow-xs transition-all cursor-pointer mr-1"
+                              title="Setujui & Aktivasi Akun Pengguna"
+                            >
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              <span>Aktivasi</span>
+                            </button>
+                          )}
+
                           {/* Edit */}
                           <button
                             onClick={() => handleOpenEdit(u)}
                             disabled={isTargetSuperAdmin && !isSuperAdmin}
                             title="Edit Pengguna"
-                            className="p-1.5 rounded-lg text-slate-500 hover:text-sky-600 hover:bg-sky-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer"
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-sky-700 hover:bg-sky-50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
                           >
                             <Edit className="w-4 h-4" />
                           </button>
@@ -478,17 +515,17 @@ export default function UsersManagementPage() {
                             onClick={() => handleOpenReset(u)}
                             disabled={isTargetSuperAdmin && !isSuperAdmin}
                             title="Reset Password"
-                            className="p-1.5 rounded-lg text-slate-500 hover:text-amber-600 hover:bg-amber-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer"
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-amber-700 hover:bg-amber-50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
                           >
                             <KeyRound className="w-4 h-4" />
                           </button>
 
-                          {/* Delete / Nonaktifkan */}
+                          {/* Delete / Deactivate */}
                           <button
                             onClick={() => handleOpenDelete(u)}
                             disabled={isCurrentUser || (isTargetSuperAdmin && !isSuperAdmin)}
-                            title={isCurrentUser ? "Tidak dapat menghapus diri sendiri" : "Nonaktifkan Pengguna"}
-                            className="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer"
+                            title={isCurrentUser ? "Tidak dapat menghapus akun sendiri" : "Nonaktifkan / Hapus Pengguna"}
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-rose-700 hover:bg-rose-50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -502,43 +539,55 @@ export default function UsersManagementPage() {
           </table>
         </div>
 
-        {/* Unified TablePagination */}
+        {/* Unified TablePagination Component */}
         <TablePagination
           currentPage={page}
-          totalItems={total}
           pageSize={limit}
+          totalItems={total}
           currentCount={users.length}
-          onPageChange={(newPage) => setPage(newPage)}
+          onPageChange={setPage}
           onPageSizeChange={(newLimit) => {
             setLimit(newLimit);
             setPage(1);
           }}
-          itemUnit="pengguna"
+          pageSizeOptions={[10, 15, 25, 50]}
         />
       </div>
 
-      {/* Modals */}
-      <UserModal
-        isOpen={isUserModalOpen}
-        onClose={() => setIsUserModalOpen(false)}
-        onSuccess={fetchUsers}
-        editUser={selectedUserForEdit}
-        isSuperAdmin={isSuperAdmin}
-      />
+      {/* MODALS */}
+      {isUserModalOpen && (
+        <UserModal
+          isOpen={isUserModalOpen}
+          onClose={() => setIsUserModalOpen(false)}
+          onSuccess={fetchUsers}
+          editUser={selectedUserForEdit}
+          isSuperAdmin={isSuperAdmin}
+        />
+      )}
 
-      <ResetPasswordModal
-        isOpen={isResetModalOpen}
-        onClose={() => setIsResetModalOpen(false)}
-        onSuccess={fetchUsers}
-        user={selectedUserForReset}
-      />
+      {isResetModalOpen && selectedUserForReset && (
+        <ResetPasswordModal
+          isOpen={isResetModalOpen}
+          onClose={() => {
+            setIsResetModalOpen(false);
+            setSelectedUserForReset(null);
+          }}
+          onSuccess={fetchUsers}
+          user={selectedUserForReset}
+        />
+      )}
 
-      <DeleteUserModal
-        isOpen={isDeleteModalOpen}
-        onClose={() => setIsDeleteModalOpen(false)}
-        onSuccess={fetchUsers}
-        user={selectedUserForDelete}
-      />
+      {isDeleteModalOpen && selectedUserForDelete && (
+        <DeleteUserModal
+          isOpen={isDeleteModalOpen}
+          onClose={() => {
+            setIsDeleteModalOpen(false);
+            setSelectedUserForDelete(null);
+          }}
+          onSuccess={fetchUsers}
+          user={selectedUserForDelete}
+        />
+      )}
     </div>
   );
 }

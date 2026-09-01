@@ -29,8 +29,14 @@ func (s *AuthService) Login(ctx context.Context, identifier, password string) (*
 		return nil, "", errors.New("kredensial tidak valid")
 	}
 
+	if user.Status == domain.StatusInactive {
+		return nil, "", errors.New("Akun Anda sedang menunggu persetujuan dan aktivasi dari Administrator.")
+	}
+	if user.Status == domain.StatusSuspended {
+		return nil, "", errors.New("Akun Anda telah dinonaktifkan atau ditangguhkan oleh Administrator.")
+	}
 	if user.Status != domain.StatusActive {
-		return nil, "", errors.New("akun Anda tidak aktif atau dinonaktifkan. Silakan hubungi Administrator")
+		return nil, "", errors.New("Akun Anda tidak aktif. Silakan hubungi Administrator.")
 	}
 
 	if !hash.CheckPasswordHash(password, user.PasswordHash) {
@@ -57,6 +63,10 @@ func (s *AuthService) Logout(ctx context.Context, sessionID string) error {
 }
 
 func (s *AuthService) Register(ctx context.Context, user *domain.User, plainPassword string) error {
+	if len(plainPassword) < 6 {
+		return errors.New("password minimal 6 karakter")
+	}
+
 	hashedPassword, err := hash.HashPassword(plainPassword)
 	if err != nil {
 		return err
@@ -66,9 +76,12 @@ func (s *AuthService) Register(ctx context.Context, user *domain.User, plainPass
 		user.ID = uuid.New()
 	}
 	user.PasswordHash = hashedPassword
-	if user.Status == "" {
-		user.Status = domain.StatusActive
+
+	// Default role is finance/basic and status is INACTIVE (Pending Admin Approval)
+	if user.Role == "" || user.Role == domain.RoleSuperAdmin || user.Role == domain.RoleAdmin {
+		user.Role = domain.RoleFinance
 	}
+	user.Status = domain.StatusInactive
 
 	return s.userRepo.Create(ctx, user)
 }

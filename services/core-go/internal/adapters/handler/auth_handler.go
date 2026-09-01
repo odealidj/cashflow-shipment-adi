@@ -114,17 +114,29 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	req.Email = strings.TrimSpace(req.Email)
+	req.FullName = strings.TrimSpace(req.FullName)
+	if req.Email == "" || req.FullName == "" || req.Password == "" {
+		response.Error(w, http.StatusBadRequest, "Nama lengkap, email, dan password wajib diisi")
+		return
+	}
+
 	user := &domain.User{
 		Email:    req.Email,
 		Phone:    req.Phone,
 		FullName: req.FullName,
-		Role:     domain.UserRole(req.Role),
+		Role:     domain.RoleFinance,
+		Status:   domain.StatusInactive,
 	}
 
 	if err := h.authService.Register(r.Context(), user, req.Password); err != nil {
-		response.Error(w, http.StatusInternalServerError, "Gagal mendaftarkan user: "+err.Error())
+		response.Error(w, http.StatusBadRequest, "Gagal mendaftarkan akun: "+err.Error())
 		return
 	}
 
-	response.JSON(w, http.StatusCreated, "User berhasil didaftarkan", nil)
+	response.JSON(w, http.StatusCreated, "Pendaftaran berhasil! Akun Anda sedang menunggu verifikasi & aktivasi hak akses oleh Administrator.", map[string]interface{}{
+		"email":     user.Email,
+		"full_name": user.FullName,
+		"status":    user.Status,
+	})
 }
