@@ -35,6 +35,7 @@ export default function LoginPage() {
     try {
       const res = await fetch("http://localhost:8080/api/v1/auth/login", {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ identifier, password }),
       });
@@ -45,9 +46,13 @@ export default function LoginPage() {
         throw new Error(data.message || "Gagal masuk");
       }
       
-      // Store token
-      localStorage.setItem("token", data.data.token);
-      localStorage.setItem("user", JSON.stringify(data.data.user));
+      // Store user profile for fast initial render
+      if (data.data?.token) {
+        localStorage.setItem("token", data.data.token);
+      }
+      if (data.data?.user) {
+        localStorage.setItem("user", JSON.stringify(data.data.user));
+      }
       
       // Redirect to dashboard
       window.location.href = "/dashboard";

@@ -1,9 +1,9 @@
 /**
- * apiClient.ts - HTTP Request Helper dengan Otomatisasi Interceptor 401 Unauthorized
+ * apiClient.ts - HTTP Request Helper dengan Two-Tier Session via HttpOnly Cookie
  * 
- * Jika backend mengembalikan status 401 (token expired / invalid):
- * 1. Menghapus sesi localStorage (token & user).
- * 2. Mengarahkan otomatis ke halaman login (/) agar user tidak terjebak di layar kosong.
+ * Menggunakan credentials: "include" secara default agar HttpOnly Cookie (auth_session)
+ * otomatis terkirim pada setiap request ke Backend Go.
+ * Jika status 401 Unauthorized diterima, otomatis mengarahkan ke halaman login (/?expired=true).
  */
 
 export const API_BASE_URL = "http://localhost:8080/api/v1";
@@ -24,7 +24,8 @@ export async function fetchWithAuth(url: string, options: FetchOptions = {}): Pr
   try {
     const response = await fetch(url, {
       ...options,
-      headers
+      credentials: "include", // Pastikan HttpOnly Cookie selalu terkirim
+      headers,
     });
 
     // Tangani 401 Unauthorized secara global
@@ -34,7 +35,6 @@ export async function fetchWithAuth(url: string, options: FetchOptions = {}): Pr
         localStorage.removeItem("token");
         localStorage.removeItem("user");
         
-        // Jangan redirect jika sudah di halaman login
         if (window.location.pathname !== "/" && window.location.pathname !== "/m/pin") {
           window.location.href = "/?expired=true";
         }

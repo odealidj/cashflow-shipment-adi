@@ -3,9 +3,11 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/cashflow-shipment-app/backend/internal/application/services"
 	"github.com/cashflow-shipment-app/backend/internal/core/domain"
+	"github.com/cashflow-shipment-app/backend/internal/middleware"
 	"github.com/cashflow-shipment-app/backend/pkg/response"
 )
 
@@ -22,33 +24,79 @@ type LoginRequest struct {
 	Password   string `json:"password"`
 }
 
-// Login godoc
-// @Summary      User login
-// @Description  Login using email or phone number and password
-// @Tags         auth
-// @Accept       json
-// @Produce      json
-// @Param        request body LoginRequest true "Login Credentials"
-// @Success      200  {object}  response.APIResponse
-// @Failure      401  {object}  response.APIResponse
-// @Router       /auth/login [post]
+// Login authenticates user and sets HttpOnly session cookie
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	var req LoginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		response.Error(w, http.StatusBadRequest, "Invalid request payload")
+		response.Error(w, http.StatusBadRequest, "Payload request tidak valid")
 		return
 	}
 
-	token, user, err := h.authService.Login(r.Context(), req.Identifier, req.Password)
+	session, token, err := h.authService.Login(r.Context(), req.Identifier, req.Password)
 	if err != nil {
-		response.Error(w, http.StatusUnauthorized, "Invalid credentials")
+		response.Error(w, http.StatusUnauthorized, err.Error())
 		return
 	}
 
-	response.JSON(w, http.StatusOK, "Login successful", map[string]interface{}{
-		"token": token,
-		"user":  user,
+	// Set HttpOnly Secure Session Cookie (Anti-XSS)
+	http.SetCookie(w, &http.Cookie{
+		Name:     middleware.CookieAuthName,
+		Value:    token,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   false, // Set true in production behind HTTPS
+		SameSite: http.SameSiteLaxMode,
+		MaxAge:   86400, // 24 hours
 	})
+
+	response.JSON(w, http.StatusOK, "Login berhasil", map[string]interface{}{
+		"token": token,
+		"user":  session,
+	})
+}
+
+// Logout revokes session and clears HttpOnly cookie
+func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
+	var token string
+	if cookie, err := r.Cookie(middleware.CookieAuthName); err == nil && cookie != nil {
+		token = cookie.Value
+	}
+	if token == "" {
+		authHeader := r.Header.Get("Authorization")
+		if authHeader != "" {
+			parts := strings.Split(authHeader, " ")
+			if len(parts) == 2 {
+				token = parts[1]
+			}
+		}
+	}
+
+	if token != "" {
+		_ = h.authService.Logout(r.Context(), token)
+	}
+
+	// Expire cookie
+	http.SetCookie(w, &http.Cookie{
+		Name:     middleware.CookieAuthName,
+		Value:    "",
+		Path:     "/",
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+		MaxAge:   -1,
+	})
+
+	response.JSON(w, http.StatusOK, "Logout berhasil", nil)
+}
+
+// Me returns current active session profile
+func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
+	session := middleware.GetUserSessionFromContext(r.Context())
+	if session == nil {
+		response.Error(w, http.StatusUnauthorized, "Sesi tidak valid")
+		return
+	}
+
+	response.JSON(w, http.StatusOK, "Sesi pengguna aktif", session)
 }
 
 type RegisterRequest struct {
@@ -59,19 +107,10 @@ type RegisterRequest struct {
 	Role     string `json:"role"`
 }
 
-// Register godoc
-// @Summary      Register a new user
-// @Description  Register a new user in the system (Admin only ideally, but open for now)
-// @Tags         auth
-// @Accept       json
-// @Produce      json
-// @Param        request body RegisterRequest true "User Registration Info"
-// @Success      201  {object}  response.APIResponse
-// @Router       /auth/register [post]
 func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	var req RegisterRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		response.Error(w, http.StatusBadRequest, "Invalid request payload")
+		response.Error(w, http.StatusBadRequest, "Payload request tidak valid")
 		return
 	}
 
@@ -83,9 +122,9 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.authService.Register(r.Context(), user, req.Password); err != nil {
-		response.Error(w, http.StatusInternalServerError, "Failed to register user: "+err.Error())
+		response.Error(w, http.StatusInternalServerError, "Gagal mendaftarkan user: "+err.Error())
 		return
 	}
 
-	response.JSON(w, http.StatusCreated, "User registered successfully", nil)
+	response.JSON(w, http.StatusCreated, "User berhasil didaftarkan", nil)
 }

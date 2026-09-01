@@ -6,31 +6,26 @@ import {
   LayoutDashboard, 
   Truck, 
   Receipt, 
-  FileText,
   Building2,
   Sparkles,
   Route,
   Smartphone, 
   ChevronLeft, 
-  ChevronRight 
+  ChevronRight,
+  Users,
+  ShieldCheck
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<any>(null);
+  const { user, logout, canManageUsers, isSuperAdmin } = useAuth();
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
   const pathname = usePathname();
 
   useEffect(() => {
-    const userData = localStorage.getItem("user");
-    if (!userData) {
-      window.location.href = "/";
-      return;
-    }
-    setUser(JSON.parse(userData));
-
     const savedCollapsed = localStorage.getItem("sidebar_collapsed");
     if (savedCollapsed === "true") {
       setIsCollapsed(true);
@@ -45,14 +40,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     });
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    window.location.href = "/";
-  };
-
-  if (!user) return <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC] text-slate-500 font-semibold text-sm">Memuat dashboard...</div>;
-
   const isDashboardActive = pathname === "/dashboard";
   const isTransactionsActive = pathname.startsWith("/dashboard/transactions");
   const isInvoicesActive = pathname.startsWith("/dashboard/invoices");
@@ -60,6 +47,41 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const isVendorsActive = pathname.startsWith("/dashboard/vendors");
   const isActInfoActive = pathname.startsWith("/dashboard/activity-info");
   const isActRoutesActive = pathname.startsWith("/dashboard/activity-routes");
+  const isUsersActive = pathname.startsWith("/dashboard/users");
+
+  const getRoleLabel = (role?: string) => {
+    switch (role) {
+      case "super_admin":
+        return "IT SUPER ADMIN";
+      case "admin":
+        return "ADMINISTRATOR BISNIS";
+      case "finance":
+        return "FINANCE & AKUNTANSI";
+      case "direktur":
+        return "DIREKTUR";
+      case "owner":
+        return "PEMILIK MODAL";
+      default:
+        return role?.toUpperCase() || "PENGGUNA";
+    }
+  };
+
+  const getRoleBadgeStyle = (role?: string) => {
+    switch (role) {
+      case "super_admin":
+        return "from-purple-600 to-indigo-700 text-purple-200 border-purple-400/30";
+      case "admin":
+        return "from-blue-600 to-sky-700 text-sky-200 border-sky-400/30";
+      case "finance":
+        return "from-emerald-600 to-teal-700 text-emerald-200 border-emerald-400/30";
+      case "direktur":
+        return "from-amber-600 to-indigo-800 text-amber-200 border-amber-400/30";
+      case "owner":
+        return "from-amber-500 to-orange-700 text-amber-100 border-amber-400/30";
+      default:
+        return "from-slate-600 to-slate-700 text-slate-200 border-slate-400/30";
+    }
+  };
 
   return (
     <div className="min-h-screen flex bg-[#F4F6F9] text-slate-900 font-sans antialiased">
@@ -120,7 +142,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 >
                   <Image
                     src="/logo.png"
-                    alt="Logo"
+                    alt="Logo PT. Adijayantara Logistics Indonesia"
                     width={48}
                     height={48}
                     className="w-full h-full object-contain"
@@ -131,8 +153,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             )}
           </div>
 
-          {/* Navigation Links Grouped by Functionality */}
-          <nav className="space-y-3">
+          {/* Navigation Links */}
+          <nav className="space-y-4">
             {/* GRUP 1: UTAMA */}
             <div>
               {!isCollapsed && (
@@ -143,42 +165,32 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <div className="space-y-1">
                 <Link 
                   href="/dashboard" 
-                  title="Dashboard Overview"
+                  title="Monitoring Finansial"
                   className={`flex items-center gap-3 rounded-xl transition-all text-xs font-bold ${
                     isCollapsed ? "justify-center p-3" : "px-3.5 py-2.5"
                   } ${
                     isDashboardActive 
-                    ? "bg-sky-700/80 text-white shadow-xs" 
+                    ? "bg-sky-600 text-white shadow-xs" 
                     : "text-slate-300 hover:text-white hover:bg-white/10"
                   }`}
                 >
                   <LayoutDashboard className="w-5 h-5 shrink-0" />
-                  {!isCollapsed && <span className="truncate">Dashboard Overview</span>}
+                  {!isCollapsed && <span className="truncate">Monitoring Finansial</span>}
                 </Link>
-              </div>
-            </div>
 
-            {/* GRUP 2: TRANSAKSI & OPERASIONAL */}
-            <div className={`pt-1 ${isCollapsed ? "border-t border-white/10 pt-2.5" : ""}`}>
-              {!isCollapsed && (
-                <div className="px-3 pb-1 text-[10px] font-black text-slate-400/90 uppercase tracking-widest">
-                  Transaksi & Kas
-                </div>
-              )}
-              <div className="space-y-1">
                 <Link 
                   href="/dashboard/transactions" 
-                  title="Transaksi Cashflow & Shipment"
+                  title="Kas & Operasional"
                   className={`flex items-center gap-3 rounded-xl transition-all text-xs font-bold ${
                     isCollapsed ? "justify-center p-3" : "px-3.5 py-2.5"
                   } ${
                     isTransactionsActive 
-                    ? "bg-sky-700/80 text-white shadow-xs" 
+                    ? "bg-sky-600 text-white shadow-xs" 
                     : "text-slate-300 hover:text-white hover:bg-white/10"
                   }`}
                 >
                   <Receipt className="w-5 h-5 shrink-0" />
-                  {!isCollapsed && <span className="truncate">Transaksi Cashflow</span>}
+                  {!isCollapsed && <span className="truncate">Kas & Operasional</span>}
                 </Link>
 
                 <Link 
@@ -188,54 +200,64 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     isCollapsed ? "justify-center p-3" : "px-3.5 py-2.5"
                   } ${
                     isInvoicesActive 
-                    ? "bg-sky-700/80 text-white shadow-xs" 
+                    ? "bg-sky-600 text-white shadow-xs" 
                     : "text-slate-300 hover:text-white hover:bg-white/10"
                   }`}
                 >
-                  <FileText className="w-5 h-5 shrink-0" />
+                  <ShieldCheck className="w-5 h-5 shrink-0" />
                   {!isCollapsed && <span className="truncate">Monitoring Invoice</span>}
                 </Link>
               </div>
             </div>
 
-            {/* GRUP 3: DATA MASTER */}
-            <div className={`pt-1 ${isCollapsed ? "border-t border-white/10 pt-2.5" : ""}`}>
+            {/* GRUP 2: MASTER REKANAN */}
+            <div className="pt-2 border-t border-white/10">
               {!isCollapsed && (
                 <div className="px-3 pb-1 text-[10px] font-black text-slate-400/90 uppercase tracking-widest">
-                  Data Master
+                  Master Rekanan
                 </div>
               )}
               <div className="space-y-1">
                 <Link 
                   href="/dashboard/customers" 
-                  title="Master Customer (Klien)"
+                  title="Klien / Perusahaan"
                   className={`flex items-center gap-3 rounded-xl transition-all text-xs font-bold ${
                     isCollapsed ? "justify-center p-3" : "px-3.5 py-2.5"
                   } ${
                     isCustomersActive 
-                    ? "bg-sky-700/80 text-white shadow-xs" 
+                    ? "bg-sky-600 text-white shadow-xs" 
                     : "text-slate-300 hover:text-white hover:bg-white/10"
                   }`}
                 >
                   <Building2 className="w-5 h-5 shrink-0" />
-                  {!isCollapsed && <span className="truncate">Daftar Customer</span>}
+                  {!isCollapsed && <span className="truncate">Klien / Perusahaan</span>}
                 </Link>
 
                 <Link 
                   href="/dashboard/vendors" 
-                  title="Master Vendor (Armada & Transporter)"
+                  title="Mitra Armada & Transporter"
                   className={`flex items-center gap-3 rounded-xl transition-all text-xs font-bold ${
                     isCollapsed ? "justify-center p-3" : "px-3.5 py-2.5"
                   } ${
                     isVendorsActive 
-                    ? "bg-sky-700/80 text-white shadow-xs" 
+                    ? "bg-sky-600 text-white shadow-xs" 
                     : "text-slate-300 hover:text-white hover:bg-white/10"
                   }`}
                 >
                   <Truck className="w-5 h-5 shrink-0" />
-                  {!isCollapsed && <span className="truncate">Daftar Vendor</span>}
+                  {!isCollapsed && <span className="truncate">Mitra Armada (Vendor)</span>}
                 </Link>
+              </div>
+            </div>
 
+            {/* GRUP 3: MASTER AKTIVITAS */}
+            <div className="pt-2 border-t border-white/10">
+              {!isCollapsed && (
+                <div className="px-3 pb-1 text-[10px] font-black text-slate-400/90 uppercase tracking-widest">
+                  Preset Aktivitas
+                </div>
+              )}
+              <div className="space-y-1">
                 <Link 
                   href="/dashboard/activity-info" 
                   title="Master Keterangan Aktivitas (Armada)"
@@ -268,7 +290,34 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </div>
             </div>
 
-            {/* GRUP 4: AKSES MOBILE PWA */}
+            {/* GRUP 4: PENGATURAN SISTEM (Admin & Super Admin only) */}
+            {canManageUsers && (
+              <div className="pt-2 border-t border-white/10">
+                {!isCollapsed && (
+                  <div className="px-3 pb-1 text-[10px] font-black text-slate-400/90 uppercase tracking-widest">
+                    Pengaturan Sistem
+                  </div>
+                )}
+                <div className="space-y-1">
+                  <Link 
+                    href="/dashboard/users" 
+                    title="Manajemen Pengguna & Role"
+                    className={`flex items-center gap-3 rounded-xl transition-all text-xs font-bold ${
+                      isCollapsed ? "justify-center p-3" : "px-3.5 py-2.5"
+                    } ${
+                      isUsersActive 
+                      ? "bg-purple-600 text-white shadow-xs" 
+                      : "text-slate-300 hover:text-white hover:bg-white/10"
+                    }`}
+                  >
+                    <Users className="w-5 h-5 text-purple-300 shrink-0" />
+                    {!isCollapsed && <span className="truncate">Manajemen Pengguna</span>}
+                  </Link>
+                </div>
+              </div>
+            )}
+
+            {/* GRUP 5: AKSES MOBILE PWA */}
             <div className={`pt-2 border-t border-white/10 ${isCollapsed ? "flex justify-center pt-2.5" : ""}`}>
               {!isCollapsed && (
                 <div className="px-3 pb-1 text-[10px] font-black text-slate-400/90 uppercase tracking-widest">
@@ -293,20 +342,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div className="pt-4 pb-1 border-t border-white/10">
           <div className={`flex items-center gap-2.5 mb-3 ${isCollapsed ? "justify-center px-0" : "px-1"}`}>
             <div 
-              className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center text-white font-bold text-xs shadow-xs shrink-0"
-              title={`${user?.full_name || "Pengguna"} (${user?.role || "ADMIN"})`}
+              className={`w-9 h-9 rounded-full bg-gradient-to-br ${getRoleBadgeStyle(user?.role)} flex items-center justify-center text-white font-bold text-xs shadow-xs shrink-0 border`}
+              title={`${user?.full_name || "Pengguna"} (${getRoleLabel(user?.role)})`}
             >
               {user?.full_name?.charAt(0) || "U"}
             </div>
             {!isCollapsed && (
               <div className="overflow-hidden min-w-0">
                 <p className="text-xs font-bold text-white truncate">{user?.full_name || "Pengguna"}</p>
-                <p className="text-[10px] text-sky-300 truncate uppercase font-semibold">{user?.role || "ADMIN"}</p>
+                <p className="text-[10px] text-sky-300 truncate uppercase font-semibold">
+                  {getRoleLabel(user?.role)}
+                </p>
               </div>
             )}
           </div>
           <button 
-            onClick={handleLogout}
+            onClick={logout}
             title="Keluar"
             className={`flex items-center gap-2 w-full rounded-xl text-xs font-bold text-rose-300 hover:text-white hover:bg-rose-600/30 transition-all cursor-pointer ${
               isCollapsed ? "justify-center p-2.5" : "px-3 py-2.5"

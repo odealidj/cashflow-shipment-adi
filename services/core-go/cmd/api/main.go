@@ -14,19 +14,18 @@ import (
 	"github.com/cashflow-shipment-app/backend/internal/adapters/handler"
 	"github.com/cashflow-shipment-app/backend/internal/adapters/repository"
 	"github.com/cashflow-shipment-app/backend/internal/application/services"
+	"github.com/cashflow-shipment-app/backend/internal/core/domain"
 	"github.com/cashflow-shipment-app/backend/internal/middleware"
 	"github.com/go-chi/chi/v5"
 	chiMiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 	httpSwagger "github.com/swaggo/http-swagger/v2"
-
-	_ "github.com/cashflow-shipment-app/backend/docs"
 )
 
-// @title           Cashflow Shipment App API
-// @version         1.0
-// @description     API for managing continuous rolling cashflow for logistics/trucking.
-// @termsOfService  http://swagger.io/terms/
+// @title         Cashflow & Shipment Management API
+// @version       1.0
+// @description   High Performance Backend Service for PT. Adijayantara Logistics Indonesia.
+// @termsOfService http://swagger.io/terms/
 
 // @contact.name   API Support
 // @contact.url    http://www.swagger.io/support
@@ -38,10 +37,6 @@ import (
 // @host      localhost:8080
 // @BasePath  /api/v1
 
-// @securityDefinitions.apikey BearerAuth
-// @in header
-// @name Authorization
-
 func main() {
 	ctx := context.Background()
 	
@@ -50,9 +45,9 @@ func main() {
 		dbUrl = "postgres://cashflow_user:cashflow_password@localhost:5432/cashflow_db?sslmode=disable"
 	}
 
-	jwtSecret := os.Getenv("JWT_SECRET")
-	if jwtSecret == "" {
-		jwtSecret = "super-secret-key-for-dev-only"
+	redisUrl := os.Getenv("REDIS_URL")
+	if redisUrl == "" {
+		redisUrl = "localhost:6379"
 	}
 
 	// Initialize DB Pool
@@ -62,6 +57,13 @@ func main() {
 	}
 	defer dbPool.Close()
 
+	// Initialize Redis Client
+	redisClient, err := repository.NewRedisClient(ctx, redisUrl)
+	if err != nil {
+		log.Fatalf("Failed to initialize Redis: %v", err)
+	}
+	defer redisClient.Close()
+
 	// Initialize Repositories
 	userRepo := repository.NewPostgresUserRepo(dbPool)
 	vendorRepo := repository.NewPostgresVendorRepo(dbPool)
@@ -69,9 +71,12 @@ func main() {
 	activityPresetRepo := repository.NewPostgresActivityPresetRepo(dbPool)
 	cashflowRepo := repository.NewPostgresCashflowRepo(dbPool)
 	invoiceRepo := repository.NewPostgresInvoiceRepo(dbPool)
+	sessionRepo := repository.NewRedisSessionRepo(redisClient)
 	
-	// Initialize Services
-	authService := services.NewAuthService(userRepo, jwtSecret)
+	// Initialize Services (Two-Tier Session)
+	sessionService := services.NewSessionService(sessionRepo)
+	authService := services.NewAuthService(userRepo, sessionService)
+	userService := services.NewUserService(userRepo, sessionService)
 	vendorService := services.NewVendorService(vendorRepo)
 	customerService := services.NewCustomerService(customerRepo)
 	activityPresetService := services.NewActivityPresetService(activityPresetRepo)
@@ -80,6 +85,7 @@ func main() {
 
 	// Initialize Handlers
 	authHandler := handler.NewAuthHandler(authService)
+	userHandler := handler.NewUserHandler(userService)
 	vendorHandler := handler.NewVendorHandler(vendorService)
 	customerHandler := handler.NewCustomerHandler(customerService)
 	activityPresetHandler := handler.NewActivityPresetHandler(activityPresetService)
@@ -88,12 +94,12 @@ func main() {
 
 	r := chi.NewRouter()
 
-	// CORS Middleware
+	// CORS Middleware (Strictly allow credentials for HttpOnly cookies)
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{"https://*", "http://*"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
-		ExposedHeaders:   []string{"Link", "Content-Disposition"},
+		ExposedHeaders:   []string{"Link", "Content-Disposition", "Set-Cookie"},
 		AllowCredentials: true,
 		MaxAge:           300,
 	}))
@@ -104,7 +110,7 @@ func main() {
 
 	// Swagger Endpoint
 	r.Get("/swagger/*", httpSwagger.Handler(
-		httpSwagger.URL("http://localhost:8080/swagger/doc.json"), //The url pointing to API definition
+		httpSwagger.URL("http://localhost:8080/swagger/doc.json"),
 	))
 
 	// API Routes
@@ -116,12 +122,27 @@ func main() {
 		// Auth Routes (Public)
 		r.Route("/auth", func(r chi.Router) {
 			r.Post("/login", authHandler.Login)
+			r.Post("/logout", authHandler.Logout)
 			r.Post("/register", authHandler.Register)
 		})
 		
 		// Protected Routes
 		r.Group(func(r chi.Router) {
-			r.Use(middleware.RequireAuth(jwtSecret))
+			r.Use(middleware.RequireAuth(sessionService))
+			
+			// Profile & Current Session Info
+			r.Get("/auth/me", authHandler.Me)
+
+			// User Management (Admin & Super Admin only)
+			r.Route("/users", func(r chi.Router) {
+				r.Use(middleware.RequireRole(domain.RoleAdmin, domain.RoleSuperAdmin))
+				r.Get("/", userHandler.List)
+				r.Post("/", userHandler.Create)
+				r.Get("/{id}", userHandler.Get)
+				r.Put("/{id}", userHandler.Update)
+				r.Patch("/{id}/password", userHandler.ResetPassword)
+				r.Delete("/{id}", userHandler.Delete)
+			})
 			
 			// Cashflow Routes
 			r.Route("/cashflow", func(r chi.Router) {
@@ -132,8 +153,10 @@ func main() {
 				r.Post("/shipment", cashflowHandler.CreateShipment)
 				r.Post("/topup", cashflowHandler.CreateTopUp)
 				r.Put("/{id}", cashflowHandler.Update)
-				r.Delete("/{id}", cashflowHandler.Delete)
 				r.Patch("/{id}/status", cashflowHandler.UpdateStatus)
+				
+				// Deletion requires Admin or Super Admin
+				r.With(middleware.RequireRole(domain.RoleAdmin, domain.RoleSuperAdmin)).Delete("/{id}", cashflowHandler.Delete)
 			})
 			
 			// Vendor Routes (Mitra Armada & Transporter)
@@ -142,7 +165,7 @@ func main() {
 				r.Post("/", vendorHandler.Create)
 				r.Get("/{id}", vendorHandler.Get)
 				r.Put("/{id}", vendorHandler.Update)
-				r.Delete("/{id}", vendorHandler.Delete)
+				r.With(middleware.RequireRole(domain.RoleAdmin, domain.RoleSuperAdmin)).Delete("/{id}", vendorHandler.Delete)
 			})
 
 			// Customer Routes (Klien / Pemilik Muatan)
@@ -151,7 +174,7 @@ func main() {
 				r.Post("/", customerHandler.Create)
 				r.Get("/{id}", customerHandler.Get)
 				r.Put("/{id}", customerHandler.Update)
-				r.Delete("/{id}", customerHandler.Delete)
+				r.With(middleware.RequireRole(domain.RoleAdmin, domain.RoleSuperAdmin)).Delete("/{id}", customerHandler.Delete)
 			})
 
 			// Activity Presets Routes (Master Keterangan Aktivitas & Rute Armada)
@@ -160,7 +183,7 @@ func main() {
 				r.Post("/", activityPresetHandler.Create)
 				r.Get("/{id}", activityPresetHandler.GetByID)
 				r.Put("/{id}", activityPresetHandler.Update)
-				r.Delete("/{id}", activityPresetHandler.Delete)
+				r.With(middleware.RequireRole(domain.RoleAdmin, domain.RoleSuperAdmin)).Delete("/{id}", activityPresetHandler.Delete)
 			})
 
 			// Invoice Routes (Monitoring Piutang Klien)
@@ -171,7 +194,7 @@ func main() {
 				r.Get("/{id}", invoiceHandler.GetByID)
 				r.Put("/{id}", invoiceHandler.Update)
 				r.Patch("/{id}/pay", invoiceHandler.MarkPaid)
-				r.Delete("/{id}", invoiceHandler.Delete)
+				r.With(middleware.RequireRole(domain.RoleAdmin, domain.RoleSuperAdmin)).Delete("/{id}", invoiceHandler.Delete)
 			})
 		})
 	})
@@ -198,18 +221,15 @@ func main() {
 		sig := <-sigChan
 		log.Printf("Received shutdown signal (%v). Initiating graceful shutdown...\n", sig)
 
-		// Create shutdown context with 10 second timeout
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 
-		// Shutdown HTTP server gracefully
 		if err := server.Shutdown(shutdownCtx); err != nil {
 			log.Printf("HTTP server shutdown error: %v\n", err)
 		} else {
 			log.Println("HTTP server stopped gracefully.")
 		}
 
-		// Close DB connections
 		if err := dbPool.Close(); err != nil {
 			log.Printf("Database connection close error: %v\n", err)
 		} else {
@@ -227,7 +247,6 @@ func main() {
 		log.Fatalf("Server failed to start: %v", err)
 	}
 
-	// Wait for shutdown goroutine to complete
 	<-serverCtx.Done()
 	log.Println("Server gracefully stopped.")
 }

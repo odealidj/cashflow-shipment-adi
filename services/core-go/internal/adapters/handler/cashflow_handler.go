@@ -12,7 +12,6 @@ import (
 	"github.com/cashflow-shipment-app/backend/internal/core/domain"
 	"github.com/cashflow-shipment-app/backend/internal/core/ports"
 	"github.com/cashflow-shipment-app/backend/internal/middleware"
-	"github.com/cashflow-shipment-app/backend/pkg/auth"
 	"github.com/cashflow-shipment-app/backend/pkg/response"
 	"github.com/go-chi/chi/v5"
 	"github.com/xuri/excelize/v2"
@@ -115,9 +114,9 @@ func (h *CashflowHandler) CreateTopUp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	claims := r.Context().Value(middleware.ClaimsKey).(*auth.Claims)
-	entry.CreatedBy = claims.UserID
-	entry.UpdatedBy = claims.UserID
+	userID := middleware.GetUserIDFromContext(r.Context())
+	entry.CreatedBy = userID
+	entry.UpdatedBy = userID
 
 	if err := h.cashflowService.RecordTopUp(r.Context(), &entry); err != nil {
 		response.Error(w, http.StatusInternalServerError, "Failed to record Top-Up: "+err.Error())
@@ -143,9 +142,9 @@ func (h *CashflowHandler) CreateShipment(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	claims := r.Context().Value(middleware.ClaimsKey).(*auth.Claims)
-	entry.CreatedBy = claims.UserID
-	entry.UpdatedBy = claims.UserID
+	userID := middleware.GetUserIDFromContext(r.Context())
+	entry.CreatedBy = userID
+	entry.UpdatedBy = userID
 
 	if err := h.cashflowService.RecordShipment(r.Context(), &entry); err != nil {
 		response.Error(w, http.StatusInternalServerError, "Failed to record Shipment: "+err.Error())
@@ -180,8 +179,8 @@ func (h *CashflowHandler) Update(w http.ResponseWriter, r *http.Request) {
 	}
 	entry.ID = id
 
-	claims := r.Context().Value(middleware.ClaimsKey).(*auth.Claims)
-	if err := h.cashflowService.UpdateEntry(r.Context(), &entry, claims.UserID); err != nil {
+	userID := middleware.GetUserIDFromContext(r.Context())
+	if err := h.cashflowService.UpdateEntry(r.Context(), &entry, userID); err != nil {
 		response.Error(w, http.StatusInternalServerError, "Failed to update entry: "+err.Error())
 		return
 	}
@@ -205,8 +204,8 @@ func (h *CashflowHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	claims := r.Context().Value(middleware.ClaimsKey).(*auth.Claims)
-	if err := h.cashflowService.DeleteEntry(r.Context(), id, claims.UserID); err != nil {
+	userID := middleware.GetUserIDFromContext(r.Context())
+	if err := h.cashflowService.DeleteEntry(r.Context(), id, userID); err != nil {
 		response.Error(w, http.StatusInternalServerError, "Failed to delete entry: "+err.Error())
 		return
 	}
@@ -242,8 +241,8 @@ func (h *CashflowHandler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	claims := r.Context().Value(middleware.ClaimsKey).(*auth.Claims)
-	if err := h.cashflowService.UpdatePaymentStatus(r.Context(), id, req.Remarks, claims.UserID); err != nil {
+	userID := middleware.GetUserIDFromContext(r.Context())
+	if err := h.cashflowService.UpdatePaymentStatus(r.Context(), id, req.Remarks, userID); err != nil {
 		response.Error(w, http.StatusInternalServerError, "Failed to update payment status: "+err.Error())
 		return
 	}
@@ -621,8 +620,8 @@ func (h *CashflowHandler) ImportExcel(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 
-	claims := r.Context().Value(middleware.ClaimsKey).(*auth.Claims)
-	if err := h.cashflowService.ProcessExcelImport(r.Context(), file, claims.UserID); err != nil {
+	userID := middleware.GetUserIDFromContext(r.Context())
+	if err := h.cashflowService.ProcessExcelImport(r.Context(), file, userID); err != nil {
 		response.Error(w, http.StatusInternalServerError, "Failed to process excel import: "+err.Error())
 		return
 	}
