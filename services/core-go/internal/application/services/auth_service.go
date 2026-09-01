@@ -73,16 +73,10 @@ func (s *AuthService) Register(ctx context.Context, user *domain.User, plainPass
 	return s.userRepo.Create(ctx, user)
 }
 
-// BootstrapSuperAdmin auto-initializes the initial Super Admin account from Environment Variables if not present
+// BootstrapSuperAdmin auto-initializes or syncs Super Admin account from Environment Variables
 func (s *AuthService) BootstrapSuperAdmin(ctx context.Context, email, password, fullName, phone string) error {
 	if email == "" || password == "" {
-		return nil // No env configuration provided, skip
-	}
-
-	// Check if user with this email already exists
-	existingUser, _ := s.userRepo.GetByEmailOrPhone(ctx, email)
-	if existingUser != nil {
-		return nil // Already initialized, skip
+		return nil
 	}
 
 	if fullName == "" {
@@ -99,6 +93,39 @@ func (s *AuthService) BootstrapSuperAdmin(ctx context.Context, email, password, 
 		return err
 	}
 
+	// 1. Check if user with this email or phone exists
+	existingUser, _ := s.userRepo.GetByEmailOrPhone(ctx, email)
+	if existingUser == nil && phone != "" {
+		existingUser, _ = s.userRepo.GetByEmailOrPhone(ctx, phone)
+	}
+
+	if existingUser != nil {
+		// Sync details & password from .env
+		existingUser.Email = email
+		existingUser.Phone = phonePtr
+		existingUser.FullName = fullName
+		existingUser.Role = domain.RoleSuperAdmin
+		existingUser.Status = domain.StatusActive
+		_ = s.userRepo.Update(ctx, existingUser)
+		_ = s.userRepo.UpdatePassword(ctx, existingUser.ID, hashedPassword)
+		log.Printf("[Bootstrap] Akun IT Super Admin (%s / %s) berhasil disinkronkan dari .env\n", email, phone)
+		return nil
+	}
+
+	// 2. Check if old default super_admin (e.g. admin@example.com) exists and update it
+	oldSuperAdmin, _ := s.userRepo.GetByEmailOrPhone(ctx, "admin@example.com")
+	if oldSuperAdmin != nil && oldSuperAdmin.Role == domain.RoleSuperAdmin {
+		oldSuperAdmin.Email = email
+		oldSuperAdmin.Phone = phonePtr
+		oldSuperAdmin.FullName = fullName
+		oldSuperAdmin.Status = domain.StatusActive
+		_ = s.userRepo.Update(ctx, oldSuperAdmin)
+		_ = s.userRepo.UpdatePassword(ctx, oldSuperAdmin.ID, hashedPassword)
+		log.Printf("[Bootstrap] Akun IT Super Admin default berhasil diperbarui menjadi: %s (%s)\n", email, phone)
+		return nil
+	}
+
+	// 3. Create fresh Super Admin
 	user := &domain.User{
 		ID:           uuid.New(),
 		Email:        email,
@@ -113,6 +140,6 @@ func (s *AuthService) BootstrapSuperAdmin(ctx context.Context, email, password, 
 		return err
 	}
 
-	log.Printf("[Bootstrap] Akun IT Super Admin berhasil diinisialisasi otomatis dari .env untuk: %s\n", email)
+	log.Printf("[Bootstrap] Akun IT Super Admin baru berhasil dibuat dari .env untuk: %s (%s)\n", email, phone)
 	return nil
 }

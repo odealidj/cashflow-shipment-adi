@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -37,7 +38,34 @@ import (
 // @host      localhost:8080
 // @BasePath  /api/v1
 
+func loadEnvFiles() {
+	envFiles := []string{".env", "../.env", "services/core-go/.env", ".env.example", "services/core-go/.env.example"}
+	for _, file := range envFiles {
+		data, err := os.ReadFile(file)
+		if err != nil {
+			continue
+		}
+		lines := strings.Split(string(data), "\n")
+		for _, line := range lines {
+			line = strings.TrimSpace(line)
+			if line == "" || strings.HasPrefix(line, "#") {
+				continue
+			}
+			parts := strings.SplitN(line, "=", 2)
+			if len(parts) == 2 {
+				key := strings.TrimSpace(parts[0])
+				val := strings.TrimSpace(parts[1])
+				val = strings.Trim(val, `"'`)
+				if os.Getenv(key) == "" {
+					os.Setenv(key, val)
+				}
+			}
+		}
+	}
+}
+
 func main() {
+	loadEnvFiles()
 	ctx := context.Background()
 	
 	dbUrl := os.Getenv("DATABASE_URL")
