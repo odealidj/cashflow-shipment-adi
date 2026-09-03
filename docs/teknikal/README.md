@@ -13,6 +13,7 @@ Folder ini berisi seluruh dokumen rekayasa perangkat lunak, arsitektur teknis, s
 | 🔒 **[rbac_two_tier_session_specification.md](./rbac_two_tier_session_specification.md)** | **Arsitektur Keamanan Sesi**: Opaque Session via HttpOnly Cookie, Two-Tier Caching (L1 RAM Go `< 0.005 ms` + L2 Redis 7 In-Memory Store), payload izin lengkap, dan protokol *Instant Force Logout*. |
 | 🎛️ **[dynamic_rbac_matrix_specification.md](./dynamic_rbac_matrix_specification.md)** | **Spesifikasi Matriks Hak Akses Dinamis**: Detail teknis tabel relasi PBAC (`roles`, `permissions`, `role_permissions`), kode perizinan per modul, dan integrasi middleware Go. |
 | 📡 **[standarisasi_api_response.md](./standarisasi_api_response.md)** | **Standarisasi Respon API & HTTP 409 Conflict**: Struktur baku respon REST API (`status`, `message`, `data`, `meta`, `errors`), kontrak paginasi koleksi array murni, dan penanganan duplikasi key (409 Conflict). |
+| 🚪 **[arsitektur_api_gateway.md](./arsitektur_api_gateway.md)** | **Custom Go API Gateway**: Arsitektur Single Entry Point, Dual-Routing & Auto-Rewrite, X-Request-ID, X-Idempotency-Key via Redis, dan persiapan modul Tracking. |
 
 ---
 

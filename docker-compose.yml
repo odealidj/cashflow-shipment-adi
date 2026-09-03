@@ -24,6 +24,43 @@ services:
     restart: unless-stopped
     command: redis-server --appendonly yes
 
+  core-go:
+    build:
+      context: ./services/core-go
+      dockerfile: Dockerfile
+    container_name: cashflow_core_go
+    environment:
+      - PORT=8081
+      - DATABASE_URL=postgres://cashflow_user:cashflow_password@postgres:5432/cashflow_db?sslmode=disable
+      - REDIS_URL=redis:6379
+      - SUPERADMIN_EMAIL=odealidj.go@gmail.com
+      - SUPERADMIN_PASSWORD=password123
+      - SUPERADMIN_NAME=IT Super Admin
+      - SUPERADMIN_PHONE=082111391380
+    ports:
+      - "8081:8081"
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+
+  gateway-go:
+    build:
+      context: ./services/gateway-go
+      dockerfile: Dockerfile
+    container_name: cashflow_gateway
+    environment:
+      - PORT=8080
+      - CORE_SERVICE_URL=http://core-go:8081
+      - TRACKING_SERVICE_URL=http://tracking-go:8082
+      - REDIS_ADDR=redis:6379
+    ports:
+      - "8080:8080"
+    depends_on:
+      - core-go
+      - redis
+    restart: unless-stopped
+
 volumes:
   pgdata:
   redisdata:
