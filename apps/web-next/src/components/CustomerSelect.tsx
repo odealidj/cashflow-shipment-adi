@@ -53,7 +53,7 @@ export function CustomerSelect({
       const res = await fetchWithAuth("http://localhost:8080/api/v1/customers?limit=200");
       if (res.ok) {
         const data = await res.json();
-        setCustomers(data.data?.entries || data.data || []);
+        setCustomers(Array.isArray(data.data) ? data.data : (data.data?.entries || []));
       }
     } catch (err) {
       console.error("Failed to load customers:", err);

@@ -76,6 +76,7 @@ func (h *RoleHandler) Get(w http.ResponseWriter, r *http.Request) {
 // @Param        request body   services.CreateRoleInput  true  "New Role Data"
 // @Success      201  {object}  response.APIResponse
 // @Failure      400  {object}  response.APIResponse
+// @Failure      409  {object}  response.APIResponse
 // @Router       /roles [post]
 func (h *RoleHandler) Create(w http.ResponseWriter, r *http.Request) {
 	var input services.CreateRoleInput
@@ -86,6 +87,10 @@ func (h *RoleHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	role, err := h.roleService.CreateRole(r.Context(), input)
 	if err != nil {
+		if response.IsDuplicateKeyError(err) {
+			response.Conflict(w, err.Error())
+			return
+		}
 		response.Error(w, http.StatusBadRequest, "Gagal membuat role: "+err.Error())
 		return
 	}

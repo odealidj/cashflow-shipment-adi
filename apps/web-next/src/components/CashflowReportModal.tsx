@@ -84,7 +84,7 @@ export function CashflowReportModal({
         const resEntries = await fetchWithAuth(`http://localhost:8080/api/v1/cashflow?${query.toString()}`);
         const dataEntries = await resEntries.json();
         if (dataEntries.status && dataEntries.data) {
-          setEntries(dataEntries.data.entries || []);
+          setEntries(Array.isArray(dataEntries.data) ? dataEntries.data : (dataEntries.data.entries || []));
         }
       } catch (err) {
         console.error("Gagal memuat data laporan:", err);

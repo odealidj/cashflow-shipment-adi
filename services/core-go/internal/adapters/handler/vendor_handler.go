@@ -43,12 +43,7 @@ func (h *VendorHandler) List(w http.ResponseWriter, r *http.Request) {
 		response.Error(w, http.StatusInternalServerError, "Failed to retrieve vendors")
 		return
 	}
-	response.JSON(w, http.StatusOK, "Vendors retrieved", map[string]interface{}{
-		"entries": vendors,
-		"total":   total,
-		"page":    page,
-		"limit":   limit,
-	})
+	response.Paginated(w, http.StatusOK, "Vendors retrieved", vendors, page, limit, total)
 }
 
 // Get Vendor godoc
@@ -84,6 +79,8 @@ func (h *VendorHandler) Get(w http.ResponseWriter, r *http.Request) {
 // @Security     BearerAuth
 // @Param        request body domain.Vendor true "Vendor Data"
 // @Success      201  {object}  response.APIResponse
+// @Failure      400  {object}  response.APIResponse
+// @Failure      409  {object}  response.APIResponse
 // @Router       /vendors [post]
 func (h *VendorHandler) Create(w http.ResponseWriter, r *http.Request) {
 	var vendor domain.Vendor
@@ -93,7 +90,11 @@ func (h *VendorHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.vendorService.CreateVendor(r.Context(), &vendor); err != nil {
-		response.Error(w, http.StatusInternalServerError, "Failed to create vendor: "+err.Error())
+		if response.IsDuplicateKeyError(err) {
+			response.Conflict(w, "Nama vendor sudah terdaftar di sistem")
+			return
+		}
+		response.Error(w, http.StatusBadRequest, "Failed to create vendor: "+err.Error())
 		return
 	}
 
@@ -109,6 +110,8 @@ func (h *VendorHandler) Create(w http.ResponseWriter, r *http.Request) {
 // @Param        id path int true "Vendor ID"
 // @Param        request body domain.Vendor true "Vendor Data"
 // @Success      200  {object}  response.APIResponse
+// @Failure      400  {object}  response.APIResponse
+// @Failure      409  {object}  response.APIResponse
 // @Router       /vendors/{id} [put]
 func (h *VendorHandler) Update(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
@@ -126,7 +129,11 @@ func (h *VendorHandler) Update(w http.ResponseWriter, r *http.Request) {
 	vendor.ID = id
 
 	if err := h.vendorService.UpdateVendor(r.Context(), &vendor); err != nil {
-		response.Error(w, http.StatusInternalServerError, "Failed to update vendor: "+err.Error())
+		if response.IsDuplicateKeyError(err) {
+			response.Conflict(w, "Nama vendor sudah terdaftar di sistem")
+			return
+		}
+		response.Error(w, http.StatusBadRequest, "Failed to update vendor: "+err.Error())
 		return
 	}
 

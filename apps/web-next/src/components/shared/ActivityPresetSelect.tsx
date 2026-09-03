@@ -61,8 +61,12 @@ export function ActivityPresetSelect({
     try {
       const res = await fetchWithAuth(`http://localhost:8080/api/v1/activity-presets?category=${category}&limit=100`);
       const data = await res.json();
-      if (data.status && data.data && Array.isArray(data.data.entries)) {
-        setPresets(data.data.entries);
+      if (data.status && data.data) {
+        if (Array.isArray(data.data)) {
+          setPresets(data.data);
+        } else if (Array.isArray(data.data.entries)) {
+          setPresets(data.data.entries);
+        }
       }
     } catch (err) {
       console.error("Failed to load activity presets", err);

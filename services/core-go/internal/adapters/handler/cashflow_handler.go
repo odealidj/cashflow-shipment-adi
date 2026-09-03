@@ -89,13 +89,7 @@ func (h *CashflowHandler) List(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response.JSON(w, http.StatusOK, "Cashflow data retrieved", map[string]interface{}{
-		"entries": entries,
-		"total":   total,
-		"page":    page,
-		"limit":   limit,
-		"sort":    filter.SortDir,
-	})
+	response.Paginated(w, http.StatusOK, "Cashflow data retrieved", entries, page, limit, total)
 }
 
 // Create Top-Up godoc

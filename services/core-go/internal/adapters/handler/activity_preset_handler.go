@@ -49,12 +49,7 @@ func (h *ActivityPresetHandler) List(w http.ResponseWriter, r *http.Request) {
 		response.Error(w, http.StatusInternalServerError, "Gagal mengambil daftar preset: "+err.Error())
 		return
 	}
-	response.JSON(w, http.StatusOK, "Daftar preset berhasil diambil", map[string]interface{}{
-		"entries": presets,
-		"total":   total,
-		"page":    page,
-		"limit":   limit,
-	})
+	response.Paginated(w, http.StatusOK, "Daftar preset berhasil diambil", presets, page, limit, total)
 }
 
 // GetByID handles retrieving a single activity preset by ID

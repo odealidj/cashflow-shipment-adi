@@ -54,8 +54,8 @@ export function CustomerTable() {
       const res = await fetchWithAuth(`http://localhost:8080/api/v1/customers?page=${page}&limit=${pageSize}${searchParam}`);
       const data = await res.json();
       if (data.status && data.data) {
-        setCustomers(data.data.entries || data.data || []);
-        setTotal(data.data.total || 0);
+        setCustomers(Array.isArray(data.data) ? data.data : (data.data.entries || []));
+        setTotal(data.meta?.total_items ?? data.data?.total ?? 0);
       } else {
         setCustomers([]);
         setTotal(0);

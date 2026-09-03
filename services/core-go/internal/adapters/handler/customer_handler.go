@@ -45,12 +45,7 @@ func (h *CustomerHandler) List(w http.ResponseWriter, r *http.Request) {
 		response.Error(w, http.StatusInternalServerError, "Failed to retrieve customers: "+err.Error())
 		return
 	}
-	response.JSON(w, http.StatusOK, "Customers retrieved", map[string]interface{}{
-		"entries": customers,
-		"total":   total,
-		"page":    page,
-		"limit":   limit,
-	})
+	response.Paginated(w, http.StatusOK, "Customers retrieved", customers, page, limit, total)
 }
 
 // Get Customer godoc
@@ -86,6 +81,8 @@ func (h *CustomerHandler) Get(w http.ResponseWriter, r *http.Request) {
 // @Security     BearerAuth
 // @Param        request body domain.Customer true "Customer Data"
 // @Success      201  {object}  response.APIResponse
+// @Failure      400  {object}  response.APIResponse
+// @Failure      409  {object}  response.APIResponse
 // @Router       /customers [post]
 func (h *CustomerHandler) Create(w http.ResponseWriter, r *http.Request) {
 	var customer domain.Customer
@@ -95,6 +92,10 @@ func (h *CustomerHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.customerService.CreateCustomer(r.Context(), &customer); err != nil {
+		if response.IsDuplicateKeyError(err) {
+			response.Conflict(w, err.Error())
+			return
+		}
 		response.Error(w, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -111,6 +112,8 @@ func (h *CustomerHandler) Create(w http.ResponseWriter, r *http.Request) {
 // @Param        id path int true "Customer ID"
 // @Param        request body domain.Customer true "Customer Data"
 // @Success      200  {object}  response.APIResponse
+// @Failure      400  {object}  response.APIResponse
+// @Failure      409  {object}  response.APIResponse
 // @Router       /customers/{id} [put]
 func (h *CustomerHandler) Update(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
@@ -128,6 +131,10 @@ func (h *CustomerHandler) Update(w http.ResponseWriter, r *http.Request) {
 	customer.ID = id
 
 	if err := h.customerService.UpdateCustomer(r.Context(), &customer); err != nil {
+		if response.IsDuplicateKeyError(err) {
+			response.Conflict(w, err.Error())
+			return
+		}
 		response.Error(w, http.StatusBadRequest, err.Error())
 		return
 	}

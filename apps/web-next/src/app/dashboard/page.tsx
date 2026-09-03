@@ -50,7 +50,7 @@ export default function Dashboard() {
       const resEntries = await fetchWithAuth("http://localhost:8080/api/v1/cashflow?page=1&limit=5&sort=DESC");
       const dataEntries = await resEntries.json();
       if (dataEntries.status && dataEntries.data) {
-        setRecentEntries(dataEntries.data.entries || dataEntries.data || []);
+        setRecentEntries(Array.isArray(dataEntries.data) ? dataEntries.data : (dataEntries.data.entries || []));
       }
     } catch (err) {
       console.error("Failed to fetch dashboard data:", err);

@@ -15,6 +15,7 @@ Selamat datang di direktori dokumentasi resmi sistem aplikasi **PT. Adijayantara
 | 🛡️ **[Panduan Lengkap User, Role, PBAC & Auto-Bootstrap](./teknikal/panduan_lengkap_user_role_pbac_dan_bootstrap.md)** | **Spesifikasi & Proses Bisnis Lengkap**: Tata kelola pengguna, 5 role default, peran kustom, aturan main (3 Aturan Emas), mekanisme injeksi otomatis (*Zero-Config Auto-Bootstrap*), katalog 25 izin, dan panduan operasional. |
 | 🔒 **[Spesifikasi RBAC & Two-Tier Session](./teknikal/rbac_two_tier_session_specification.md)** | Arsitektur keamanan mendalam: Opaque Session via HttpOnly Cookie, Two-Tier Caching (L1 RAM Go `< 0.005 ms` + L2 Redis 7), 5 tingkat peran, dan protokol *Instant Force Logout*. |
 | 🎛️ **[Spesifikasi Matriks Hak Akses Dinamis](./teknikal/dynamic_rbac_matrix_specification.md)** | Detail teknis tabel perizinan modular, permission codes, dan pemetaan endpoint API. |
+| 📡 **[Standarisasi Respon API & HTTP 409 Conflict](./teknikal/standarisasi_api_response.md)** | Format baku respon REST API (`status`, `message`, `data`, `meta`, `errors`), kontrak pagination koleksi array murni, dan penanganan duplikasi key (409 Conflict). |
 
 ### 2. Proses Bisnis, Kalkulasi & Kasus Operasional
 | Dokumen | Deskripsi |

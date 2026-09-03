@@ -210,10 +210,28 @@ definitions:
   response.APIResponse:
     properties:
       data: {}
+      errors: {}
       message:
         type: string
+      meta:
+        $ref: '#/definitions/response.PaginationMeta'
       status:
         type: boolean
+    type: object
+  response.PaginationMeta:
+    properties:
+      has_next:
+        type: boolean
+      has_prev:
+        type: boolean
+      limit:
+        type: integer
+      page:
+        type: integer
+      total_items:
+        type: integer
+      total_pages:
+        type: integer
     type: object
   services.CreateRoleInput:
     properties:
@@ -502,6 +520,10 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/response.APIResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/response.APIResponse'
       summary: Register new user
       tags:
       - auth
@@ -770,6 +792,14 @@ paths:
           description: Created
           schema:
             $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/response.APIResponse'
       security:
       - BearerAuth: []
       summary: Create new customer
@@ -834,6 +864,14 @@ paths:
       responses:
         "200":
           description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "409":
+          description: Conflict
           schema:
             $ref: '#/definitions/response.APIResponse'
       security:
@@ -951,6 +989,10 @@ paths:
             $ref: '#/definitions/response.APIResponse'
         "400":
           description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "409":
+          description: Conflict
           schema:
             $ref: '#/definitions/response.APIResponse'
       security:
@@ -1156,6 +1198,10 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/response.APIResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/response.APIResponse'
       security:
       - BearerAuth: []
       summary: Create new user
@@ -1239,6 +1285,10 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/response.APIResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/response.APIResponse'
       security:
       - BearerAuth: []
       summary: Update user
@@ -1319,6 +1369,14 @@ paths:
           description: Created
           schema:
             $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/response.APIResponse'
       security:
       - BearerAuth: []
       summary: Create new vendor
@@ -1383,6 +1441,14 @@ paths:
       responses:
         "200":
           description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "409":
+          description: Conflict
           schema:
             $ref: '#/definitions/response.APIResponse'
       security:

@@ -77,12 +77,7 @@ func (h *InvoiceHandler) List(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response.JSON(w, http.StatusOK, "Invoices retrieved", map[string]interface{}{
-		"entries": invoices,
-		"total":   total,
-		"page":    page,
-		"limit":   limit,
-	})
+	response.Paginated(w, http.StatusOK, "Invoices retrieved", invoices, page, limit, total)
 }
 
 // Get Invoice Summary godoc
@@ -140,6 +135,10 @@ func (h *InvoiceHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	inv, err := h.invoiceService.CreateInvoice(r.Context(), input)
 	if err != nil {
+		if response.IsDuplicateKeyError(err) {
+			response.Conflict(w, err.Error())
+			return
+		}
 		response.Error(w, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -170,6 +169,10 @@ func (h *InvoiceHandler) Update(w http.ResponseWriter, r *http.Request) {
 
 	inv, err := h.invoiceService.UpdateInvoice(r.Context(), id, input)
 	if err != nil {
+		if response.IsDuplicateKeyError(err) {
+			response.Conflict(w, err.Error())
+			return
+		}
 		response.Error(w, http.StatusBadRequest, err.Error())
 		return
 	}

@@ -139,6 +139,7 @@ type RegisterRequest struct {
 // @Param        request body RegisterRequest true "Registration Data"
 // @Success      201  {object}  response.APIResponse
 // @Failure      400  {object}  response.APIResponse
+// @Failure      409  {object}  response.APIResponse
 // @Router       /auth/register [post]
 func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	var req RegisterRequest
@@ -163,6 +164,10 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.authService.Register(r.Context(), user, req.Password); err != nil {
+		if response.IsDuplicateKeyError(err) {
+			response.Conflict(w, "Email atau nomor telepon sudah terdaftar di sistem")
+			return
+		}
 		response.Error(w, http.StatusBadRequest, "Gagal mendaftarkan akun: "+err.Error())
 		return
 	}

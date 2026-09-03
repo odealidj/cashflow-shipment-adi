@@ -93,8 +93,8 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
       const res = await fetchWithAuth(`http://localhost:8080/api/v1/cashflow?${query}`);
       const data = await res.json();
       if (data.status && data.data) {
-        setEntries(data.data.entries || data.data || []);
-        setTotal(data.data.total || (data.data.entries ? data.data.entries.length : 0));
+        setEntries(Array.isArray(data.data) ? data.data : (data.data.entries || []));
+        setTotal(data.meta?.total_items ?? data.data?.total ?? 0);
       } else {
         setEntries([]);
       }

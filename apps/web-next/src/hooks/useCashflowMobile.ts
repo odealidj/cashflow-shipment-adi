@@ -92,10 +92,10 @@ export function useCashflowMobile() {
       if (res.ok) {
         const json = await res.json();
         if (json.status && json.data) {
-          if (Array.isArray(json.data.entries)) {
-            setEntries(json.data.entries);
-          } else if (Array.isArray(json.data)) {
+          if (Array.isArray(json.data)) {
             setEntries(json.data);
+          } else if (Array.isArray(json.data.entries)) {
+            setEntries(json.data.entries);
           } else {
             setEntries([]);
           }

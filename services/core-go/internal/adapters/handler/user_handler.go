@@ -58,15 +58,7 @@ func (h *UserHandler) List(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response.JSON(w, http.StatusOK, "Daftar pengguna berhasil dimuat", map[string]interface{}{
-		"users": users,
-		"meta": map[string]interface{}{
-			"page":       page,
-			"limit":      limit,
-			"total":      total,
-			"total_page": (total + limit - 1) / limit,
-		},
-	})
+	response.Paginated(w, http.StatusOK, "Daftar pengguna berhasil dimuat", users, page, limit, total)
 }
 
 // Get handles retrieving a single user by ID
@@ -106,6 +98,7 @@ func (h *UserHandler) Get(w http.ResponseWriter, r *http.Request) {
 // @Param        request body   services.CreateUserInput  true  "New User Data"
 // @Success      201  {object}  response.APIResponse
 // @Failure      400  {object}  response.APIResponse
+// @Failure      409  {object}  response.APIResponse
 // @Router       /users [post]
 func (h *UserHandler) Create(w http.ResponseWriter, r *http.Request) {
 	var input services.CreateUserInput
@@ -118,6 +111,10 @@ func (h *UserHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	user, err := h.userService.Create(r.Context(), input, currentUserRole)
 	if err != nil {
+		if response.IsDuplicateKeyError(err) {
+			response.Conflict(w, err.Error())
+			return
+		}
 		response.Error(w, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -136,6 +133,7 @@ func (h *UserHandler) Create(w http.ResponseWriter, r *http.Request) {
 // @Param        request body   services.UpdateUserInput  true  "Updated User Data"
 // @Success      200  {object}  response.APIResponse
 // @Failure      400  {object}  response.APIResponse
+// @Failure      409  {object}  response.APIResponse
 // @Router       /users/{id} [put]
 func (h *UserHandler) Update(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
@@ -156,6 +154,10 @@ func (h *UserHandler) Update(w http.ResponseWriter, r *http.Request) {
 
 	user, err := h.userService.Update(r.Context(), id, input, currentUserID, currentUserRole)
 	if err != nil {
+		if response.IsDuplicateKeyError(err) {
+			response.Conflict(w, err.Error())
+			return
+		}
 		response.Error(w, http.StatusBadRequest, err.Error())
 		return
 	}

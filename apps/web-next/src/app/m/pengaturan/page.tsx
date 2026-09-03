@@ -115,8 +115,8 @@ export default function PengaturanPage() {
         },
       });
       const data = await res.json();
-      if (data.status && Array.isArray(data.data)) {
-        setVendors(data.data);
+      if (data.status && data.data) {
+        setVendors(Array.isArray(data.data) ? data.data : (data.data.entries || []));
       }
     } catch (err) {
       console.error('Failed to load vendors', err);

@@ -54,7 +54,7 @@ export function VendorSelect({
       });
       if (res.ok) {
         const data = await res.json();
-        setVendors(data.data?.entries || []);
+        setVendors(Array.isArray(data.data) ? data.data : (data.data?.entries || []));
       }
     } catch (err) {
       console.error("Failed to load vendors:", err);

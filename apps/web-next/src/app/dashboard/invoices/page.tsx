@@ -123,8 +123,8 @@ export default function InvoicesPage() {
       const res = await fetchWithAuth(`http://localhost:8080/api/v1/invoices?${params.toString()}`);
       const data = await res.json();
       if (data.status && data.data) {
-        setInvoices(data.data.entries || []);
-        setTotal(data.data.total || 0);
+        setInvoices(Array.isArray(data.data) ? data.data : (data.data.entries || []));
+        setTotal(data.meta?.total_items ?? data.data?.total ?? 0);
       } else {
         setInvoices([]);
         setTotal(0);

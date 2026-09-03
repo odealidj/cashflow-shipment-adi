@@ -82,8 +82,8 @@ export default function UsersManagementPage() {
         throw new Error(data.message || "Gagal memuat daftar pengguna");
       }
 
-      setUsers(data.data?.users || []);
-      setTotal(data.data?.meta?.total || 0);
+      setUsers(Array.isArray(data.data) ? data.data : (data.data?.users || []));
+      setTotal(data.meta?.total_items ?? data.data?.meta?.total ?? 0);
     } catch (err: any) {
       setError(err.message || "Terjadi kesalahan saat memuat data");
     } finally {
