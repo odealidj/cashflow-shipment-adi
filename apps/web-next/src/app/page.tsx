@@ -158,26 +158,26 @@ export default function AuthPage() {
       <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
 
       <div className="w-full max-w-md z-10 animate-fade-in my-auto">
-        {/* Banner Logo Section (Identik dengan Menu Sidebar) */}
-        <div className="bg-white/10 backdrop-blur-md rounded-3xl p-3.5 border border-white/20 flex items-center justify-center gap-3.5 shadow-2xl mb-6 max-w-md mx-auto">
-          <div className="w-16 h-16 rounded-2xl bg-white p-1 flex items-center justify-center shrink-0 shadow-lg">
+        {/* Banner Logo Section (Identik dengan Menu Sidebar tapi Lebih Besar) */}
+        <div className="bg-white/10 backdrop-blur-md rounded-3xl p-4 sm:p-5 border border-white/20 flex items-center justify-center gap-4 sm:gap-5 shadow-2xl mb-6 max-w-md mx-auto">
+          <div className="w-22 h-22 sm:w-26 sm:h-26 rounded-2xl bg-white p-2 flex items-center justify-center shrink-0 shadow-xl">
             <Image
               src="/logo.png"
               alt="Logo PT. Adijayantara Logistics Indonesia"
-              width={70}
-              height={70}
+              width={110}
+              height={110}
               className="w-full h-full object-contain"
               priority
             />
           </div>
           <div className="text-left min-w-0">
-            <h1 className="text-base font-black text-white leading-tight tracking-tight uppercase truncate">
+            <h1 className="text-lg sm:text-xl font-black text-white leading-tight tracking-tight uppercase truncate">
               Adijayantara
             </h1>
-            <p className="text-xs text-sky-200 font-bold leading-tight mt-0.5 truncate">
+            <p className="text-xs sm:text-sm text-sky-200 font-bold leading-tight mt-1 truncate">
               Logistics Indonesia
             </p>
-            <span className="inline-block mt-1.5 px-2.5 py-0.5 bg-sky-950/60 text-sky-300 text-[10px] font-black tracking-widest rounded-md border border-sky-400/30">
+            <span className="inline-block mt-2 px-2.5 py-0.5 bg-sky-950/70 text-sky-300 text-[10px] sm:text-[11px] font-black tracking-widest rounded-md border border-sky-400/30">
               CASHFLOW & SHIPMENT
             </span>
           </div>
