@@ -55,15 +55,22 @@ Sistem menyediakan berbagai opsi eksekusi yang fleksibel, baik secara lokal di H
 #### A. Menjalankan Seluruh Sistem Secara Cepat (Rekomendasi)
 
 ```bash
-# Opsi 1: Menjalankan Seluruh Backend di Docker Container
+# ==============================================================================
+# OPSI 1: Full Container (Satu Perintah untuk SEMUA: DB, Redis, Core Go, & Gateway)
+# Tidak perlu 'make infra-up' lagi karena sudah otomatis dinyalakan bersamaan!
+# ==============================================================================
 make run-all-go
 
-# Opsi 2: Menjalankan Seluruh Backend di Host OS (Core :8081 + Gateway :8080)
-make infra-up            # Nyalakan PostgreSQL & Redis
-make run-local-all-go    # Nyalakan Core Go & API Gateway di Host OS
+# ==============================================================================
+# OPSI 2: Hybrid Development (DB & Redis di Container, Service Go di Host OS)
+# ==============================================================================
+make infra-up            # 1. Nyalakan PostgreSQL & Redis di container
+make run-local-all-go    # 2. Nyalakan Core Go (:8081) & API Gateway (:8080) di Host OS
 
-# Di Terminal Lain: Jalankan Frontend Web & Mobile PWA
-make run-local-web-next
+# ==============================================================================
+# Frontend Next.js (Di Terminal Terpisah)
+# ==============================================================================
+make run-local-web-next  # Jalankan Desktop Web (/dashboard) & Mobile PWA (/m)
 ```
 
 ---
