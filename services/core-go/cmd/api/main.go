@@ -12,6 +12,7 @@ import (
 	"syscall"
 	"time"
 
+	_ "github.com/cashflow-shipment-app/backend/docs"
 	"github.com/cashflow-shipment-app/backend/internal/adapters/handler"
 	"github.com/cashflow-shipment-app/backend/internal/adapters/repository"
 	"github.com/cashflow-shipment-app/backend/internal/application/services"
@@ -175,7 +176,7 @@ func main() {
 
 	// Swagger Endpoint
 	r.Get("/swagger/*", httpSwagger.Handler(
-		httpSwagger.URL("http://localhost:8080/swagger/doc.json"),
+		httpSwagger.URL("/swagger/doc.json"),
 	))
 
 	// API Routes
