@@ -46,7 +46,7 @@ func (h *ActivityPresetHandler) List(w http.ResponseWriter, r *http.Request) {
 
 	presets, total, err := h.service.ListPresets(r.Context(), category, search, page, limit)
 	if err != nil {
-		response.Error(w, http.StatusInternalServerError, "Gagal mengambil daftar preset: "+err.Error())
+		response.HandleError(w, err, http.StatusInternalServerError)
 		return
 	}
 	response.Paginated(w, http.StatusOK, "Daftar preset berhasil diambil", presets, page, limit, total)
@@ -72,7 +72,7 @@ func (h *ActivityPresetHandler) GetByID(w http.ResponseWriter, r *http.Request) 
 
 	preset, err := h.service.GetPresetByID(r.Context(), id)
 	if err != nil {
-		response.Error(w, http.StatusNotFound, err.Error())
+		response.Error(w, http.StatusNotFound, "Preset aktivitas tidak ditemukan")
 		return
 	}
 
@@ -89,16 +89,17 @@ func (h *ActivityPresetHandler) GetByID(w http.ResponseWriter, r *http.Request) 
 // @Param        request body   domain.ActivityPreset  true  "New Preset Data"
 // @Success      201  {object}  response.APIResponse
 // @Failure      400  {object}  response.APIResponse
+// @Failure      409  {object}  response.APIResponse
 // @Router       /activity-presets [post]
 func (h *ActivityPresetHandler) Create(w http.ResponseWriter, r *http.Request) {
 	var req domain.ActivityPreset
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		response.Error(w, http.StatusBadRequest, "Payload JSON tidak valid")
+		response.Error(w, http.StatusBadRequest, "Payload request tidak valid")
 		return
 	}
 
 	if err := h.service.CreatePreset(r.Context(), &req); err != nil {
-		response.Error(w, http.StatusBadRequest, err.Error())
+		response.HandleError(w, err)
 		return
 	}
 
@@ -116,6 +117,7 @@ func (h *ActivityPresetHandler) Create(w http.ResponseWriter, r *http.Request) {
 // @Param        request body   domain.ActivityPreset  true  "Updated Preset Data"
 // @Success      200  {object}  response.APIResponse
 // @Failure      400  {object}  response.APIResponse
+// @Failure      409  {object}  response.APIResponse
 // @Router       /activity-presets/{id} [put]
 func (h *ActivityPresetHandler) Update(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
@@ -127,13 +129,13 @@ func (h *ActivityPresetHandler) Update(w http.ResponseWriter, r *http.Request) {
 
 	var req domain.ActivityPreset
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		response.Error(w, http.StatusBadRequest, "Payload JSON tidak valid")
+		response.Error(w, http.StatusBadRequest, "Payload request tidak valid")
 		return
 	}
 
 	req.ID = id
 	if err := h.service.UpdatePreset(r.Context(), &req); err != nil {
-		response.Error(w, http.StatusBadRequest, err.Error())
+		response.HandleError(w, err)
 		return
 	}
 
@@ -159,11 +161,9 @@ func (h *ActivityPresetHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.service.DeletePreset(r.Context(), id); err != nil {
-		response.Error(w, http.StatusBadRequest, err.Error())
+		response.HandleError(w, err)
 		return
 	}
 
-	response.JSON(w, http.StatusOK, "Preset aktivitas berhasil dihapus", map[string]interface{}{
-		"id": id,
-	})
+	response.JSON(w, http.StatusOK, "Preset aktivitas berhasil dihapus", nil)
 }

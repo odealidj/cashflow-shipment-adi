@@ -352,6 +352,10 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/response.APIResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/response.APIResponse'
       security:
       - BearerAuth: []
       summary: Create new activity preset
@@ -431,6 +435,10 @@ paths:
             $ref: '#/definitions/response.APIResponse'
         "400":
           description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "409":
+          description: Conflict
           schema:
             $ref: '#/definitions/response.APIResponse'
       security:
@@ -592,6 +600,10 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
       security:
       - BearerAuth: []
       summary: Delete a cashflow entry
@@ -617,6 +629,14 @@ paths:
       responses:
         "200":
           description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "409":
+          description: Conflict
           schema:
             $ref: '#/definitions/response.APIResponse'
       security:
@@ -645,6 +665,10 @@ paths:
       responses:
         "200":
           description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
           schema:
             $ref: '#/definitions/response.APIResponse'
       security:
@@ -681,6 +705,14 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
       security:
       - BearerAuth: []
       summary: Import cashflow data from Excel
@@ -702,6 +734,14 @@ paths:
       responses:
         "201":
           description: Created
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "409":
+          description: Conflict
           schema:
             $ref: '#/definitions/response.APIResponse'
       security:
@@ -739,6 +779,14 @@ paths:
       responses:
         "201":
           description: Created
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "409":
+          description: Conflict
           schema:
             $ref: '#/definitions/response.APIResponse'
       security:

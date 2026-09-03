@@ -54,7 +54,7 @@ func (h *UserHandler) List(w http.ResponseWriter, r *http.Request) {
 
 	users, total, err := h.userService.List(r.Context(), limit, offset, search, role, status, currentUserRole)
 	if err != nil {
-		response.Error(w, http.StatusInternalServerError, "Gagal memuat daftar pengguna: "+err.Error())
+		response.HandleError(w, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -191,7 +191,7 @@ func (h *UserHandler) ResetPassword(w http.ResponseWriter, r *http.Request) {
 	currentUserRole := middleware.GetUserRoleFromContext(r.Context())
 
 	if err := h.userService.ResetPassword(r.Context(), id, req.Password, currentUserID, currentUserRole); err != nil {
-		response.Error(w, http.StatusBadRequest, err.Error())
+		response.HandleError(w, err)
 		return
 	}
 
@@ -220,7 +220,7 @@ func (h *UserHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	currentUserRole := middleware.GetUserRoleFromContext(r.Context())
 
 	if err := h.userService.Delete(r.Context(), id, currentUserID, currentUserRole); err != nil {
-		response.Error(w, http.StatusBadRequest, err.Error())
+		response.HandleError(w, err)
 		return
 	}
 

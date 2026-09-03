@@ -40,7 +40,7 @@ func (h *VendorHandler) List(w http.ResponseWriter, r *http.Request) {
 
 	vendors, total, err := h.vendorService.ListAllVendors(r.Context(), page, limit)
 	if err != nil {
-		response.Error(w, http.StatusInternalServerError, "Failed to retrieve vendors")
+		response.HandleError(w, err, http.StatusInternalServerError)
 		return
 	}
 	response.Paginated(w, http.StatusOK, "Vendors retrieved", vendors, page, limit, total)
@@ -149,7 +149,7 @@ func (h *VendorHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.vendorService.DeleteVendor(r.Context(), id); err != nil {
-		response.Error(w, http.StatusInternalServerError, "Failed to delete vendor: "+err.Error())
+		response.HandleError(w, err, http.StatusInternalServerError)
 		return
 	}
 

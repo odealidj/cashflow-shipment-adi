@@ -32,7 +32,7 @@ func (h *RoleHandler) List(w http.ResponseWriter, r *http.Request) {
 	currentUserRole := middleware.GetUserRoleFromContext(r.Context())
 	roles, err := h.roleService.ListRoles(r.Context(), currentUserRole)
 	if err != nil {
-		response.Error(w, http.StatusInternalServerError, "Gagal memuat daftar peran: "+err.Error())
+		response.HandleError(w, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -59,7 +59,7 @@ func (h *RoleHandler) Get(w http.ResponseWriter, r *http.Request) {
 
 	roleDetail, err := h.roleService.GetRoleDetail(r.Context(), id)
 	if err != nil {
-		response.Error(w, http.StatusNotFound, "Role tidak ditemukan: "+err.Error())
+		response.Error(w, http.StatusNotFound, "Role tidak ditemukan")
 		return
 	}
 
@@ -121,7 +121,7 @@ func (h *RoleHandler) Update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.roleService.UpdateRole(r.Context(), id, input); err != nil {
-		response.Error(w, http.StatusBadRequest, "Gagal memperbarui role: "+err.Error())
+		response.HandleError(w, err)
 		return
 	}
 
@@ -147,7 +147,7 @@ func (h *RoleHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.roleService.DeleteRole(r.Context(), id); err != nil {
-		response.Error(w, http.StatusBadRequest, "Gagal menghapus role: "+err.Error())
+		response.HandleError(w, err)
 		return
 	}
 
@@ -166,7 +166,7 @@ func (h *RoleHandler) Delete(w http.ResponseWriter, r *http.Request) {
 func (h *RoleHandler) ListPermissions(w http.ResponseWriter, r *http.Request) {
 	permsGrouped, err := h.roleService.ListPermissionsGrouped(r.Context())
 	if err != nil {
-		response.Error(w, http.StatusInternalServerError, "Gagal memuat kamus izin: "+err.Error())
+		response.HandleError(w, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -204,7 +204,7 @@ func (h *RoleHandler) UpdatePermissions(w http.ResponseWriter, r *http.Request) 
 	}
 
 	if err := h.roleService.UpdateRolePermissions(r.Context(), id, input.Permissions); err != nil {
-		response.Error(w, http.StatusBadRequest, "Gagal memperbarui hak akses role: "+err.Error())
+		response.HandleError(w, err)
 		return
 	}
 

@@ -42,7 +42,7 @@ func (h *CustomerHandler) List(w http.ResponseWriter, r *http.Request) {
 
 	customers, total, err := h.customerService.ListAllCustomers(r.Context(), page, limit, search)
 	if err != nil {
-		response.Error(w, http.StatusInternalServerError, "Failed to retrieve customers: "+err.Error())
+		response.HandleError(w, err, http.StatusInternalServerError)
 		return
 	}
 	response.Paginated(w, http.StatusOK, "Customers retrieved", customers, page, limit, total)
@@ -151,7 +151,7 @@ func (h *CustomerHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.customerService.DeleteCustomer(r.Context(), id); err != nil {
-		response.Error(w, http.StatusInternalServerError, err.Error())
+		response.HandleError(w, err, http.StatusInternalServerError)
 		return
 	}
 

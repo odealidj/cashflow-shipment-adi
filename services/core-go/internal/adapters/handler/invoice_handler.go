@@ -73,7 +73,7 @@ func (h *InvoiceHandler) List(w http.ResponseWriter, r *http.Request) {
 	filter := extractInvoiceFilter(r)
 	invoices, total, err := h.invoiceService.ListInvoices(r.Context(), page, limit, filter)
 	if err != nil {
-		response.Error(w, http.StatusInternalServerError, "Gagal mengambil data invoice: "+err.Error())
+		response.HandleError(w, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -90,7 +90,7 @@ func (h *InvoiceHandler) GetSummary(w http.ResponseWriter, r *http.Request) {
 	filter := extractInvoiceFilter(r)
 	summary, err := h.invoiceService.GetSummary(r.Context(), filter)
 	if err != nil {
-		response.Error(w, http.StatusInternalServerError, "Gagal mengambil ringkasan invoice: "+err.Error())
+		response.HandleError(w, err, http.StatusInternalServerError)
 		return
 	}
 	response.JSON(w, http.StatusOK, "Invoice summary retrieved", summary)
@@ -187,7 +187,7 @@ func (h *InvoiceHandler) MarkPaid(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.invoiceService.MarkAsPaid(r.Context(), id); err != nil {
-		response.Error(w, http.StatusInternalServerError, "Gagal mengubah status pelunasan: "+err.Error())
+		response.HandleError(w, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -209,9 +209,9 @@ func (h *InvoiceHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.invoiceService.DeleteInvoice(r.Context(), id); err != nil {
-		response.Error(w, http.StatusInternalServerError, "Gagal menghapus invoice: "+err.Error())
+		response.HandleError(w, err, http.StatusInternalServerError)
 		return
 	}
 
-	response.JSON(w, http.StatusOK, "Invoice berhasil dihapus", map[string]interface{}{"id": id})
+	response.JSON(w, http.StatusOK, "Invoice berhasil dihapus", nil)
 }

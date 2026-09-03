@@ -85,7 +85,7 @@ func (h *CashflowHandler) List(w http.ResponseWriter, r *http.Request) {
 	filter := extractListFilter(r)
 	entries, total, err := h.cashflowService.GetDashboardData(r.Context(), page, limit, filter)
 	if err != nil {
-		response.Error(w, http.StatusInternalServerError, "Failed to retrieve cashflow data: "+err.Error())
+		response.HandleError(w, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -100,6 +100,8 @@ func (h *CashflowHandler) List(w http.ResponseWriter, r *http.Request) {
 // @Security     BearerAuth
 // @Param        request body domain.CashflowEntry true "Top-Up Entry Data"
 // @Success      201  {object}  response.APIResponse
+// @Failure      400  {object}  response.APIResponse
+// @Failure      409  {object}  response.APIResponse
 // @Router       /cashflow/topup [post]
 func (h *CashflowHandler) CreateTopUp(w http.ResponseWriter, r *http.Request) {
 	var entry domain.CashflowEntry
@@ -113,7 +115,7 @@ func (h *CashflowHandler) CreateTopUp(w http.ResponseWriter, r *http.Request) {
 	entry.UpdatedBy = userID
 
 	if err := h.cashflowService.RecordTopUp(r.Context(), &entry); err != nil {
-		response.Error(w, http.StatusInternalServerError, "Failed to record Top-Up: "+err.Error())
+		response.HandleError(w, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -128,6 +130,8 @@ func (h *CashflowHandler) CreateTopUp(w http.ResponseWriter, r *http.Request) {
 // @Security     BearerAuth
 // @Param        request body domain.CashflowEntry true "Shipment Entry Data"
 // @Success      201  {object}  response.APIResponse
+// @Failure      400  {object}  response.APIResponse
+// @Failure      409  {object}  response.APIResponse
 // @Router       /cashflow/shipment [post]
 func (h *CashflowHandler) CreateShipment(w http.ResponseWriter, r *http.Request) {
 	var entry domain.CashflowEntry
@@ -141,7 +145,7 @@ func (h *CashflowHandler) CreateShipment(w http.ResponseWriter, r *http.Request)
 	entry.UpdatedBy = userID
 
 	if err := h.cashflowService.RecordShipment(r.Context(), &entry); err != nil {
-		response.Error(w, http.StatusInternalServerError, "Failed to record Shipment: "+err.Error())
+		response.HandleError(w, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -157,6 +161,8 @@ func (h *CashflowHandler) CreateShipment(w http.ResponseWriter, r *http.Request)
 // @Param        id path int true "Entry ID"
 // @Param        request body domain.CashflowEntry true "Updated Entry Data"
 // @Success      200  {object}  response.APIResponse
+// @Failure      400  {object}  response.APIResponse
+// @Failure      409  {object}  response.APIResponse
 // @Router       /cashflow/{id} [put]
 func (h *CashflowHandler) Update(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
@@ -175,7 +181,7 @@ func (h *CashflowHandler) Update(w http.ResponseWriter, r *http.Request) {
 
 	userID := middleware.GetUserIDFromContext(r.Context())
 	if err := h.cashflowService.UpdateEntry(r.Context(), &entry, userID); err != nil {
-		response.Error(w, http.StatusInternalServerError, "Failed to update entry: "+err.Error())
+		response.HandleError(w, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -189,6 +195,7 @@ func (h *CashflowHandler) Update(w http.ResponseWriter, r *http.Request) {
 // @Security     BearerAuth
 // @Param        id path int true "Entry ID"
 // @Success      200  {object}  response.APIResponse
+// @Failure      400  {object}  response.APIResponse
 // @Router       /cashflow/{id} [delete]
 func (h *CashflowHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
@@ -200,7 +207,7 @@ func (h *CashflowHandler) Delete(w http.ResponseWriter, r *http.Request) {
 
 	userID := middleware.GetUserIDFromContext(r.Context())
 	if err := h.cashflowService.DeleteEntry(r.Context(), id, userID); err != nil {
-		response.Error(w, http.StatusInternalServerError, "Failed to delete entry: "+err.Error())
+		response.HandleError(w, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -220,6 +227,7 @@ type UpdateStatusRequest struct {
 // @Param        id path int true "Entry ID"
 // @Param        request body UpdateStatusRequest true "Payment Status Data"
 // @Success      200  {object}  response.APIResponse
+// @Failure      400  {object}  response.APIResponse
 // @Router       /cashflow/{id}/status [patch]
 func (h *CashflowHandler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
@@ -237,7 +245,7 @@ func (h *CashflowHandler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 
 	userID := middleware.GetUserIDFromContext(r.Context())
 	if err := h.cashflowService.UpdatePaymentStatus(r.Context(), id, req.Remarks, userID); err != nil {
-		response.Error(w, http.StatusInternalServerError, "Failed to update payment status: "+err.Error())
+		response.HandleError(w, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -588,7 +596,7 @@ func (h *CashflowHandler) ExportExcel(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, filename))
 	
 	if err := f.Write(w); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		response.HandleError(w, err, http.StatusInternalServerError)
 	}
 }
 
@@ -600,25 +608,27 @@ func (h *CashflowHandler) ExportExcel(w http.ResponseWriter, r *http.Request) {
 // @Security     BearerAuth
 // @Param        file formData file true "Excel File"
 // @Success      200  {object}  response.APIResponse
+// @Failure      400  {object}  response.APIResponse
+// @Failure      500  {object}  response.APIResponse
 // @Router       /cashflow/import [post]
 func (h *CashflowHandler) ImportExcel(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseMultipartForm(10 << 20); err != nil { // 10MB max
-		response.Error(w, http.StatusBadRequest, "File too large or invalid form")
+		response.Error(w, http.StatusBadRequest, "Ukuran file terlalu besar atau format form tidak valid")
 		return
 	}
 
 	file, _, err := r.FormFile("file")
 	if err != nil {
-		response.Error(w, http.StatusBadRequest, "File is required")
+		response.Error(w, http.StatusBadRequest, "File Excel wajib diunggah")
 		return
 	}
 	defer file.Close()
 
 	userID := middleware.GetUserIDFromContext(r.Context())
 	if err := h.cashflowService.ProcessExcelImport(r.Context(), file, userID); err != nil {
-		response.Error(w, http.StatusInternalServerError, "Failed to process excel import: "+err.Error())
+		response.HandleError(w, err, http.StatusInternalServerError)
 		return
 	}
 
-	response.JSON(w, http.StatusOK, "Excel imported successfully", nil)
+	response.JSON(w, http.StatusOK, "Excel berhasil diimpor", nil)
 }
