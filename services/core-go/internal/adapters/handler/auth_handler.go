@@ -25,6 +25,15 @@ type LoginRequest struct {
 }
 
 // Login authenticates user and sets HttpOnly session cookie
+// @Summary      User login
+// @Description  Login using email or phone number and password
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        request body LoginRequest true "Login Credentials"
+// @Success      200  {object}  response.APIResponse
+// @Failure      401  {object}  response.APIResponse
+// @Router       /auth/login [post]
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	var req LoginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -56,6 +65,12 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 }
 
 // Logout revokes session and clears HttpOnly cookie
+// @Summary      User logout
+// @Description  Revokes session token and clears HttpOnly session cookie
+// @Tags         auth
+// @Produce      json
+// @Success      200  {object}  response.APIResponse
+// @Router       /auth/logout [post]
 func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	var token string
 	if cookie, err := r.Cookie(middleware.CookieAuthName); err == nil && cookie != nil {
@@ -89,6 +104,14 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 }
 
 // Me returns current active session profile
+// @Summary      Get current user profile
+// @Description  Returns the active session profile including role and assigned permissions
+// @Tags         auth
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200  {object}  response.APIResponse
+// @Failure      401  {object}  response.APIResponse
+// @Router       /auth/me [get]
 func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
 	session := middleware.GetUserSessionFromContext(r.Context())
 	if session == nil {
@@ -107,6 +130,16 @@ type RegisterRequest struct {
 	Role     string `json:"role"`
 }
 
+// Register registers a new user account
+// @Summary      Register new user
+// @Description  Registers a new staff user pending administrator verification
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        request body RegisterRequest true "Registration Data"
+// @Success      201  {object}  response.APIResponse
+// @Failure      400  {object}  response.APIResponse
+// @Router       /auth/register [post]
 func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	var req RegisterRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {

@@ -20,6 +20,14 @@ func NewRoleHandler(roleService *services.RoleService) *RoleHandler {
 }
 
 // List handles listing roles
+// @Summary      List all roles
+// @Description  Retrieves list of all available roles with user counts
+// @Tags         roles
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200  {object}  response.APIResponse
+// @Failure      500  {object}  response.APIResponse
+// @Router       /roles [get]
 func (h *RoleHandler) List(w http.ResponseWriter, r *http.Request) {
 	currentUserRole := middleware.GetUserRoleFromContext(r.Context())
 	roles, err := h.roleService.ListRoles(r.Context(), currentUserRole)
@@ -32,6 +40,15 @@ func (h *RoleHandler) List(w http.ResponseWriter, r *http.Request) {
 }
 
 // Get handles retrieving role detail with its active permissions
+// @Summary      Get role detail with active permissions
+// @Description  Retrieves role information along with active permission codes
+// @Tags         roles
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id   path      string  true  "Role UUID"
+// @Success      200  {object}  response.APIResponse
+// @Failure      404  {object}  response.APIResponse
+// @Router       /roles/{id} [get]
 func (h *RoleHandler) Get(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	id, err := uuid.Parse(idStr)
@@ -50,6 +67,16 @@ func (h *RoleHandler) Get(w http.ResponseWriter, r *http.Request) {
 }
 
 // Create handles creating a new custom role
+// @Summary      Create new custom role
+// @Description  Creates a new custom business role
+// @Tags         roles
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        request body   services.CreateRoleInput  true  "New Role Data"
+// @Success      201  {object}  response.APIResponse
+// @Failure      400  {object}  response.APIResponse
+// @Router       /roles [post]
 func (h *RoleHandler) Create(w http.ResponseWriter, r *http.Request) {
 	var input services.CreateRoleInput
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
@@ -67,6 +94,17 @@ func (h *RoleHandler) Create(w http.ResponseWriter, r *http.Request) {
 }
 
 // Update handles updating role name and description
+// @Summary      Update role information
+// @Description  Updates name and description of a role
+// @Tags         roles
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id      path   string                    true  "Role UUID"
+// @Param        request body   services.UpdateRoleInput  true  "Updated Role Data"
+// @Success      200  {object}  response.APIResponse
+// @Failure      400  {object}  response.APIResponse
+// @Router       /roles/{id} [put]
 func (h *RoleHandler) Update(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	id, err := uuid.Parse(idStr)
@@ -90,6 +128,15 @@ func (h *RoleHandler) Update(w http.ResponseWriter, r *http.Request) {
 }
 
 // Delete handles deleting a role (if not system and has 0 active users)
+// @Summary      Delete custom role
+// @Description  Deletes a custom role if no users are currently assigned
+// @Tags         roles
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id   path      string  true  "Role UUID"
+// @Success      200  {object}  response.APIResponse
+// @Failure      400  {object}  response.APIResponse
+// @Router       /roles/{id} [delete]
 func (h *RoleHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	id, err := uuid.Parse(idStr)
@@ -107,6 +154,14 @@ func (h *RoleHandler) Delete(w http.ResponseWriter, r *http.Request) {
 }
 
 // ListPermissions handles listing all available system permissions grouped by module
+// @Summary      List all available system permissions
+// @Description  Retrieves all permissions grouped by modules
+// @Tags         roles
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200  {object}  response.APIResponse
+// @Failure      500  {object}  response.APIResponse
+// @Router       /roles/permissions [get]
 func (h *RoleHandler) ListPermissions(w http.ResponseWriter, r *http.Request) {
 	permsGrouped, err := h.roleService.ListPermissionsGrouped(r.Context())
 	if err != nil {
@@ -122,6 +177,17 @@ type UpdatePermissionsInput struct {
 }
 
 // UpdatePermissions handles updating the permission checklist matrix for a role
+// @Summary      Update role permissions matrix
+// @Description  Atomically updates the permission checklist assigned to a role
+// @Tags         roles
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id      path   string                  true  "Role UUID"
+// @Param        request body   UpdatePermissionsInput  true  "Permission Codes List"
+// @Success      200  {object}  response.APIResponse
+// @Failure      400  {object}  response.APIResponse
+// @Router       /roles/{id}/permissions [put]
 func (h *RoleHandler) UpdatePermissions(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	id, err := uuid.Parse(idStr)

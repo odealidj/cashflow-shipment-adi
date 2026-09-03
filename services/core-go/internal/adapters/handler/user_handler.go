@@ -21,6 +21,19 @@ func NewUserHandler(userService *services.UserService) *UserHandler {
 }
 
 // List handles listing users with pagination and filters
+// @Summary      List users
+// @Description  Retrieves list of users with pagination, search, role, and status filtering
+// @Tags         users
+// @Produce      json
+// @Security     BearerAuth
+// @Param        page    query  int     false  "Page number" default(1)
+// @Param        limit   query  int     false  "Items per page" default(15)
+// @Param        search  query  string  false  "Search by name, email, or phone"
+// @Param        role    query  string  false  "Filter by role code"
+// @Param        status  query  string  false  "Filter by status (ACTIVE, INACTIVE, SUSPENDED)"
+// @Success      200  {object}  response.APIResponse
+// @Failure      500  {object}  response.APIResponse
+// @Router       /users [get]
 func (h *UserHandler) List(w http.ResponseWriter, r *http.Request) {
 	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
 	if page < 1 {
@@ -57,6 +70,15 @@ func (h *UserHandler) List(w http.ResponseWriter, r *http.Request) {
 }
 
 // Get handles retrieving a single user by ID
+// @Summary      Get user by ID
+// @Description  Retrieves profile of a specific user
+// @Tags         users
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id   path      string  true  "User UUID"
+// @Success      200  {object}  response.APIResponse
+// @Failure      404  {object}  response.APIResponse
+// @Router       /users/{id} [get]
 func (h *UserHandler) Get(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	id, err := uuid.Parse(idStr)
@@ -75,6 +97,16 @@ func (h *UserHandler) Get(w http.ResponseWriter, r *http.Request) {
 }
 
 // Create handles registering a new user by Admin
+// @Summary      Create new user
+// @Description  Registers a new staff user with designated role
+// @Tags         users
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        request body   services.CreateUserInput  true  "New User Data"
+// @Success      201  {object}  response.APIResponse
+// @Failure      400  {object}  response.APIResponse
+// @Router       /users [post]
 func (h *UserHandler) Create(w http.ResponseWriter, r *http.Request) {
 	var input services.CreateUserInput
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
@@ -94,6 +126,17 @@ func (h *UserHandler) Create(w http.ResponseWriter, r *http.Request) {
 }
 
 // Update handles editing an existing user profile and role
+// @Summary      Update user
+// @Description  Updates profile, status, or role of an existing user (enforces C-Level & Self-Deletion Golden Rules)
+// @Tags         users
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id      path   string                    true  "User UUID"
+// @Param        request body   services.UpdateUserInput  true  "Updated User Data"
+// @Success      200  {object}  response.APIResponse
+// @Failure      400  {object}  response.APIResponse
+// @Router       /users/{id} [put]
 func (h *UserHandler) Update(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	id, err := uuid.Parse(idStr)
@@ -125,6 +168,17 @@ type ResetPasswordRequest struct {
 }
 
 // ResetPassword handles resetting user password
+// @Summary      Reset user password
+// @Description  Resets the password for a user account
+// @Tags         users
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id      path   string                true  "User UUID"
+// @Param        request body   ResetPasswordRequest  true  "New Password"
+// @Success      200  {object}  response.APIResponse
+// @Failure      400  {object}  response.APIResponse
+// @Router       /users/{id}/password [patch]
 func (h *UserHandler) ResetPassword(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	id, err := uuid.Parse(idStr)
@@ -151,6 +205,15 @@ func (h *UserHandler) ResetPassword(w http.ResponseWriter, r *http.Request) {
 }
 
 // Delete handles soft-deleting a user
+// @Summary      Soft delete / deactivate user
+// @Description  Soft deletes or deactivates a user (enforces Anti Self-Deletion, Last Admin Standing, and C-Level Immunity)
+// @Tags         users
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id   path      string  true  "User UUID"
+// @Success      200  {object}  response.APIResponse
+// @Failure      400  {object}  response.APIResponse
+// @Router       /users/{id} [delete]
 func (h *UserHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	id, err := uuid.Parse(idStr)

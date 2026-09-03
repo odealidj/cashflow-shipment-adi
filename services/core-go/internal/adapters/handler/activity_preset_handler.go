@@ -19,6 +19,19 @@ func NewActivityPresetHandler(service *services.ActivityPresetService) *Activity
 	return &ActivityPresetHandler{service: service}
 }
 
+// List handles listing activity presets
+// @Summary      List activity presets
+// @Description  Retrieves master activity descriptions and routes with optional category/search filter
+// @Tags         activity-presets
+// @Produce      json
+// @Security     BearerAuth
+// @Param        page      query  int     false  "Page number" default(1)
+// @Param        limit     query  int     false  "Items per page" default(100)
+// @Param        category  query  string  false  "Category filter"
+// @Param        search    query  string  false  "Search keyword"
+// @Success      200  {object}  response.APIResponse
+// @Failure      500  {object}  response.APIResponse
+// @Router       /activity-presets [get]
 func (h *ActivityPresetHandler) List(w http.ResponseWriter, r *http.Request) {
 	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
 	if page < 1 {
@@ -44,6 +57,16 @@ func (h *ActivityPresetHandler) List(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// GetByID handles retrieving a single activity preset by ID
+// @Summary      Get activity preset by ID
+// @Description  Retrieves detail of a specific activity preset
+// @Tags         activity-presets
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id   path      int  true  "Preset ID"
+// @Success      200  {object}  response.APIResponse
+// @Failure      404  {object}  response.APIResponse
+// @Router       /activity-presets/{id} [get]
 func (h *ActivityPresetHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	id, err := strconv.Atoi(idStr)
@@ -61,6 +84,17 @@ func (h *ActivityPresetHandler) GetByID(w http.ResponseWriter, r *http.Request) 
 	response.JSON(w, http.StatusOK, "Detail preset ditemukan", preset)
 }
 
+// Create handles creating a new activity preset
+// @Summary      Create new activity preset
+// @Description  Creates a new preset for activity description or armada route
+// @Tags         activity-presets
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        request body   domain.ActivityPreset  true  "New Preset Data"
+// @Success      201  {object}  response.APIResponse
+// @Failure      400  {object}  response.APIResponse
+// @Router       /activity-presets [post]
 func (h *ActivityPresetHandler) Create(w http.ResponseWriter, r *http.Request) {
 	var req domain.ActivityPreset
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -76,6 +110,18 @@ func (h *ActivityPresetHandler) Create(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, http.StatusCreated, "Preset aktivitas berhasil ditambahkan", req)
 }
 
+// Update handles editing an existing activity preset
+// @Summary      Update activity preset
+// @Description  Updates an existing activity preset
+// @Tags         activity-presets
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id      path   int                    true  "Preset ID"
+// @Param        request body   domain.ActivityPreset  true  "Updated Preset Data"
+// @Success      200  {object}  response.APIResponse
+// @Failure      400  {object}  response.APIResponse
+// @Router       /activity-presets/{id} [put]
 func (h *ActivityPresetHandler) Update(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	id, err := strconv.Atoi(idStr)
@@ -99,6 +145,16 @@ func (h *ActivityPresetHandler) Update(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, http.StatusOK, "Preset aktivitas berhasil diperbarui", req)
 }
 
+// Delete handles removing an activity preset
+// @Summary      Delete activity preset
+// @Description  Deletes an activity preset by ID
+// @Tags         activity-presets
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id   path      int  true  "Preset ID"
+// @Success      200  {object}  response.APIResponse
+// @Failure      400  {object}  response.APIResponse
+// @Router       /activity-presets/{id} [delete]
 func (h *ActivityPresetHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	id, err := strconv.Atoi(idStr)

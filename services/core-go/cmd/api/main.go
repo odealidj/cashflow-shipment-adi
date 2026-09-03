@@ -37,6 +37,11 @@ import (
 // @host      localhost:8080
 // @BasePath  /api/v1
 
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Type "Bearer" followed by a space and the session token.
+
 func loadEnvFiles() {
 	envFiles := []string{".env", "../.env", "services/core-go/.env", ".env.example", "services/core-go/.env.example"}
 	for _, file := range envFiles {

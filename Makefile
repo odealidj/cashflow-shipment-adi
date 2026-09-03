@@ -1,4 +1,4 @@
-.PHONY: help infra-up infra-down infra-logs run-local-core-go run-local-web-next generate-ui-assets
+.PHONY: help infra-up infra-down infra-logs run-local-core-go run-local-web-next generate-ui-assets swagger-gen
 
 # Default command
 help:
@@ -35,3 +35,7 @@ run-local-web-next:
 generate-ui-assets:
 	@echo "Generating mobile UI composite screenshots..."
 	python3 scripts/generate_mobile_ui_assets.py
+
+swagger-gen:
+	@echo "Generating Swagger OpenAPI documentation..."
+	cd services/core-go && swag init -g cmd/api/main.go

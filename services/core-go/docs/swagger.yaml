@@ -1,5 +1,25 @@
 basePath: /api/v1
 definitions:
+  domain.ActivityPreset:
+    properties:
+      category:
+        description: '''ACT_INFO'' or ''ACT_EXPLAIN'''
+        type: string
+      created_at:
+        type: string
+      deleted_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      is_active:
+        type: boolean
+      name:
+        type: string
+      updated_at:
+        type: string
+    type: object
   domain.CashflowEntry:
     properties:
       act_explaination:
@@ -47,6 +67,29 @@ definitions:
       vendor_name_raw:
         type: string
     type: object
+  domain.Customer:
+    properties:
+      address:
+        type: string
+      created_at:
+        type: string
+      deleted_at:
+        type: string
+      email:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      notes:
+        type: string
+      phone:
+        type: string
+      pic_name:
+        type: string
+      updated_at:
+        type: string
+    type: object
   domain.EntryType:
     enum:
     - SHIPMENT
@@ -65,9 +108,53 @@ definitions:
     - PaymentPaid
     - PaymentUnpaid
     - PaymentPending
+  domain.UserRole:
+    enum:
+    - super_admin
+    - admin
+    - finance
+    - direktur
+    - owner
+    - operator
+    - viewer
+    type: string
+    x-enum-comments:
+      RoleAdmin: Administrator Bisnis / Head of Operations
+      RoleDirektur: Direktur / Manajemen (Monitoring & Review)
+      RoleFinance: Staf Keuangan & Akuntansi (Input Transaksi & Invoice)
+      RoleOwner: Pemilik Modal / Investor (Executive Dashboard)
+      RoleSuperAdmin: IT Master / Developer (Tersembunyi, Fail-safe All Access)
+    x-enum-descriptions:
+    - IT Master / Developer (Tersembunyi, Fail-safe All Access)
+    - Administrator Bisnis / Head of Operations
+    - Staf Keuangan & Akuntansi (Input Transaksi & Invoice)
+    - Direktur / Manajemen (Monitoring & Review)
+    - Pemilik Modal / Investor (Executive Dashboard)
+    - ""
+    - ""
+    x-enum-varnames:
+    - RoleSuperAdmin
+    - RoleAdmin
+    - RoleFinance
+    - RoleDirektur
+    - RoleOwner
+    - RoleOperator
+    - RoleViewer
+  domain.UserStatus:
+    enum:
+    - ACTIVE
+    - INACTIVE
+    - SUSPENDED
+    type: string
+    x-enum-varnames:
+    - StatusActive
+    - StatusInactive
+    - StatusSuspended
   domain.Vendor:
     properties:
       created_at:
+        type: string
+      deleted_at:
         type: string
       email:
         type: string
@@ -78,6 +165,8 @@ definitions:
       notes:
         type: string
       phone:
+        type: string
+      updated_at:
         type: string
     type: object
   handler.LoginRequest:
@@ -101,6 +190,23 @@ definitions:
       role:
         type: string
     type: object
+  handler.ResetPasswordRequest:
+    properties:
+      password:
+        type: string
+    type: object
+  handler.UpdatePermissionsInput:
+    properties:
+      permissions:
+        items:
+          type: string
+        type: array
+    type: object
+  handler.UpdateStatusRequest:
+    properties:
+      remarks:
+        $ref: '#/definitions/domain.PaymentStatus'
+    type: object
   response.APIResponse:
     properties:
       data: {}
@@ -109,20 +215,211 @@ definitions:
       status:
         type: boolean
     type: object
+  services.CreateRoleInput:
+    properties:
+      code:
+        type: string
+      description:
+        type: string
+      name:
+        type: string
+    type: object
+  services.CreateUserInput:
+    properties:
+      email:
+        type: string
+      full_name:
+        type: string
+      password:
+        type: string
+      phone:
+        type: string
+      role:
+        $ref: '#/definitions/domain.UserRole'
+      status:
+        $ref: '#/definitions/domain.UserStatus'
+    type: object
+  services.UpdateRoleInput:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+    type: object
+  services.UpdateUserInput:
+    properties:
+      email:
+        type: string
+      full_name:
+        type: string
+      phone:
+        type: string
+      role:
+        $ref: '#/definitions/domain.UserRole'
+      status:
+        $ref: '#/definitions/domain.UserStatus'
+    type: object
 host: localhost:8080
 info:
   contact:
     email: support@swagger.io
     name: API Support
     url: http://www.swagger.io/support
-  description: API for managing continuous rolling cashflow for logistics/trucking.
+  description: High Performance Backend Service for PT. Adijayantara Logistics Indonesia.
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
   termsOfService: http://swagger.io/terms/
-  title: Cashflow Shipment App API
+  title: Cashflow & Shipment Management API
   version: "1.0"
 paths:
+  /activity-presets:
+    get:
+      description: Retrieves master activity descriptions and routes with optional
+        category/search filter
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 100
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      - description: Category filter
+        in: query
+        name: category
+        type: string
+      - description: Search keyword
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: List activity presets
+      tags:
+      - activity-presets
+    post:
+      consumes:
+      - application/json
+      description: Creates a new preset for activity description or armada route
+      parameters:
+      - description: New Preset Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/domain.ActivityPreset'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Create new activity preset
+      tags:
+      - activity-presets
+  /activity-presets/{id}:
+    delete:
+      description: Deletes an activity preset by ID
+      parameters:
+      - description: Preset ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete activity preset
+      tags:
+      - activity-presets
+    get:
+      description: Retrieves detail of a specific activity preset
+      parameters:
+      - description: Preset ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Get activity preset by ID
+      tags:
+      - activity-presets
+    put:
+      consumes:
+      - application/json
+      description: Updates an existing activity preset
+      parameters:
+      - description: Preset ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Updated Preset Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/domain.ActivityPreset'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Update activity preset
+      tags:
+      - activity-presets
   /auth/login:
     post:
       consumes:
@@ -149,14 +446,46 @@ paths:
       summary: User login
       tags:
       - auth
+  /auth/logout:
+    post:
+      description: Revokes session token and clears HttpOnly session cookie
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      summary: User logout
+      tags:
+      - auth
+  /auth/me:
+    get:
+      description: Returns the active session profile including role and assigned
+        permissions
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Get current user profile
+      tags:
+      - auth
   /auth/register:
     post:
       consumes:
       - application/json
-      description: Register a new user in the system (Admin only ideally, but open
-        for now)
+      description: Registers a new staff user pending administrator verification
       parameters:
-      - description: User Registration Info
+      - description: Registration Data
         in: body
         name: request
         required: true
@@ -169,7 +498,11 @@ paths:
           description: Created
           schema:
             $ref: '#/definitions/response.APIResponse'
-      summary: Register a new user
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      summary: Register new user
       tags:
       - auth
   /cashflow:
@@ -185,6 +518,31 @@ paths:
         in: query
         name: limit
         type: integer
+      - default: ASC
+        description: Sort direction (ASC/DESC)
+        in: query
+        name: sort
+        type: string
+      - description: Start date (YYYY-MM-DD)
+        in: query
+        name: date_from
+        type: string
+      - description: End date (YYYY-MM-DD)
+        in: query
+        name: date_to
+        type: string
+      - description: Entry type (SHIPMENT/TOP_UP)
+        in: query
+        name: entry_type
+        type: string
+      - description: Payment status (PAID/UNPAID/PENDING)
+        in: query
+        name: remarks
+        type: string
+      - description: Vendor search keyword
+        in: query
+        name: vendor_name
+        type: string
       produces:
       - application/json
       responses:
@@ -195,6 +553,81 @@ paths:
       security:
       - BearerAuth: []
       summary: Get dashboard cashflow entries
+      tags:
+      - cashflow
+  /cashflow/{id}:
+    delete:
+      parameters:
+      - description: Entry ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete a cashflow entry
+      tags:
+      - cashflow
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Entry ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Updated Entry Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/domain.CashflowEntry'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Update a cashflow entry
+      tags:
+      - cashflow
+  /cashflow/{id}/status:
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Entry ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Payment Status Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.UpdateStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Update payment status (Remarks)
       tags:
       - cashflow
   /cashflow/export:
@@ -291,6 +724,559 @@ paths:
       summary: Record a Top-Up entry
       tags:
       - cashflow
+  /customers:
+    get:
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 50
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      - description: Search query
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Get all customers
+      tags:
+      - customers
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Customer Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/domain.Customer'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Create new customer
+      tags:
+      - customers
+  /customers/{id}:
+    delete:
+      parameters:
+      - description: Customer ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Soft delete customer
+      tags:
+      - customers
+    get:
+      parameters:
+      - description: Customer ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Get customer by ID
+      tags:
+      - customers
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Customer ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Customer Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/domain.Customer'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Update existing customer
+      tags:
+      - customers
+  /invoices:
+    get:
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Get invoices list
+      tags:
+      - invoices
+    post:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Create new invoice
+      tags:
+      - invoices
+  /invoices/{id}:
+    delete:
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Soft delete invoice
+      tags:
+      - invoices
+    get:
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Get invoice by ID
+      tags:
+      - invoices
+    put:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Update invoice
+      tags:
+      - invoices
+  /invoices/{id}/pay:
+    patch:
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Mark invoice as paid
+      tags:
+      - invoices
+  /invoices/summary:
+    get:
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Get invoice summary KPI
+      tags:
+      - invoices
+  /roles:
+    get:
+      description: Retrieves list of all available roles with user counts
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: List all roles
+      tags:
+      - roles
+    post:
+      consumes:
+      - application/json
+      description: Creates a new custom business role
+      parameters:
+      - description: New Role Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/services.CreateRoleInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Create new custom role
+      tags:
+      - roles
+  /roles/{id}:
+    delete:
+      description: Deletes a custom role if no users are currently assigned
+      parameters:
+      - description: Role UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete custom role
+      tags:
+      - roles
+    get:
+      description: Retrieves role information along with active permission codes
+      parameters:
+      - description: Role UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Get role detail with active permissions
+      tags:
+      - roles
+    put:
+      consumes:
+      - application/json
+      description: Updates name and description of a role
+      parameters:
+      - description: Role UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Updated Role Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/services.UpdateRoleInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Update role information
+      tags:
+      - roles
+  /roles/{id}/permissions:
+    put:
+      consumes:
+      - application/json
+      description: Atomically updates the permission checklist assigned to a role
+      parameters:
+      - description: Role UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Permission Codes List
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.UpdatePermissionsInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Update role permissions matrix
+      tags:
+      - roles
+  /roles/permissions:
+    get:
+      description: Retrieves all permissions grouped by modules
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: List all available system permissions
+      tags:
+      - roles
+  /users:
+    get:
+      description: Retrieves list of users with pagination, search, role, and status
+        filtering
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 15
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      - description: Search by name, email, or phone
+        in: query
+        name: search
+        type: string
+      - description: Filter by role code
+        in: query
+        name: role
+        type: string
+      - description: Filter by status (ACTIVE, INACTIVE, SUSPENDED)
+        in: query
+        name: status
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: List users
+      tags:
+      - users
+    post:
+      consumes:
+      - application/json
+      description: Registers a new staff user with designated role
+      parameters:
+      - description: New User Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/services.CreateUserInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Create new user
+      tags:
+      - users
+  /users/{id}:
+    delete:
+      description: Soft deletes or deactivates a user (enforces Anti Self-Deletion,
+        Last Admin Standing, and C-Level Immunity)
+      parameters:
+      - description: User UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Soft delete / deactivate user
+      tags:
+      - users
+    get:
+      description: Retrieves profile of a specific user
+      parameters:
+      - description: User UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Get user by ID
+      tags:
+      - users
+    put:
+      consumes:
+      - application/json
+      description: Updates profile, status, or role of an existing user (enforces
+        C-Level & Self-Deletion Golden Rules)
+      parameters:
+      - description: User UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Updated User Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/services.UpdateUserInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Update user
+      tags:
+      - users
+  /users/{id}/password:
+    patch:
+      consumes:
+      - application/json
+      description: Resets the password for a user account
+      parameters:
+      - description: User UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: New Password
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.ResetPasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Reset user password
+      tags:
+      - users
   /vendors:
     get:
       parameters:
@@ -339,6 +1325,25 @@ paths:
       tags:
       - vendors
   /vendors/{id}:
+    delete:
+      parameters:
+      - description: Vendor ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Soft delete vendor by ID
+      tags:
+      - vendors
     get:
       parameters:
       - description: Vendor ID
@@ -358,8 +1363,36 @@ paths:
       summary: Get vendor by ID
       tags:
       - vendors
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Vendor ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Vendor Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/domain.Vendor'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Update vendor by ID
+      tags:
+      - vendors
 securityDefinitions:
   BearerAuth:
+    description: Type "Bearer" followed by a space and the session token.
     in: header
     name: Authorization
     type: apiKey
