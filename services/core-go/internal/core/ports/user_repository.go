@@ -17,4 +17,5 @@ type UserRepository interface {
 	UpdateStatus(ctx context.Context, id uuid.UUID, status domain.UserStatus) error
 	UpdateLastLogin(ctx context.Context, id uuid.UUID) error
 	Delete(ctx context.Context, id uuid.UUID) error
+	GetUserPermissions(ctx context.Context, userID uuid.UUID) ([]string, error)
 }

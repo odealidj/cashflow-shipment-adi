@@ -30,6 +30,7 @@ import { KpiCardGrid } from "@/components/shared/KpiCardGrid";
 import { KpiCard } from "@/components/shared/KpiCard";
 import { TableCard, tableTheadClass, ActionButton } from "@/components/shared/TableCard";
 import { TablePagination } from "@/components/shared/TablePagination";
+import { useAuth } from "@/hooks/useAuth";
 import { 
   formatActivePeriod, 
   getCurrentMonthRange, 
@@ -39,6 +40,7 @@ import {
 } from "@/components/FilterBar";
 
 export default function InvoicesPage() {
+  const { can } = useAuth();
   const [invoices, setInvoices] = useState<any[]>([]);
   const [total, setTotal] = useState(0);
   const [summary, setSummary] = useState<any>(null);
@@ -290,21 +292,25 @@ export default function InvoicesPage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <button
-              onClick={() => window.print()}
-              className="px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 text-xs font-bold hover:bg-slate-50 transition shadow-2xs flex items-center gap-1.5 cursor-pointer"
-            >
-              <Printer className="w-3.5 h-3.5 text-slate-500" />
-              <span>Cetak Rekapitulasi</span>
-            </button>
+            {can("invoices.print") && (
+              <button
+                onClick={() => window.print()}
+                className="px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 text-xs font-bold hover:bg-slate-50 transition shadow-2xs flex items-center gap-1.5 cursor-pointer"
+              >
+                <Printer className="w-3.5 h-3.5 text-slate-500" />
+                <span>Cetak Rekapitulasi</span>
+              </button>
+            )}
 
-            <button
-              onClick={() => setIsCreateOpen(true)}
-              className="px-4 py-2 rounded-xl bg-sky-700 hover:bg-sky-800 text-white text-xs font-black transition shadow-xs flex items-center gap-1.5 cursor-pointer active:scale-95"
-            >
-              <Plus className="w-4 h-4 stroke-[3]" />
-              <span>Buat Invoice Baru</span>
-            </button>
+            {can("invoices.create") && (
+              <button
+                onClick={() => setIsCreateOpen(true)}
+                className="px-4 py-2 rounded-xl bg-sky-700 hover:bg-sky-800 text-white text-xs font-black transition shadow-xs flex items-center gap-1.5 cursor-pointer active:scale-95"
+              >
+                <Plus className="w-4 h-4 stroke-[3]" />
+                <span>Buat Invoice Baru</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -519,28 +525,34 @@ export default function InvoicesPage() {
                       <td className="py-3 px-3 text-center">
                         <div className="flex items-center justify-center gap-1.5">
                           {/* 1. Cetak Kwitansi */}
-                          <ActionButton
-                            onClick={() => setSelectedInvoiceForPrint(inv)}
-                            icon={<Printer className="w-3.5 h-3.5" />}
-                            title="Cetak Kwitansi Tagihan"
-                            variant="sky"
-                          />
+                          {can("invoices.print") && (
+                            <ActionButton
+                              onClick={() => setSelectedInvoiceForPrint(inv)}
+                              icon={<Printer className="w-3.5 h-3.5" />}
+                              title="Cetak Kwitansi Tagihan"
+                              variant="sky"
+                            />
+                          )}
 
                           {/* 2. Edit Invoice */}
-                          <ActionButton
-                            onClick={() => setSelectedInvoiceForEdit(inv)}
-                            icon={<Edit2 className="w-3.5 h-3.5" />}
-                            title="Edit Invoice"
-                            variant="amber"
-                          />
+                          {can("invoices.edit") && (
+                            <ActionButton
+                              onClick={() => setSelectedInvoiceForEdit(inv)}
+                              icon={<Edit2 className="w-3.5 h-3.5" />}
+                              title="Edit Invoice"
+                              variant="amber"
+                            />
+                          )}
 
                           {/* 3. Hapus Invoice */}
-                          <ActionButton
-                            onClick={() => setInvoiceToDelete(inv)}
-                            icon={<Trash2 className="w-3.5 h-3.5" />}
-                            title="Hapus Invoice (Soft Delete)"
-                            variant="rose"
-                          />
+                          {can("invoices.delete") && (
+                            <ActionButton
+                              onClick={() => setInvoiceToDelete(inv)}
+                              icon={<Trash2 className="w-3.5 h-3.5" />}
+                              title="Hapus Invoice (Soft Delete)"
+                              variant="rose"
+                            />
+                          )}
                         </div>
                       </td>
                     </tr>

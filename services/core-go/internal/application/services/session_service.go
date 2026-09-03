@@ -73,15 +73,17 @@ func (s *SessionService) CreateSession(ctx context.Context, user *domain.User) (
 
 	now := time.Now()
 	session := &domain.UserSession{
-		SessionID: token,
-		UserID:    user.ID,
-		Email:     user.Email,
-		Phone:     user.Phone,
-		FullName:  user.FullName,
-		Role:      user.Role,
-		Status:    user.Status,
-		CreatedAt: now,
-		ExpiresAt: now.Add(s.l2TTL),
+		SessionID:   token,
+		UserID:      user.ID,
+		Email:       user.Email,
+		Phone:       user.Phone,
+		FullName:    user.FullName,
+		Role:        user.Role,
+		RoleID:      user.RoleID,
+		Status:      user.Status,
+		Permissions: user.Permissions,
+		CreatedAt:   now,
+		ExpiresAt:   now.Add(s.l2TTL),
 	}
 
 	// Save to L2 Redis

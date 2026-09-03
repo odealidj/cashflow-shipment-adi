@@ -15,7 +15,6 @@ import (
 	"github.com/cashflow-shipment-app/backend/internal/adapters/handler"
 	"github.com/cashflow-shipment-app/backend/internal/adapters/repository"
 	"github.com/cashflow-shipment-app/backend/internal/application/services"
-	"github.com/cashflow-shipment-app/backend/internal/core/domain"
 	"github.com/cashflow-shipment-app/backend/internal/middleware"
 	"github.com/go-chi/chi/v5"
 	chiMiddleware "github.com/go-chi/chi/v5/middleware"
@@ -93,6 +92,7 @@ func main() {
 	defer redisClient.Close()
 
 	// Initialize Repositories
+	roleRepo := repository.NewPostgresRoleRepo(dbPool)
 	userRepo := repository.NewPostgresUserRepo(dbPool)
 	vendorRepo := repository.NewPostgresVendorRepo(dbPool)
 	customerRepo := repository.NewPostgresCustomerRepo(dbPool)
@@ -104,7 +104,8 @@ func main() {
 	// Initialize Services (Two-Tier Session)
 	sessionService := services.NewSessionService(sessionRepo)
 	authService := services.NewAuthService(userRepo, sessionService)
-	userService := services.NewUserService(userRepo, sessionService)
+	roleService := services.NewRoleService(roleRepo, sessionService)
+	userService := services.NewUserService(userRepo, roleRepo, sessionService)
 	vendorService := services.NewVendorService(vendorRepo)
 	customerService := services.NewCustomerService(customerRepo)
 	activityPresetService := services.NewActivityPresetService(activityPresetRepo)
@@ -135,6 +136,7 @@ func main() {
 
 	// Initialize Handlers
 	authHandler := handler.NewAuthHandler(authService)
+	roleHandler := handler.NewRoleHandler(roleService)
 	userHandler := handler.NewUserHandler(userService)
 	vendorHandler := handler.NewVendorHandler(vendorService)
 	customerHandler := handler.NewCustomerHandler(customerService)
@@ -183,68 +185,85 @@ func main() {
 			// Profile & Current Session Info
 			r.Get("/auth/me", authHandler.Me)
 
-			// User Management (Admin & Super Admin only)
+			// Role & Permission Management (PBAC)
+			r.Route("/roles", func(r chi.Router) {
+				r.Use(middleware.RequirePermission("roles.view"))
+				r.Get("/", roleHandler.List)
+				r.Get("/permissions", roleHandler.ListPermissions)
+				r.Get("/{id}", roleHandler.Get)
+
+				// Managing roles requires roles.manage
+				r.With(middleware.RequirePermission("roles.manage")).Post("/", roleHandler.Create)
+				r.With(middleware.RequirePermission("roles.manage")).Put("/{id}", roleHandler.Update)
+				r.With(middleware.RequirePermission("roles.manage")).Delete("/{id}", roleHandler.Delete)
+				r.With(middleware.RequirePermission("roles.manage")).Put("/{id}/permissions", roleHandler.UpdatePermissions)
+			})
+
+			// User Management
 			r.Route("/users", func(r chi.Router) {
-				r.Use(middleware.RequireRole(domain.RoleAdmin, domain.RoleSuperAdmin))
+				r.Use(middleware.RequirePermission("users.view"))
 				r.Get("/", userHandler.List)
-				r.Post("/", userHandler.Create)
+				r.With(middleware.RequirePermission("users.create")).Post("/", userHandler.Create)
 				r.Get("/{id}", userHandler.Get)
-				r.Put("/{id}", userHandler.Update)
-				r.Patch("/{id}/password", userHandler.ResetPassword)
-				r.Delete("/{id}", userHandler.Delete)
+				r.With(middleware.RequirePermission("users.edit")).Put("/{id}", userHandler.Update)
+				r.With(middleware.RequirePermission("users.reset_password")).Patch("/{id}/password", userHandler.ResetPassword)
+				r.With(middleware.RequirePermission("users.delete")).Delete("/{id}", userHandler.Delete)
 			})
 			
 			// Cashflow Routes
 			r.Route("/cashflow", func(r chi.Router) {
+				r.Use(middleware.RequirePermission("cashflow.view"))
 				r.Get("/", cashflowHandler.List)
 				r.Get("/summary", cashflowHandler.GetSummary)
-				r.Get("/export", cashflowHandler.ExportExcel)
-				r.Post("/import", cashflowHandler.ImportExcel)
-				r.Post("/shipment", cashflowHandler.CreateShipment)
-				r.Post("/topup", cashflowHandler.CreateTopUp)
-				r.Put("/{id}", cashflowHandler.Update)
-				r.Patch("/{id}/status", cashflowHandler.UpdateStatus)
-				
-				// Deletion requires Admin or Super Admin
-				r.With(middleware.RequireRole(domain.RoleAdmin, domain.RoleSuperAdmin)).Delete("/{id}", cashflowHandler.Delete)
+				r.With(middleware.RequirePermission("cashflow.export")).Get("/export", cashflowHandler.ExportExcel)
+				r.With(middleware.RequirePermission("cashflow.import")).Post("/import", cashflowHandler.ImportExcel)
+				r.With(middleware.RequirePermission("cashflow.create")).Post("/shipment", cashflowHandler.CreateShipment)
+				r.With(middleware.RequirePermission("cashflow.create")).Post("/topup", cashflowHandler.CreateTopUp)
+				r.With(middleware.RequirePermission("cashflow.edit")).Put("/{id}", cashflowHandler.Update)
+				r.With(middleware.RequirePermission("cashflow.edit")).Patch("/{id}/status", cashflowHandler.UpdateStatus)
+				r.With(middleware.RequirePermission("cashflow.delete")).Delete("/{id}", cashflowHandler.Delete)
 			})
 			
 			// Vendor Routes (Mitra Armada & Transporter)
 			r.Route("/vendors", func(r chi.Router) {
+				r.Use(middleware.RequirePermission("vendors.view"))
 				r.Get("/", vendorHandler.List)
-				r.Post("/", vendorHandler.Create)
+				r.With(middleware.RequirePermission("vendors.manage")).Post("/", vendorHandler.Create)
 				r.Get("/{id}", vendorHandler.Get)
-				r.Put("/{id}", vendorHandler.Update)
-				r.With(middleware.RequireRole(domain.RoleAdmin, domain.RoleSuperAdmin)).Delete("/{id}", vendorHandler.Delete)
+				r.With(middleware.RequirePermission("vendors.manage")).Put("/{id}", vendorHandler.Update)
+				r.With(middleware.RequirePermission("vendors.manage")).Delete("/{id}", vendorHandler.Delete)
 			})
 
 			// Customer Routes (Klien / Pemilik Muatan)
 			r.Route("/customers", func(r chi.Router) {
+				r.Use(middleware.RequirePermission("customers.view"))
 				r.Get("/", customerHandler.List)
-				r.Post("/", customerHandler.Create)
+				r.With(middleware.RequirePermission("customers.manage")).Post("/", customerHandler.Create)
 				r.Get("/{id}", customerHandler.Get)
-				r.Put("/{id}", customerHandler.Update)
-				r.With(middleware.RequireRole(domain.RoleAdmin, domain.RoleSuperAdmin)).Delete("/{id}", customerHandler.Delete)
+				r.With(middleware.RequirePermission("customers.manage")).Put("/{id}", customerHandler.Update)
+				r.With(middleware.RequirePermission("customers.manage")).Delete("/{id}", customerHandler.Delete)
 			})
 
 			// Activity Presets Routes (Master Keterangan Aktivitas & Rute Armada)
 			r.Route("/activity-presets", func(r chi.Router) {
+				r.Use(middleware.RequirePermission("presets.view"))
 				r.Get("/", activityPresetHandler.List)
-				r.Post("/", activityPresetHandler.Create)
+				r.With(middleware.RequirePermission("presets.manage")).Post("/", activityPresetHandler.Create)
 				r.Get("/{id}", activityPresetHandler.GetByID)
-				r.Put("/{id}", activityPresetHandler.Update)
-				r.With(middleware.RequireRole(domain.RoleAdmin, domain.RoleSuperAdmin)).Delete("/{id}", activityPresetHandler.Delete)
+				r.With(middleware.RequirePermission("presets.manage")).Put("/{id}", activityPresetHandler.Update)
+				r.With(middleware.RequirePermission("presets.manage")).Delete("/{id}", activityPresetHandler.Delete)
 			})
 
 			// Invoice Routes (Monitoring Piutang Klien)
 			r.Route("/invoices", func(r chi.Router) {
+				r.Use(middleware.RequirePermission("invoices.view"))
 				r.Get("/", invoiceHandler.List)
 				r.Get("/summary", invoiceHandler.GetSummary)
-				r.Post("/", invoiceHandler.Create)
+				r.With(middleware.RequirePermission("invoices.create")).Post("/", invoiceHandler.Create)
 				r.Get("/{id}", invoiceHandler.GetByID)
-				r.Put("/{id}", invoiceHandler.Update)
-				r.Patch("/{id}/pay", invoiceHandler.MarkPaid)
-				r.With(middleware.RequireRole(domain.RoleAdmin, domain.RoleSuperAdmin)).Delete("/{id}", invoiceHandler.Delete)
+				r.With(middleware.RequirePermission("invoices.edit")).Put("/{id}", invoiceHandler.Update)
+				r.With(middleware.RequirePermission("invoices.mark_paid")).Patch("/{id}/pay", invoiceHandler.MarkPaid)
+				r.With(middleware.RequirePermission("invoices.delete")).Delete("/{id}", invoiceHandler.Delete)
 			})
 		})
 	})

@@ -139,9 +139,10 @@ func (h *UserHandler) ResetPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	currentUserID := middleware.GetUserIDFromContext(r.Context())
 	currentUserRole := middleware.GetUserRoleFromContext(r.Context())
 
-	if err := h.userService.ResetPassword(r.Context(), id, req.Password, currentUserRole); err != nil {
+	if err := h.userService.ResetPassword(r.Context(), id, req.Password, currentUserID, currentUserRole); err != nil {
 		response.Error(w, http.StatusBadRequest, err.Error())
 		return
 	}

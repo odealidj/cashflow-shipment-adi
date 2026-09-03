@@ -33,12 +33,14 @@ import { FilterBar, FilterState, getCurrentMonthRange, formatActivePeriod } from
 import { fetchWithAuth } from "@/lib/apiClient";
 import { TableCard, tableTheadClass, ActionButton } from "@/components/shared/TableCard";
 import { TablePagination } from "@/components/shared/TablePagination";
+import { useAuth } from "@/hooks/useAuth";
 
 interface CashflowTableProps {
   onDataChange?: () => void;
 }
 
 export function CashflowTable({ onDataChange }: CashflowTableProps) {
+  const { can } = useAuth();
   const [entries, setEntries] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -395,37 +397,47 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
                 ref={fileInputRef} 
                 onChange={handleImport} 
               />
-              <button 
-                onClick={() => setIsReportOpen(true)}
-                className="text-xs bg-sky-50 hover:bg-sky-100 text-sky-800 px-3.5 py-2 rounded-xl transition-colors font-bold border border-sky-200 flex items-center gap-1.5 shadow-2xs cursor-pointer"
-                title="Buka Pratinjau & Cetak Laporan (Excel Asli / Grid Modern)"
-              >
-                <Printer className="w-3.5 h-3.5 text-sky-700" /> Cetak Laporan
-              </button>
-              <button 
-                onClick={() => fileInputRef.current?.click()}
-                className="text-xs bg-white hover:bg-slate-50 text-slate-700 px-3.5 py-2 rounded-xl transition-colors font-bold border border-slate-200 flex items-center gap-1.5 shadow-2xs cursor-pointer"
-              >
-                <Upload className="w-3.5 h-3.5 text-slate-600" /> Impor Excel
-              </button>
-              <button 
-                onClick={handleExport}
-                className="text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-800 px-3.5 py-2 rounded-xl transition-colors font-bold border border-emerald-200 flex items-center gap-1.5 shadow-2xs cursor-pointer"
-              >
-                <Download className="w-3.5 h-3.5 text-emerald-700" /> Ekspor Excel
-              </button>
-              <button 
-                onClick={() => setIsTopUpOpen(true)}
-                className="text-xs bg-white hover:bg-slate-50 text-slate-700 px-3.5 py-2 rounded-xl transition-colors font-bold border border-slate-200 flex items-center gap-1.5 shadow-2xs cursor-pointer"
-              >
-                <Wallet className="w-3.5 h-3.5 text-slate-600" /> Tambah Modal
-              </button>
-              <button 
-                onClick={() => setIsShipmentOpen(true)}
-                className="text-xs bg-sky-700 hover:bg-sky-800 text-white px-4 py-2 rounded-xl transition-all font-bold shadow-2xs flex items-center gap-1.5 cursor-pointer active:scale-95"
-              >
-                <Plus className="w-4 h-4 stroke-[3]" /> Catat Shipment
-              </button>
+              {can("cashflow.export") && (
+                <button 
+                  onClick={() => setIsReportOpen(true)}
+                  className="text-xs bg-sky-50 hover:bg-sky-100 text-sky-800 px-3.5 py-2 rounded-xl transition-colors font-bold border border-sky-200 flex items-center gap-1.5 shadow-2xs cursor-pointer"
+                  title="Buka Pratinjau & Cetak Laporan (Excel Asli / Grid Modern)"
+                >
+                  <Printer className="w-3.5 h-3.5 text-sky-700" /> Cetak Laporan
+                </button>
+              )}
+              {can("cashflow.import") && (
+                <button 
+                  onClick={() => fileInputRef.current?.click()}
+                  className="text-xs bg-white hover:bg-slate-50 text-slate-700 px-3.5 py-2 rounded-xl transition-colors font-bold border border-slate-200 flex items-center gap-1.5 shadow-2xs cursor-pointer"
+                >
+                  <Upload className="w-3.5 h-3.5 text-slate-600" /> Impor Excel
+                </button>
+              )}
+              {can("cashflow.export") && (
+                <button 
+                  onClick={handleExport}
+                  className="text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-800 px-3.5 py-2 rounded-xl transition-colors font-bold border border-emerald-200 flex items-center gap-1.5 shadow-2xs cursor-pointer"
+                >
+                  <Download className="w-3.5 h-3.5 text-emerald-700" /> Ekspor Excel
+                </button>
+              )}
+              {can("cashflow.create") && (
+                <button 
+                  onClick={() => setIsTopUpOpen(true)}
+                  className="text-xs bg-white hover:bg-slate-50 text-slate-700 px-3.5 py-2 rounded-xl transition-colors font-bold border border-slate-200 flex items-center gap-1.5 shadow-2xs cursor-pointer"
+                >
+                  <Wallet className="w-3.5 h-3.5 text-slate-600" /> Tambah Modal
+                </button>
+              )}
+              {can("cashflow.create") && (
+                <button 
+                  onClick={() => setIsShipmentOpen(true)}
+                  className="text-xs bg-sky-700 hover:bg-sky-800 text-white px-4 py-2 rounded-xl transition-all font-bold shadow-2xs flex items-center gap-1.5 cursor-pointer active:scale-95"
+                >
+                  <Plus className="w-4 h-4 stroke-[3]" /> Catat Shipment
+                </button>
+              )}
             </div>
           </div>
 
@@ -643,23 +655,27 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
                           />
 
                           {/* 2. Edit Transaksi */}
-                          <ActionButton
-                            onClick={() => {
-                              setSelectedEntry(entry);
-                              setIsEditOpen(true);
-                            }}
-                            icon={<Edit2 className="w-3.5 h-3.5" />}
-                            title="Edit Transaksi"
-                            variant="amber"
-                          />
+                          {can("cashflow.edit") && (
+                            <ActionButton
+                              onClick={() => {
+                                setSelectedEntry(entry);
+                                setIsEditOpen(true);
+                              }}
+                              icon={<Edit2 className="w-3.5 h-3.5" />}
+                              title="Edit Transaksi"
+                              variant="amber"
+                            />
+                          )}
 
                           {/* 3. Hapus Transaksi */}
-                          <ActionButton
-                            onClick={() => handleOpenDelete(entry)}
-                            icon={<Trash2 className="w-3.5 h-3.5" />}
-                            title="Hapus Transaksi"
-                            variant="rose"
-                          />
+                          {can("cashflow.delete") && (
+                            <ActionButton
+                              onClick={() => handleOpenDelete(entry)}
+                              icon={<Trash2 className="w-3.5 h-3.5" />}
+                              title="Hapus Transaksi"
+                              variant="rose"
+                            />
+                          )}
                         </div>
                       </td>
                     </tr>

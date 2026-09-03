@@ -39,7 +39,7 @@ interface UserResponse {
 }
 
 export default function UsersManagementPage() {
-  const { user: currentUser, isSuperAdmin } = useAuth();
+  const { user: currentUser, isSuperAdmin, can, canManageUser } = useAuth();
 
   const [users, setUsers] = useState<UserResponse[]>([]);
   const [loading, setLoading] = useState(true);
@@ -226,13 +226,15 @@ export default function UsersManagementPage() {
           </div>
         </div>
 
-        <button
-          onClick={handleOpenAdd}
-          className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#223249] to-sky-900 hover:from-slate-900 hover:to-sky-950 text-white text-xs font-bold shadow-md shadow-slate-900/20 flex items-center justify-center gap-2 transition-all cursor-pointer shrink-0"
-        >
-          <UserPlus className="w-4 h-4" />
-          <span>Tambah Pengguna</span>
-        </button>
+        {can("users.create") && (
+          <button
+            onClick={handleOpenAdd}
+            className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#223249] to-sky-900 hover:from-slate-900 hover:to-sky-950 text-white text-xs font-bold shadow-md shadow-slate-900/20 flex items-center justify-center gap-2 transition-all cursor-pointer shrink-0"
+          >
+            <UserPlus className="w-4 h-4" />
+            <span>Tambah Pengguna</span>
+          </button>
+        )}
       </div>
 
       {/* KPI Cards Section */}
@@ -487,49 +489,63 @@ export default function UsersManagementPage() {
 
                       {/* Aksi */}
                       <td className="py-3 px-4 text-center">
-                        <div className="flex items-center justify-center gap-1">
-                          {/* Quick Approve Button if Inactive */}
-                          {isPending && (
-                            <button
-                              onClick={() => handleOpenEdit(u)}
-                              className="px-2.5 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-bold text-[11px] flex items-center gap-1 shadow-xs transition-all cursor-pointer mr-1"
-                              title="Setujui & Aktivasi Akun Pengguna"
-                            >
-                              <CheckCircle2 className="w-3.5 h-3.5" />
-                              <span>Aktivasi</span>
-                            </button>
-                          )}
+                        {(() => {
+                          const manageCheck = canManageUser(u.role, u.id);
+                          const activeAdminsCount = users.filter((x) => x.role === "admin" && x.status === "ACTIVE").length;
+                          const isLastAdmin = u.role === "admin" && activeAdminsCount <= 1;
 
-                          {/* Edit */}
-                          <button
-                            onClick={() => handleOpenEdit(u)}
-                            disabled={isTargetSuperAdmin && !isSuperAdmin}
-                            title="Edit Pengguna"
-                            className="p-1.5 rounded-lg text-slate-500 hover:text-sky-700 hover:bg-sky-50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </button>
+                          return (
+                            <div className="flex items-center justify-center gap-1">
+                              {/* Quick Approve Button if Inactive */}
+                              {isPending && can("users.edit") && manageCheck.allowed && (
+                                <button
+                                  onClick={() => handleOpenEdit(u)}
+                                  className="px-2.5 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-bold text-[11px] flex items-center gap-1 shadow-xs transition-all cursor-pointer mr-1"
+                                  title="Setujui & Aktivasi Akun Pengguna"
+                                >
+                                  <CheckCircle2 className="w-3.5 h-3.5" />
+                                  <span>Aktivasi</span>
+                                </button>
+                              )}
 
-                          {/* Reset Password */}
-                          <button
-                            onClick={() => handleOpenReset(u)}
-                            disabled={isTargetSuperAdmin && !isSuperAdmin}
-                            title="Reset Password"
-                            className="p-1.5 rounded-lg text-slate-500 hover:text-amber-700 hover:bg-amber-50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
-                          >
-                            <KeyRound className="w-4 h-4" />
-                          </button>
+                              {/* Edit */}
+                              <button
+                                onClick={() => handleOpenEdit(u)}
+                                disabled={!manageCheck.allowed || !can("users.edit")}
+                                title={!manageCheck.allowed ? manageCheck.reason : "Edit Pengguna & Peran"}
+                                className="p-1.5 rounded-lg text-slate-500 hover:text-sky-700 hover:bg-sky-50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </button>
 
-                          {/* Delete / Deactivate */}
-                          <button
-                            onClick={() => handleOpenDelete(u)}
-                            disabled={isCurrentUser || (isTargetSuperAdmin && !isSuperAdmin)}
-                            title={isCurrentUser ? "Tidak dapat menghapus akun sendiri" : "Nonaktifkan / Hapus Pengguna"}
-                            className="p-1.5 rounded-lg text-slate-500 hover:text-rose-700 hover:bg-rose-50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
+                              {/* Reset Password */}
+                              <button
+                                onClick={() => handleOpenReset(u)}
+                                disabled={!manageCheck.allowed || !can("users.reset_password")}
+                                title={!manageCheck.allowed ? manageCheck.reason : "Reset Password"}
+                                className="p-1.5 rounded-lg text-slate-500 hover:text-amber-700 hover:bg-amber-50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                              >
+                                <KeyRound className="w-4 h-4" />
+                              </button>
+
+                              {/* Delete / Deactivate */}
+                              <button
+                                onClick={() => handleOpenDelete(u)}
+                                disabled={!manageCheck.allowed || !can("users.delete") || isLastAdmin}
+                                title={
+                                  isLastAdmin
+                                    ? "Tidak dapat menonaktifkan Administrator terakhir untuk kelangsungan sistem"
+                                    : !manageCheck.allowed
+                                    ? manageCheck.reason
+                                    : "Nonaktifkan / Hapus Pengguna"
+                                }
+                                className="p-1.5 rounded-lg text-slate-500 hover:text-rose-700 hover:bg-rose-50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          );
+                        })()}
                       </td>
                     </tr>
                   );

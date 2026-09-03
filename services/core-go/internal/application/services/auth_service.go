@@ -46,6 +46,18 @@ func (s *AuthService) Login(ctx context.Context, identifier, password string) (*
 	// Update last login timestamp
 	_ = s.userRepo.UpdateLastLogin(ctx, user.ID)
 
+	// Fetch dynamic permissions for session payload
+	if user.Role == domain.RoleSuperAdmin {
+		user.Permissions = []string{"*"}
+	} else {
+		perms, err := s.userRepo.GetUserPermissions(ctx, user.ID)
+		if err == nil && perms != nil {
+			user.Permissions = perms
+		} else {
+			user.Permissions = []string{}
+		}
+	}
+
 	// Create Two-Tier Session (L1 Memory + L2 Redis)
 	session, token, err := s.sessionService.CreateSession(ctx, user)
 	if err != nil {

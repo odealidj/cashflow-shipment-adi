@@ -33,12 +33,16 @@ func (r *PostgresUserRepo) Create(ctx context.Context, user *domain.User) error 
 	}
 
 	query := `
-		INSERT INTO users (id, email, phone, password_hash, full_name, role, status) 
-		VALUES ($1, $2, $3, $4, $5, $6, $7) 
+		INSERT INTO users (id, email, phone, password_hash, full_name, role, role_id, status) 
+		VALUES (
+			$1, $2, $3, $4, $5, $6, 
+			COALESCE($7, (SELECT id FROM roles WHERE code = $6 LIMIT 1)), 
+			$8
+		) 
 		RETURNING created_at, updated_at
 	`
 	err := r.db.QueryRowContext(ctx, query, 
-		user.ID, user.Email, user.Phone, user.PasswordHash, user.FullName, user.Role, user.Status,
+		user.ID, user.Email, user.Phone, user.PasswordHash, user.FullName, user.Role, user.RoleID, user.Status,
 	).Scan(&user.CreatedAt, &user.UpdatedAt)
 	
 	return err
@@ -46,7 +50,7 @@ func (r *PostgresUserRepo) Create(ctx context.Context, user *domain.User) error 
 
 func (r *PostgresUserRepo) GetByEmailOrPhone(ctx context.Context, identifier string) (*domain.User, error) {
 	query := `
-		SELECT id, email, phone, password_hash, full_name, role, status, last_login_at, created_at, updated_at, deleted_at 
+		SELECT id, email, phone, password_hash, full_name, role, role_id, status, last_login_at, created_at, updated_at, deleted_at 
 		FROM users 
 		WHERE (email = $1 OR phone = $1) AND deleted_at IS NULL
 	`
@@ -65,7 +69,7 @@ func (r *PostgresUserRepo) GetByEmailOrPhone(ctx context.Context, identifier str
 
 func (r *PostgresUserRepo) GetByID(ctx context.Context, id uuid.UUID) (*domain.User, error) {
 	query := `
-		SELECT id, email, phone, password_hash, full_name, role, status, last_login_at, created_at, updated_at, deleted_at 
+		SELECT id, email, phone, password_hash, full_name, role, role_id, status, last_login_at, created_at, updated_at, deleted_at 
 		FROM users 
 		WHERE id = $1 AND deleted_at IS NULL
 	`
@@ -126,7 +130,7 @@ func (r *PostgresUserRepo) List(ctx context.Context, limit, offset int, search, 
 
 	// Data query
 	dataQuery := fmt.Sprintf(`
-		SELECT id, email, phone, full_name, role, status, last_login_at, created_at, updated_at 
+		SELECT id, email, phone, full_name, role, role_id, status, last_login_at, created_at, updated_at 
 		FROM users 
 		WHERE %s 
 		ORDER BY created_at DESC 
@@ -147,11 +151,17 @@ func (r *PostgresUserRepo) List(ctx context.Context, limit, offset int, search, 
 func (r *PostgresUserRepo) Update(ctx context.Context, user *domain.User) error {
 	query := `
 		UPDATE users 
-		SET email = $1, phone = $2, full_name = $3, role = $4, status = $5, updated_at = NOW() 
-		WHERE id = $6 AND deleted_at IS NULL
+		SET email = $1, 
+		    phone = $2, 
+		    full_name = $3, 
+		    role = $4, 
+		    role_id = COALESCE($5, (SELECT id FROM roles WHERE code = $4 LIMIT 1)),
+		    status = $6, 
+		    updated_at = NOW() 
+		WHERE id = $7 AND deleted_at IS NULL
 	`
 	_, err := r.db.ExecContext(ctx, query, 
-		user.Email, user.Phone, user.FullName, user.Role, user.Status, user.ID,
+		user.Email, user.Phone, user.FullName, user.Role, user.RoleID, user.Status, user.ID,
 	)
 	return err
 }
@@ -194,4 +204,24 @@ func (r *PostgresUserRepo) Delete(ctx context.Context, id uuid.UUID) error {
 	`
 	_, err := r.db.ExecContext(ctx, query, id)
 	return err
+}
+
+func (r *PostgresUserRepo) GetUserPermissions(ctx context.Context, userID uuid.UUID) ([]string, error) {
+	query := `
+		SELECT DISTINCT p.code
+		FROM permissions p
+		JOIN role_permissions rp ON rp.permission_id = p.id
+		JOIN users u ON (u.role_id = rp.role_id OR u.role::text = (SELECT code FROM roles WHERE id = rp.role_id))
+		WHERE u.id = $1 AND u.deleted_at IS NULL
+		ORDER BY p.code ASC
+	`
+	var perms []string
+	err := r.db.SelectContext(ctx, &perms, query, userID)
+	if err != nil {
+		return nil, err
+	}
+	if perms == nil {
+		perms = []string{}
+	}
+	return perms, nil
 }

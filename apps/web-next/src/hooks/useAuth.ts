@@ -11,7 +11,9 @@ export interface UserSession {
   phone?: string;
   full_name: string;
   role: "super_admin" | "admin" | "finance" | "direktur" | "owner" | "operator" | "viewer";
+  role_id?: string;
   status: "ACTIVE" | "INACTIVE" | "SUSPENDED";
+  permissions?: string[];
 }
 
 export function useAuth() {
@@ -67,10 +69,66 @@ export function useAuth() {
   const isDirektur = user?.role === "direktur";
   const isOwner = user?.role === "owner" || user?.role === "viewer";
 
-  // Permissions
-  const canManageUsers = isSuperAdmin || isAdmin;
-  const canDeleteData = isSuperAdmin || isAdmin;
-  const canMutateData = isSuperAdmin || isAdmin || isFinance;
+  // Dynamic Fine-Grained Permission Checker (PBAC)
+  const can = useCallback((permissionCode: string): boolean => {
+    if (!user) return false;
+    // Super Admin IT has universal fail-safe bypass (*)
+    if (user.role === "super_admin") return true;
+    if (user.permissions?.includes("*")) return true;
+    return user.permissions?.includes(permissionCode) ?? false;
+  }, [user]);
+
+  const canAny = useCallback((permissionCodes: string[]): boolean => {
+    return permissionCodes.some((code) => can(code));
+  }, [can]);
+
+  const canAll = useCallback((permissionCodes: string[]): boolean => {
+    return permissionCodes.every((code) => can(code));
+  }, [can]);
+
+  // Enterprise User Management Hierarchy Guard (3 Golden Rules & C-Level Immunity)
+  const canManageUser = useCallback((targetRole: string, targetUserId?: string): { allowed: boolean; reason?: string } => {
+    if (!user) return { allowed: false, reason: "Sesi tidak ditemukan" };
+    const currentUserId = user.user_id || user.id;
+
+    // Golden Rule 1: Anti Self-Deletion
+    if (targetUserId && targetUserId === currentUserId) {
+      return { allowed: false, reason: "Anda tidak dapat menghapus atau menonaktifkan akun sendiri" };
+    }
+
+    // Super Admin can manage anyone
+    if (user.role === "super_admin") {
+      return { allowed: true };
+    }
+
+    // Target is Super Admin -> Protected from everyone else
+    if (targetRole === "super_admin") {
+      return { allowed: false, reason: "Akun Super Admin IT memiliki proteksi khusus" };
+    }
+
+    // Golden Rule 3: C-Level Immunity (Admin cannot manage Direktur or Owner)
+    if (user.role === "admin" && (targetRole === "direktur" || targetRole === "owner")) {
+      return { allowed: false, reason: "Administrator tidak memiliki wewenang untuk mengelola akun Direktur atau Pemilik Perusahaan" };
+    }
+
+    // C-Level Authority: Owner & Direktur can manage Admin and all lower staff
+    if (user.role === "owner" || user.role === "direktur") {
+      return { allowed: true };
+    }
+
+    // Admin can manage Admin, Finance, etc.
+    if (user.role === "admin") {
+      return { allowed: true };
+    }
+
+    // Other roles: check explicit permissions
+    return { allowed: can("users.edit") };
+  }, [user, can]);
+
+  // High-level role helpers (backwards-compatible)
+  const canManageUsers = isSuperAdmin || can("users.view");
+  const canDeleteData = isSuperAdmin || can("cashflow.delete");
+  const canMutateData = isSuperAdmin || can("cashflow.create");
 
   return {
     user,
@@ -82,6 +140,10 @@ export function useAuth() {
     isFinance,
     isDirektur,
     isOwner,
+    can,
+    canAny,
+    canAll,
+    canManageUser,
     canManageUsers,
     canDeleteData,
     canMutateData,

@@ -38,6 +38,20 @@ export function UserModal({
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [availableRoles, setAvailableRoles] = useState<{ code: string; name: string }[]>([]);
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchWithAuth(`${API_BASE_URL}/roles`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.data && Array.isArray(data.data)) {
+            setAvailableRoles(data.data);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (editUser) {
@@ -206,12 +220,24 @@ export function UserModal({
                   onChange={(e) => setRole(e.target.value)}
                   className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 font-bold focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-sky-500/20 focus:border-sky-600 transition-all"
                 >
-                  <option value="finance">💼 Finance & Akuntansi</option>
-                  <option value="admin">🛡️ Administrator Bisnis</option>
-                  <option value="direktur">👔 Direktur (Monitoring)</option>
-                  <option value="owner">📊 Pemilik Modal (Executive)</option>
-                  {isSuperAdmin && (
-                    <option value="super_admin">🔒 IT Super Admin (Root)</option>
+                  {availableRoles.length > 0 ? (
+                    availableRoles
+                      .filter((r) => r.code !== "super_admin" || isSuperAdmin)
+                      .map((r) => (
+                        <option key={r.code} value={r.code}>
+                          {r.name}
+                        </option>
+                      ))
+                  ) : (
+                    <>
+                      <option value="finance">💼 Finance & Akuntansi</option>
+                      <option value="admin">🛡️ Administrator Bisnis</option>
+                      <option value="direktur">👔 Direktur (Monitoring)</option>
+                      <option value="owner">📊 Pemilik Modal (Executive)</option>
+                      {isSuperAdmin && (
+                        <option value="super_admin">🔒 IT Super Admin (Root)</option>
+                      )}
+                    </>
                   )}
                 </select>
               </div>

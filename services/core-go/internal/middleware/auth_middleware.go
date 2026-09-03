@@ -101,6 +101,57 @@ func RequireRole(allowedRoles ...domain.UserRole) func(http.Handler) http.Handle
 	}
 }
 
+// RequirePermission enforces fine-grained permission-based access control.
+// Super Admin IT has universal bypass (*).
+func RequirePermission(permissionCode string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			session := GetUserSessionFromContext(r.Context())
+			if session == nil {
+				response.Error(w, http.StatusUnauthorized, "Sesi tidak valid")
+				return
+			}
+
+			// Super Admin IT has universal bypass for maintenance & recovery
+			if session.Role == domain.RoleSuperAdmin {
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			// Fine-Grained PBAC check if permissions are attached
+			if len(session.Permissions) > 0 {
+				if !session.HasPermission(permissionCode) {
+					response.Error(w, http.StatusForbidden, "Akses ditolak: Anda tidak memiliki wewenang untuk tindakan ini ("+permissionCode+")")
+					return
+				}
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			// Graceful fallback for active sessions created prior to PBAC migration
+			if session.Role == domain.RoleAdmin {
+				next.ServeHTTP(w, r)
+				return
+			}
+			if session.Role == domain.RoleDirektur || session.Role == domain.RoleOwner {
+				if strings.HasSuffix(permissionCode, ".view") {
+					next.ServeHTTP(w, r)
+					return
+				}
+			}
+			if session.Role == domain.RoleFinance {
+				if strings.HasPrefix(permissionCode, "cashflow.") || strings.HasPrefix(permissionCode, "invoices.") {
+					next.ServeHTTP(w, r)
+					return
+				}
+			}
+
+			response.Error(w, http.StatusForbidden, "Akses ditolak: Anda tidak memiliki wewenang untuk tindakan ini ("+permissionCode+")")
+			return
+		})
+	}
+}
+
 func GetUserSessionFromContext(ctx context.Context) *domain.UserSession {
 	if val := ctx.Value(SessionKey); val != nil {
 		if session, ok := val.(*domain.UserSession); ok {
