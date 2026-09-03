@@ -102,6 +102,7 @@
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
                         "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
                         "name": "X-Idempotency-Key",
                         "in": "header"
@@ -209,6 +210,7 @@
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
                         "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
                         "name": "X-Idempotency-Key",
                         "in": "header"
@@ -274,6 +276,7 @@
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
                         "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
                         "name": "X-Idempotency-Key",
                         "in": "header"
@@ -323,6 +326,12 @@
                 "summary": "User login",
                 "parameters": [
                     {
+                        "type": "string",
+                        "description": "API Version (default: v1)",
+                        "name": "X-API-Version",
+                        "in": "header"
+                    },
+                    {
                         "description": "Login Credentials",
                         "name": "request",
                         "in": "body",
@@ -358,6 +367,14 @@
                     "auth"
                 ],
                 "summary": "User logout",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "API Version (default: v1)",
+                        "name": "X-API-Version",
+                        "in": "header"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -383,6 +400,14 @@
                     "auth"
                 ],
                 "summary": "Get current user profile",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "API Version (default: v1)",
+                        "name": "X-API-Version",
+                        "in": "header"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -413,6 +438,19 @@
                 ],
                 "summary": "Register new user",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "default": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+                        "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
+                        "name": "X-Idempotency-Key",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "API Version (default: v1)",
+                        "name": "X-API-Version",
+                        "in": "header"
+                    },
                     {
                         "description": "Registration Data",
                         "name": "request",
@@ -617,6 +655,7 @@
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
                         "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
                         "name": "X-Idempotency-Key",
                         "in": "header"
@@ -703,6 +742,7 @@
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
                         "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
                         "name": "X-Idempotency-Key",
                         "in": "header"
@@ -765,6 +805,7 @@
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
                         "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
                         "name": "X-Idempotency-Key",
                         "in": "header"
@@ -829,6 +870,7 @@
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
                         "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
                         "name": "X-Idempotency-Key",
                         "in": "header"
@@ -883,6 +925,7 @@
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
                         "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
                         "name": "X-Idempotency-Key",
                         "in": "header"
@@ -996,6 +1039,7 @@
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
                         "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
                         "name": "X-Idempotency-Key",
                         "in": "header"
@@ -1095,6 +1139,7 @@
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
                         "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
                         "name": "X-Idempotency-Key",
                         "in": "header"
@@ -1159,6 +1204,7 @@
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
                         "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
                         "name": "X-Idempotency-Key",
                         "in": "header"
@@ -1230,6 +1276,7 @@
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
                         "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
                         "name": "X-Idempotency-Key",
                         "in": "header"
@@ -1312,6 +1359,7 @@
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
                         "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
                         "name": "X-Idempotency-Key",
                         "in": "header"
@@ -1341,6 +1389,7 @@
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
                         "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
                         "name": "X-Idempotency-Key",
                         "in": "header"
@@ -1372,6 +1421,7 @@
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
                         "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
                         "name": "X-Idempotency-Key",
                         "in": "header"
@@ -1401,6 +1451,14 @@
                     "roles"
                 ],
                 "summary": "List all roles",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "API Version (default: v1)",
+                        "name": "X-API-Version",
+                        "in": "header"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -1434,6 +1492,19 @@
                 ],
                 "summary": "Create new custom role",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "default": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+                        "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
+                        "name": "X-Idempotency-Key",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "API Version (default: v1)",
+                        "name": "X-API-Version",
+                        "in": "header"
+                    },
                     {
                         "description": "New Role Data",
                         "name": "request",
@@ -1481,6 +1552,14 @@
                     "roles"
                 ],
                 "summary": "List all available system permissions",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "API Version (default: v1)",
+                        "name": "X-API-Version",
+                        "in": "header"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -1513,6 +1592,12 @@
                 ],
                 "summary": "Get role detail with active permissions",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "API Version (default: v1)",
+                        "name": "X-API-Version",
+                        "in": "header"
+                    },
                     {
                         "type": "string",
                         "description": "Role UUID",
@@ -1554,6 +1639,19 @@
                 ],
                 "summary": "Update role information",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "default": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+                        "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
+                        "name": "X-Idempotency-Key",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "API Version (default: v1)",
+                        "name": "X-API-Version",
+                        "in": "header"
+                    },
                     {
                         "type": "string",
                         "description": "Role UUID",
@@ -1603,6 +1701,19 @@
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+                        "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
+                        "name": "X-Idempotency-Key",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "API Version (default: v1)",
+                        "name": "X-API-Version",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
                         "description": "Role UUID",
                         "name": "id",
                         "in": "path",
@@ -1644,6 +1755,19 @@
                 ],
                 "summary": "Update role permissions matrix",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "default": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+                        "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
+                        "name": "X-Idempotency-Key",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "API Version (default: v1)",
+                        "name": "X-API-Version",
+                        "in": "header"
+                    },
                     {
                         "type": "string",
                         "description": "Role UUID",
@@ -1767,6 +1891,7 @@
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
                         "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
                         "name": "X-Idempotency-Key",
                         "in": "header"
@@ -1874,6 +1999,7 @@
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
                         "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
                         "name": "X-Idempotency-Key",
                         "in": "header"
@@ -1939,6 +2065,7 @@
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
                         "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
                         "name": "X-Idempotency-Key",
                         "in": "header"
@@ -1994,6 +2121,7 @@
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
                         "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
                         "name": "X-Idempotency-Key",
                         "in": "header"
@@ -2032,6 +2160,46 @@
                         "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/response.APIResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/utility/idempotency-key": {
+            "get": {
+                "description": "Generates a new RFC 4122 UUID v4 to be used as 'X-Idempotency-Key' header on mutation endpoints (POST/PUT/PATCH/DELETE).",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "utility"
+                ],
+                "summary": "Generate fresh Idempotency Key",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "API Version (default: v1)",
+                        "name": "X-API-Version",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.APIResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/handler.IdempotencyKeyResponse"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     }
                 }
@@ -2101,6 +2269,7 @@
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
                         "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
                         "name": "X-Idempotency-Key",
                         "in": "header"
@@ -2200,6 +2369,7 @@
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
                         "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
                         "name": "X-Idempotency-Key",
                         "in": "header"
@@ -2264,6 +2434,7 @@
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
                         "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
                         "name": "X-Idempotency-Key",
                         "in": "header"
@@ -2530,6 +2701,23 @@
                 },
                 "updated_at": {
                     "type": "string"
+                }
+            }
+        },
+        "handler.IdempotencyKeyResponse": {
+            "type": "object",
+            "properties": {
+                "expires_in_hours": {
+                    "type": "integer",
+                    "example": 24
+                },
+                "idempotency_key": {
+                    "type": "string",
+                    "example": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11"
+                },
+                "usage_hint": {
+                    "type": "string",
+                    "example": "Include this key in the 'X-Idempotency-Key' request header for POST/PUT/PATCH/DELETE mutations"
                 }
             }
         },

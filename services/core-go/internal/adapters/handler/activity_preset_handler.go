@@ -88,7 +88,7 @@ func (h *ActivityPresetHandler) GetByID(w http.ResponseWriter, r *http.Request) 
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Param        X-Idempotency-Key header string false "Idempotency Key (UUID unik pencegah duplikasi transaksi)"
+// @Param        X-Idempotency-Key header string false "Idempotency Key (UUID unik pencegah duplikasi transaksi)" default(a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11)
 // @Param        X-API-Version     header string false "API Version (default: v1)"
 // @Param        request body   domain.ActivityPreset  true  "New Preset Data"
 // @Success      201  {object}  response.APIResponse
@@ -117,7 +117,7 @@ func (h *ActivityPresetHandler) Create(w http.ResponseWriter, r *http.Request) {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Param        X-Idempotency-Key header string false "Idempotency Key (UUID unik pencegah duplikasi transaksi)"
+// @Param        X-Idempotency-Key header string false "Idempotency Key (UUID unik pencegah duplikasi transaksi)" default(a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11)
 // @Param        X-API-Version     header string false "API Version (default: v1)"
 // @Param        id      path   int                    true  "Preset ID"
 // @Param        request body   domain.ActivityPreset  true  "Updated Preset Data"
@@ -154,7 +154,7 @@ func (h *ActivityPresetHandler) Update(w http.ResponseWriter, r *http.Request) {
 // @Tags         activity-presets
 // @Produce      json
 // @Security     BearerAuth
-// @Param        X-Idempotency-Key header string false "Idempotency Key (UUID unik pencegah duplikasi transaksi)"
+// @Param        X-Idempotency-Key header string false "Idempotency Key (UUID unik pencegah duplikasi transaksi)" default(a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11)
 // @Param        X-API-Version     header string false "API Version (default: v1)"
 // @Param        id   path      int  true  "Preset ID"
 // @Success      200  {object}  response.APIResponse

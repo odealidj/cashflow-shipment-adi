@@ -108,6 +108,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
                         "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
                         "name": "X-Idempotency-Key",
                         "in": "header"
@@ -215,6 +216,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
                         "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
                         "name": "X-Idempotency-Key",
                         "in": "header"
@@ -280,6 +282,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
                         "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
                         "name": "X-Idempotency-Key",
                         "in": "header"
@@ -329,6 +332,12 @@ const docTemplate = `{
                 "summary": "User login",
                 "parameters": [
                     {
+                        "type": "string",
+                        "description": "API Version (default: v1)",
+                        "name": "X-API-Version",
+                        "in": "header"
+                    },
+                    {
                         "description": "Login Credentials",
                         "name": "request",
                         "in": "body",
@@ -364,6 +373,14 @@ const docTemplate = `{
                     "auth"
                 ],
                 "summary": "User logout",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "API Version (default: v1)",
+                        "name": "X-API-Version",
+                        "in": "header"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -389,6 +406,14 @@ const docTemplate = `{
                     "auth"
                 ],
                 "summary": "Get current user profile",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "API Version (default: v1)",
+                        "name": "X-API-Version",
+                        "in": "header"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -419,6 +444,19 @@ const docTemplate = `{
                 ],
                 "summary": "Register new user",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "default": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+                        "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
+                        "name": "X-Idempotency-Key",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "API Version (default: v1)",
+                        "name": "X-API-Version",
+                        "in": "header"
+                    },
                     {
                         "description": "Registration Data",
                         "name": "request",
@@ -623,6 +661,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
                         "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
                         "name": "X-Idempotency-Key",
                         "in": "header"
@@ -709,6 +748,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
                         "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
                         "name": "X-Idempotency-Key",
                         "in": "header"
@@ -771,6 +811,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
                         "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
                         "name": "X-Idempotency-Key",
                         "in": "header"
@@ -835,6 +876,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
                         "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
                         "name": "X-Idempotency-Key",
                         "in": "header"
@@ -889,6 +931,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
                         "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
                         "name": "X-Idempotency-Key",
                         "in": "header"
@@ -1002,6 +1045,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
                         "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
                         "name": "X-Idempotency-Key",
                         "in": "header"
@@ -1101,6 +1145,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
                         "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
                         "name": "X-Idempotency-Key",
                         "in": "header"
@@ -1165,6 +1210,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
                         "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
                         "name": "X-Idempotency-Key",
                         "in": "header"
@@ -1236,6 +1282,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
                         "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
                         "name": "X-Idempotency-Key",
                         "in": "header"
@@ -1318,6 +1365,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
                         "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
                         "name": "X-Idempotency-Key",
                         "in": "header"
@@ -1347,6 +1395,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
                         "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
                         "name": "X-Idempotency-Key",
                         "in": "header"
@@ -1378,6 +1427,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
                         "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
                         "name": "X-Idempotency-Key",
                         "in": "header"
@@ -1407,6 +1457,14 @@ const docTemplate = `{
                     "roles"
                 ],
                 "summary": "List all roles",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "API Version (default: v1)",
+                        "name": "X-API-Version",
+                        "in": "header"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -1440,6 +1498,19 @@ const docTemplate = `{
                 ],
                 "summary": "Create new custom role",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "default": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+                        "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
+                        "name": "X-Idempotency-Key",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "API Version (default: v1)",
+                        "name": "X-API-Version",
+                        "in": "header"
+                    },
                     {
                         "description": "New Role Data",
                         "name": "request",
@@ -1487,6 +1558,14 @@ const docTemplate = `{
                     "roles"
                 ],
                 "summary": "List all available system permissions",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "API Version (default: v1)",
+                        "name": "X-API-Version",
+                        "in": "header"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -1519,6 +1598,12 @@ const docTemplate = `{
                 ],
                 "summary": "Get role detail with active permissions",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "API Version (default: v1)",
+                        "name": "X-API-Version",
+                        "in": "header"
+                    },
                     {
                         "type": "string",
                         "description": "Role UUID",
@@ -1560,6 +1645,19 @@ const docTemplate = `{
                 ],
                 "summary": "Update role information",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "default": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+                        "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
+                        "name": "X-Idempotency-Key",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "API Version (default: v1)",
+                        "name": "X-API-Version",
+                        "in": "header"
+                    },
                     {
                         "type": "string",
                         "description": "Role UUID",
@@ -1609,6 +1707,19 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+                        "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
+                        "name": "X-Idempotency-Key",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "API Version (default: v1)",
+                        "name": "X-API-Version",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
                         "description": "Role UUID",
                         "name": "id",
                         "in": "path",
@@ -1650,6 +1761,19 @@ const docTemplate = `{
                 ],
                 "summary": "Update role permissions matrix",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "default": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+                        "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
+                        "name": "X-Idempotency-Key",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "API Version (default: v1)",
+                        "name": "X-API-Version",
+                        "in": "header"
+                    },
                     {
                         "type": "string",
                         "description": "Role UUID",
@@ -1773,6 +1897,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
                         "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
                         "name": "X-Idempotency-Key",
                         "in": "header"
@@ -1880,6 +2005,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
                         "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
                         "name": "X-Idempotency-Key",
                         "in": "header"
@@ -1945,6 +2071,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
                         "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
                         "name": "X-Idempotency-Key",
                         "in": "header"
@@ -2000,6 +2127,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
                         "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
                         "name": "X-Idempotency-Key",
                         "in": "header"
@@ -2038,6 +2166,46 @@ const docTemplate = `{
                         "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/response.APIResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/utility/idempotency-key": {
+            "get": {
+                "description": "Generates a new RFC 4122 UUID v4 to be used as 'X-Idempotency-Key' header on mutation endpoints (POST/PUT/PATCH/DELETE).",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "utility"
+                ],
+                "summary": "Generate fresh Idempotency Key",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "API Version (default: v1)",
+                        "name": "X-API-Version",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.APIResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/handler.IdempotencyKeyResponse"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     }
                 }
@@ -2107,6 +2275,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
                         "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
                         "name": "X-Idempotency-Key",
                         "in": "header"
@@ -2206,6 +2375,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
                         "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
                         "name": "X-Idempotency-Key",
                         "in": "header"
@@ -2270,6 +2440,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
                         "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
                         "name": "X-Idempotency-Key",
                         "in": "header"
@@ -2536,6 +2707,23 @@ const docTemplate = `{
                 },
                 "updated_at": {
                     "type": "string"
+                }
+            }
+        },
+        "handler.IdempotencyKeyResponse": {
+            "type": "object",
+            "properties": {
+                "expires_in_hours": {
+                    "type": "integer",
+                    "example": 24
+                },
+                "idempotency_key": {
+                    "type": "string",
+                    "example": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11"
+                },
+                "usage_hint": {
+                    "type": "string",
+                    "example": "Include this key in the 'X-Idempotency-Key' request header for POST/PUT/PATCH/DELETE mutations"
                 }
             }
         },

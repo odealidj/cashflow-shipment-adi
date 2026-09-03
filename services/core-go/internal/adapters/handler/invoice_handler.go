@@ -128,7 +128,7 @@ func (h *InvoiceHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Param        X-Idempotency-Key header string false "Idempotency Key (UUID unik pencegah duplikasi transaksi)"
+// @Param        X-Idempotency-Key header string false "Idempotency Key (UUID unik pencegah duplikasi transaksi)" default(a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11)
 // @Param        X-API-Version     header string false "API Version (default: v1)"
 // @Router       /invoices [post]
 func (h *InvoiceHandler) Create(w http.ResponseWriter, r *http.Request) {
@@ -153,7 +153,7 @@ func (h *InvoiceHandler) Create(w http.ResponseWriter, r *http.Request) {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Param        X-Idempotency-Key header string false "Idempotency Key (UUID unik pencegah duplikasi transaksi)"
+// @Param        X-Idempotency-Key header string false "Idempotency Key (UUID unik pencegah duplikasi transaksi)" default(a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11)
 // @Param        X-API-Version     header string false "API Version (default: v1)"
 // @Router       /invoices/{id} [put]
 func (h *InvoiceHandler) Update(w http.ResponseWriter, r *http.Request) {
@@ -184,7 +184,7 @@ func (h *InvoiceHandler) Update(w http.ResponseWriter, r *http.Request) {
 // @Tags         invoices
 // @Produce      json
 // @Security     BearerAuth
-// @Param        X-Idempotency-Key header string false "Idempotency Key (UUID unik pencegah duplikasi transaksi)"
+// @Param        X-Idempotency-Key header string false "Idempotency Key (UUID unik pencegah duplikasi transaksi)" default(a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11)
 // @Param        X-API-Version     header string false "API Version (default: v1)"
 // @Router       /invoices/{id}/pay [patch]
 func (h *InvoiceHandler) MarkPaid(w http.ResponseWriter, r *http.Request) {
@@ -208,7 +208,7 @@ func (h *InvoiceHandler) MarkPaid(w http.ResponseWriter, r *http.Request) {
 // @Tags         invoices
 // @Produce      json
 // @Security     BearerAuth
-// @Param        X-Idempotency-Key header string false "Idempotency Key (UUID unik pencegah duplikasi transaksi)"
+// @Param        X-Idempotency-Key header string false "Idempotency Key (UUID unik pencegah duplikasi transaksi)" default(a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11)
 // @Param        X-API-Version     header string false "API Version (default: v1)"
 // @Router       /invoices/{id} [delete]
 func (h *InvoiceHandler) Delete(w http.ResponseWriter, r *http.Request) {

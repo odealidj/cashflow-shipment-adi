@@ -30,6 +30,7 @@ type LoginRequest struct {
 // @Tags         auth
 // @Accept       json
 // @Produce      json
+// @Param        X-API-Version header string false "API Version (default: v1)"
 // @Param        request body LoginRequest true "Login Credentials"
 // @Success      200  {object}  response.APIResponse
 // @Failure      401  {object}  response.APIResponse
@@ -69,6 +70,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 // @Description  Revokes session token and clears HttpOnly session cookie
 // @Tags         auth
 // @Produce      json
+// @Param        X-API-Version header string false "API Version (default: v1)"
 // @Success      200  {object}  response.APIResponse
 // @Router       /auth/logout [post]
 func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
@@ -109,6 +111,7 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 // @Tags         auth
 // @Produce      json
 // @Security     BearerAuth
+// @Param        X-API-Version header string false "API Version (default: v1)"
 // @Success      200  {object}  response.APIResponse
 // @Failure      401  {object}  response.APIResponse
 // @Router       /auth/me [get]
@@ -136,6 +139,8 @@ type RegisterRequest struct {
 // @Tags         auth
 // @Accept       json
 // @Produce      json
+// @Param        X-Idempotency-Key header string false "Idempotency Key (UUID unik pencegah duplikasi transaksi)" default(a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11)
+// @Param        X-API-Version     header string false "API Version (default: v1)"
 // @Param        request body RegisterRequest true "Registration Data"
 // @Success      201  {object}  response.APIResponse
 // @Failure      400  {object}  response.APIResponse

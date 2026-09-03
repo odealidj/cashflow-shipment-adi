@@ -97,7 +97,7 @@ func (h *UserHandler) Get(w http.ResponseWriter, r *http.Request) {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Param        X-Idempotency-Key header string false "Idempotency Key (UUID unik pencegah duplikasi transaksi)"
+// @Param        X-Idempotency-Key header string false "Idempotency Key (UUID unik pencegah duplikasi transaksi)" default(a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11)
 // @Param        X-API-Version     header string false "API Version (default: v1)"
 // @Param        request body   services.CreateUserInput  true  "New User Data"
 // @Success      201  {object}  response.APIResponse
@@ -129,7 +129,7 @@ func (h *UserHandler) Create(w http.ResponseWriter, r *http.Request) {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Param        X-Idempotency-Key header string false "Idempotency Key (UUID unik pencegah duplikasi transaksi)"
+// @Param        X-Idempotency-Key header string false "Idempotency Key (UUID unik pencegah duplikasi transaksi)" default(a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11)
 // @Param        X-API-Version     header string false "API Version (default: v1)"
 // @Param        id      path   string                    true  "User UUID"
 // @Param        request body   services.UpdateUserInput  true  "Updated User Data"
@@ -174,7 +174,7 @@ type ResetPasswordRequest struct {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Param        X-Idempotency-Key header string false "Idempotency Key (UUID unik pencegah duplikasi transaksi)"
+// @Param        X-Idempotency-Key header string false "Idempotency Key (UUID unik pencegah duplikasi transaksi)" default(a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11)
 // @Param        X-API-Version     header string false "API Version (default: v1)"
 // @Param        id      path   string                true  "User UUID"
 // @Param        request body   ResetPasswordRequest  true  "New Password"
@@ -212,7 +212,7 @@ func (h *UserHandler) ResetPassword(w http.ResponseWriter, r *http.Request) {
 // @Tags         users
 // @Produce      json
 // @Security     BearerAuth
-// @Param        X-Idempotency-Key header string false "Idempotency Key (UUID unik pencegah duplikasi transaksi)"
+// @Param        X-Idempotency-Key header string false "Idempotency Key (UUID unik pencegah duplikasi transaksi)" default(a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11)
 // @Param        X-API-Version     header string false "API Version (default: v1)"
 // @Param        id   path      string  true  "User UUID"
 // @Success      200  {object}  response.APIResponse

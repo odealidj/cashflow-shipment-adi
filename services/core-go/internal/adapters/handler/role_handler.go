@@ -25,6 +25,7 @@ func NewRoleHandler(roleService *services.RoleService) *RoleHandler {
 // @Tags         roles
 // @Produce      json
 // @Security     BearerAuth
+// @Param        X-API-Version header string false "API Version (default: v1)"
 // @Success      200  {object}  response.APIResponse
 // @Failure      500  {object}  response.APIResponse
 // @Router       /roles [get]
@@ -45,6 +46,7 @@ func (h *RoleHandler) List(w http.ResponseWriter, r *http.Request) {
 // @Tags         roles
 // @Produce      json
 // @Security     BearerAuth
+// @Param        X-API-Version header string false "API Version (default: v1)"
 // @Param        id   path      string  true  "Role UUID"
 // @Success      200  {object}  response.APIResponse
 // @Failure      404  {object}  response.APIResponse
@@ -73,6 +75,8 @@ func (h *RoleHandler) Get(w http.ResponseWriter, r *http.Request) {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
+// @Param        X-Idempotency-Key header string false "Idempotency Key (UUID unik pencegah duplikasi transaksi)" default(a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11)
+// @Param        X-API-Version     header string false "API Version (default: v1)"
 // @Param        request body   services.CreateRoleInput  true  "New Role Data"
 // @Success      201  {object}  response.APIResponse
 // @Failure      400  {object}  response.APIResponse
@@ -101,6 +105,8 @@ func (h *RoleHandler) Create(w http.ResponseWriter, r *http.Request) {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
+// @Param        X-Idempotency-Key header string false "Idempotency Key (UUID unik pencegah duplikasi transaksi)" default(a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11)
+// @Param        X-API-Version     header string false "API Version (default: v1)"
 // @Param        id      path   string                    true  "Role UUID"
 // @Param        request body   services.UpdateRoleInput  true  "Updated Role Data"
 // @Success      200  {object}  response.APIResponse
@@ -134,6 +140,8 @@ func (h *RoleHandler) Update(w http.ResponseWriter, r *http.Request) {
 // @Tags         roles
 // @Produce      json
 // @Security     BearerAuth
+// @Param        X-Idempotency-Key header string false "Idempotency Key (UUID unik pencegah duplikasi transaksi)" default(a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11)
+// @Param        X-API-Version     header string false "API Version (default: v1)"
 // @Param        id   path      string  true  "Role UUID"
 // @Success      200  {object}  response.APIResponse
 // @Failure      400  {object}  response.APIResponse
@@ -160,6 +168,7 @@ func (h *RoleHandler) Delete(w http.ResponseWriter, r *http.Request) {
 // @Tags         roles
 // @Produce      json
 // @Security     BearerAuth
+// @Param        X-API-Version header string false "API Version (default: v1)"
 // @Success      200  {object}  response.APIResponse
 // @Failure      500  {object}  response.APIResponse
 // @Router       /roles/permissions [get]
@@ -184,6 +193,8 @@ type UpdatePermissionsInput struct {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
+// @Param        X-Idempotency-Key header string false "Idempotency Key (UUID unik pencegah duplikasi transaksi)" default(a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11)
+// @Param        X-API-Version     header string false "API Version (default: v1)"
 // @Param        id      path   string                  true  "Role UUID"
 // @Param        request body   UpdatePermissionsInput  true  "Permission Codes List"
 // @Success      200  {object}  response.APIResponse

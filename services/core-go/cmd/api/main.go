@@ -170,6 +170,7 @@ func main() {
 	activityPresetHandler := handler.NewActivityPresetHandler(activityPresetService)
 	cashflowHandler := handler.NewCashflowHandler(cashflowService)
 	invoiceHandler := handler.NewInvoiceHandler(invoiceService)
+	utilityHandler := handler.NewUtilityHandler()
 
 	r := chi.NewRouter()
 
@@ -198,6 +199,10 @@ func main() {
 		r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte("OK"))
 		})
+
+		// Utility Routes (Public)
+		r.Get("/utility/idempotency-key", utilityHandler.GenerateIdempotencyKey)
+		r.Get("/idempotency-key", utilityHandler.GenerateIdempotencyKey)
 		
 		// Auth Routes (Public)
 		r.Route("/auth", func(r chi.Router) {

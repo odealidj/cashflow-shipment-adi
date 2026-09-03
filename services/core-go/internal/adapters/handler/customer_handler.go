@@ -81,7 +81,7 @@ func (h *CustomerHandler) Get(w http.ResponseWriter, r *http.Request) {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Param        X-Idempotency-Key header string false "Idempotency Key (UUID unik pencegah duplikasi transaksi)"
+// @Param        X-Idempotency-Key header string false "Idempotency Key (UUID unik pencegah duplikasi transaksi)" default(a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11)
 // @Param        X-API-Version     header string false "API Version (default: v1)"
 // @Param        request body domain.Customer true "Customer Data"
 // @Success      201  {object}  response.APIResponse
@@ -109,7 +109,7 @@ func (h *CustomerHandler) Create(w http.ResponseWriter, r *http.Request) {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Param        X-Idempotency-Key header string false "Idempotency Key (UUID unik pencegah duplikasi transaksi)"
+// @Param        X-Idempotency-Key header string false "Idempotency Key (UUID unik pencegah duplikasi transaksi)" default(a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11)
 // @Param        X-API-Version     header string false "API Version (default: v1)"
 // @Param        id path int true "Customer ID"
 // @Param        request body domain.Customer true "Customer Data"
@@ -145,7 +145,7 @@ func (h *CustomerHandler) Update(w http.ResponseWriter, r *http.Request) {
 // @Tags         customers
 // @Produce      json
 // @Security     BearerAuth
-// @Param        X-Idempotency-Key header string false "Idempotency Key (UUID unik pencegah duplikasi transaksi)"
+// @Param        X-Idempotency-Key header string false "Idempotency Key (UUID unik pencegah duplikasi transaksi)" default(a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11)
 // @Param        X-API-Version     header string false "API Version (default: v1)"
 // @Param        id path int true "Customer ID"
 // @Success      200  {object}  response.APIResponse

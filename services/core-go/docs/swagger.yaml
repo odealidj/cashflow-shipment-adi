@@ -169,6 +169,19 @@ definitions:
       updated_at:
         type: string
     type: object
+  handler.IdempotencyKeyResponse:
+    properties:
+      expires_in_hours:
+        example: 24
+        type: integer
+      idempotency_key:
+        example: a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11
+        type: string
+      usage_hint:
+        example: Include this key in the 'X-Idempotency-Key' request header for POST/PUT/PATCH/DELETE
+          mutations
+        type: string
+    type: object
   handler.LoginRequest:
     properties:
       identifier:
@@ -344,7 +357,8 @@ paths:
       - application/json
       description: Creates a new preset for activity description or armada route
       parameters:
-      - description: Idempotency Key (UUID unik pencegah duplikasi transaksi)
+      - default: a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11
+        description: Idempotency Key (UUID unik pencegah duplikasi transaksi)
         in: header
         name: X-Idempotency-Key
         type: string
@@ -382,7 +396,8 @@ paths:
     delete:
       description: Deletes an activity preset by ID
       parameters:
-      - description: Idempotency Key (UUID unik pencegah duplikasi transaksi)
+      - default: a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11
+        description: Idempotency Key (UUID unik pencegah duplikasi transaksi)
         in: header
         name: X-Idempotency-Key
         type: string
@@ -444,7 +459,8 @@ paths:
       - application/json
       description: Updates an existing activity preset
       parameters:
-      - description: Idempotency Key (UUID unik pencegah duplikasi transaksi)
+      - default: a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11
+        description: Idempotency Key (UUID unik pencegah duplikasi transaksi)
         in: header
         name: X-Idempotency-Key
         type: string
@@ -489,6 +505,10 @@ paths:
       - application/json
       description: Login using email or phone number and password
       parameters:
+      - description: 'API Version (default: v1)'
+        in: header
+        name: X-API-Version
+        type: string
       - description: Login Credentials
         in: body
         name: request
@@ -512,6 +532,11 @@ paths:
   /auth/logout:
     post:
       description: Revokes session token and clears HttpOnly session cookie
+      parameters:
+      - description: 'API Version (default: v1)'
+        in: header
+        name: X-API-Version
+        type: string
       produces:
       - application/json
       responses:
@@ -526,6 +551,11 @@ paths:
     get:
       description: Returns the active session profile including role and assigned
         permissions
+      parameters:
+      - description: 'API Version (default: v1)'
+        in: header
+        name: X-API-Version
+        type: string
       produces:
       - application/json
       responses:
@@ -548,6 +578,15 @@ paths:
       - application/json
       description: Registers a new staff user pending administrator verification
       parameters:
+      - default: a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11
+        description: Idempotency Key (UUID unik pencegah duplikasi transaksi)
+        in: header
+        name: X-Idempotency-Key
+        type: string
+      - description: 'API Version (default: v1)'
+        in: header
+        name: X-API-Version
+        type: string
       - description: Registration Data
         in: body
         name: request
@@ -629,7 +668,8 @@ paths:
   /cashflow/{id}:
     delete:
       parameters:
-      - description: Idempotency Key (UUID unik pencegah duplikasi transaksi)
+      - default: a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11
+        description: Idempotency Key (UUID unik pencegah duplikasi transaksi)
         in: header
         name: X-Idempotency-Key
         type: string
@@ -662,7 +702,8 @@ paths:
       consumes:
       - application/json
       parameters:
-      - description: Idempotency Key (UUID unik pencegah duplikasi transaksi)
+      - default: a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11
+        description: Idempotency Key (UUID unik pencegah duplikasi transaksi)
         in: header
         name: X-Idempotency-Key
         type: string
@@ -706,7 +747,8 @@ paths:
       consumes:
       - application/json
       parameters:
-      - description: Idempotency Key (UUID unik pencegah duplikasi transaksi)
+      - default: a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11
+        description: Idempotency Key (UUID unik pencegah duplikasi transaksi)
         in: header
         name: X-Idempotency-Key
         type: string
@@ -788,7 +830,8 @@ paths:
       consumes:
       - application/json
       parameters:
-      - description: Idempotency Key (UUID unik pencegah duplikasi transaksi)
+      - default: a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11
+        description: Idempotency Key (UUID unik pencegah duplikasi transaksi)
         in: header
         name: X-Idempotency-Key
         type: string
@@ -841,7 +884,8 @@ paths:
       consumes:
       - application/json
       parameters:
-      - description: Idempotency Key (UUID unik pencegah duplikasi transaksi)
+      - default: a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11
+        description: Idempotency Key (UUID unik pencegah duplikasi transaksi)
         in: header
         name: X-Idempotency-Key
         type: string
@@ -912,7 +956,8 @@ paths:
       consumes:
       - application/json
       parameters:
-      - description: Idempotency Key (UUID unik pencegah duplikasi transaksi)
+      - default: a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11
+        description: Idempotency Key (UUID unik pencegah duplikasi transaksi)
         in: header
         name: X-Idempotency-Key
         type: string
@@ -949,7 +994,8 @@ paths:
   /customers/{id}:
     delete:
       parameters:
-      - description: Idempotency Key (UUID unik pencegah duplikasi transaksi)
+      - default: a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11
+        description: Idempotency Key (UUID unik pencegah duplikasi transaksi)
         in: header
         name: X-Idempotency-Key
         type: string
@@ -1001,7 +1047,8 @@ paths:
       consumes:
       - application/json
       parameters:
-      - description: Idempotency Key (UUID unik pencegah duplikasi transaksi)
+      - default: a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11
+        description: Idempotency Key (UUID unik pencegah duplikasi transaksi)
         in: header
         name: X-Idempotency-Key
         type: string
@@ -1059,7 +1106,8 @@ paths:
       consumes:
       - application/json
       parameters:
-      - description: Idempotency Key (UUID unik pencegah duplikasi transaksi)
+      - default: a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11
+        description: Idempotency Key (UUID unik pencegah duplikasi transaksi)
         in: header
         name: X-Idempotency-Key
         type: string
@@ -1078,7 +1126,8 @@ paths:
   /invoices/{id}:
     delete:
       parameters:
-      - description: Idempotency Key (UUID unik pencegah duplikasi transaksi)
+      - default: a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11
+        description: Idempotency Key (UUID unik pencegah duplikasi transaksi)
         in: header
         name: X-Idempotency-Key
         type: string
@@ -1112,7 +1161,8 @@ paths:
       consumes:
       - application/json
       parameters:
-      - description: Idempotency Key (UUID unik pencegah duplikasi transaksi)
+      - default: a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11
+        description: Idempotency Key (UUID unik pencegah duplikasi transaksi)
         in: header
         name: X-Idempotency-Key
         type: string
@@ -1131,7 +1181,8 @@ paths:
   /invoices/{id}/pay:
     patch:
       parameters:
-      - description: Idempotency Key (UUID unik pencegah duplikasi transaksi)
+      - default: a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11
+        description: Idempotency Key (UUID unik pencegah duplikasi transaksi)
         in: header
         name: X-Idempotency-Key
         type: string
@@ -1165,6 +1216,11 @@ paths:
   /roles:
     get:
       description: Retrieves list of all available roles with user counts
+      parameters:
+      - description: 'API Version (default: v1)'
+        in: header
+        name: X-API-Version
+        type: string
       produces:
       - application/json
       responses:
@@ -1186,6 +1242,15 @@ paths:
       - application/json
       description: Creates a new custom business role
       parameters:
+      - default: a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11
+        description: Idempotency Key (UUID unik pencegah duplikasi transaksi)
+        in: header
+        name: X-Idempotency-Key
+        type: string
+      - description: 'API Version (default: v1)'
+        in: header
+        name: X-API-Version
+        type: string
       - description: New Role Data
         in: body
         name: request
@@ -1216,6 +1281,15 @@ paths:
     delete:
       description: Deletes a custom role if no users are currently assigned
       parameters:
+      - default: a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11
+        description: Idempotency Key (UUID unik pencegah duplikasi transaksi)
+        in: header
+        name: X-Idempotency-Key
+        type: string
+      - description: 'API Version (default: v1)'
+        in: header
+        name: X-API-Version
+        type: string
       - description: Role UUID
         in: path
         name: id
@@ -1240,6 +1314,10 @@ paths:
     get:
       description: Retrieves role information along with active permission codes
       parameters:
+      - description: 'API Version (default: v1)'
+        in: header
+        name: X-API-Version
+        type: string
       - description: Role UUID
         in: path
         name: id
@@ -1266,6 +1344,15 @@ paths:
       - application/json
       description: Updates name and description of a role
       parameters:
+      - default: a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11
+        description: Idempotency Key (UUID unik pencegah duplikasi transaksi)
+        in: header
+        name: X-Idempotency-Key
+        type: string
+      - description: 'API Version (default: v1)'
+        in: header
+        name: X-API-Version
+        type: string
       - description: Role UUID
         in: path
         name: id
@@ -1299,6 +1386,15 @@ paths:
       - application/json
       description: Atomically updates the permission checklist assigned to a role
       parameters:
+      - default: a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11
+        description: Idempotency Key (UUID unik pencegah duplikasi transaksi)
+        in: header
+        name: X-Idempotency-Key
+        type: string
+      - description: 'API Version (default: v1)'
+        in: header
+        name: X-API-Version
+        type: string
       - description: Role UUID
         in: path
         name: id
@@ -1329,6 +1425,11 @@ paths:
   /roles/permissions:
     get:
       description: Retrieves all permissions grouped by modules
+      parameters:
+      - description: 'API Version (default: v1)'
+        in: header
+        name: X-API-Version
+        type: string
       produces:
       - application/json
       responses:
@@ -1397,7 +1498,8 @@ paths:
       - application/json
       description: Registers a new staff user with designated role
       parameters:
-      - description: Idempotency Key (UUID unik pencegah duplikasi transaksi)
+      - default: a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11
+        description: Idempotency Key (UUID unik pencegah duplikasi transaksi)
         in: header
         name: X-Idempotency-Key
         type: string
@@ -1436,7 +1538,8 @@ paths:
       description: Soft deletes or deactivates a user (enforces Anti Self-Deletion,
         Last Admin Standing, and C-Level Immunity)
       parameters:
-      - description: Idempotency Key (UUID unik pencegah duplikasi transaksi)
+      - default: a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11
+        description: Idempotency Key (UUID unik pencegah duplikasi transaksi)
         in: header
         name: X-Idempotency-Key
         type: string
@@ -1499,7 +1602,8 @@ paths:
       description: Updates profile, status, or role of an existing user (enforces
         C-Level & Self-Deletion Golden Rules)
       parameters:
-      - description: Idempotency Key (UUID unik pencegah duplikasi transaksi)
+      - default: a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11
+        description: Idempotency Key (UUID unik pencegah duplikasi transaksi)
         in: header
         name: X-Idempotency-Key
         type: string
@@ -1544,7 +1648,8 @@ paths:
       - application/json
       description: Resets the password for a user account
       parameters:
-      - description: Idempotency Key (UUID unik pencegah duplikasi transaksi)
+      - default: a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11
+        description: Idempotency Key (UUID unik pencegah duplikasi transaksi)
         in: header
         name: X-Idempotency-Key
         type: string
@@ -1579,6 +1684,30 @@ paths:
       summary: Reset user password
       tags:
       - users
+  /utility/idempotency-key:
+    get:
+      description: Generates a new RFC 4122 UUID v4 to be used as 'X-Idempotency-Key'
+        header on mutation endpoints (POST/PUT/PATCH/DELETE).
+      parameters:
+      - description: 'API Version (default: v1)'
+        in: header
+        name: X-API-Version
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/handler.IdempotencyKeyResponse'
+              type: object
+      summary: Generate fresh Idempotency Key
+      tags:
+      - utility
   /vendors:
     get:
       parameters:
@@ -1612,7 +1741,8 @@ paths:
       consumes:
       - application/json
       parameters:
-      - description: Idempotency Key (UUID unik pencegah duplikasi transaksi)
+      - default: a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11
+        description: Idempotency Key (UUID unik pencegah duplikasi transaksi)
         in: header
         name: X-Idempotency-Key
         type: string
@@ -1649,7 +1779,8 @@ paths:
   /vendors/{id}:
     delete:
       parameters:
-      - description: Idempotency Key (UUID unik pencegah duplikasi transaksi)
+      - default: a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11
+        description: Idempotency Key (UUID unik pencegah duplikasi transaksi)
         in: header
         name: X-Idempotency-Key
         type: string
@@ -1701,7 +1832,8 @@ paths:
       consumes:
       - application/json
       parameters:
-      - description: Idempotency Key (UUID unik pencegah duplikasi transaksi)
+      - default: a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11
+        description: Idempotency Key (UUID unik pencegah duplikasi transaksi)
         in: header
         name: X-Idempotency-Key
         type: string
