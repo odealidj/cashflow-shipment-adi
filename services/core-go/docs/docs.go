@@ -41,6 +41,12 @@ const docTemplate = `{
                 "summary": "List activity presets",
                 "parameters": [
                     {
+                        "type": "string",
+                        "description": "API Version (default: v1)",
+                        "name": "X-API-Version",
+                        "in": "header"
+                    },
+                    {
                         "type": "integer",
                         "default": 1,
                         "description": "Page number",
@@ -101,6 +107,18 @@ const docTemplate = `{
                 "summary": "Create new activity preset",
                 "parameters": [
                     {
+                        "type": "string",
+                        "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
+                        "name": "X-Idempotency-Key",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "API Version (default: v1)",
+                        "name": "X-API-Version",
+                        "in": "header"
+                    },
+                    {
                         "description": "New Preset Data",
                         "name": "request",
                         "in": "body",
@@ -149,6 +167,12 @@ const docTemplate = `{
                 "summary": "Get activity preset by ID",
                 "parameters": [
                     {
+                        "type": "string",
+                        "description": "API Version (default: v1)",
+                        "name": "X-API-Version",
+                        "in": "header"
+                    },
+                    {
                         "type": "integer",
                         "description": "Preset ID",
                         "name": "id",
@@ -189,6 +213,18 @@ const docTemplate = `{
                 ],
                 "summary": "Update activity preset",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
+                        "name": "X-Idempotency-Key",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "API Version (default: v1)",
+                        "name": "X-API-Version",
+                        "in": "header"
+                    },
                     {
                         "type": "integer",
                         "description": "Preset ID",
@@ -242,6 +278,18 @@ const docTemplate = `{
                 ],
                 "summary": "Delete activity preset",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
+                        "name": "X-Idempotency-Key",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "API Version (default: v1)",
+                        "name": "X-API-Version",
+                        "in": "header"
+                    },
                     {
                         "type": "integer",
                         "description": "Preset ID",
@@ -419,6 +467,12 @@ const docTemplate = `{
                 "summary": "Get dashboard cashflow entries",
                 "parameters": [
                     {
+                        "type": "string",
+                        "description": "API Version (default: v1)",
+                        "name": "X-API-Version",
+                        "in": "header"
+                    },
+                    {
                         "type": "integer",
                         "default": 1,
                         "description": "Page number",
@@ -568,6 +622,18 @@ const docTemplate = `{
                 "summary": "Record a Shipment entry",
                 "parameters": [
                     {
+                        "type": "string",
+                        "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
+                        "name": "X-Idempotency-Key",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "API Version (default: v1)",
+                        "name": "X-API-Version",
+                        "in": "header"
+                    },
+                    {
                         "description": "Shipment Entry Data",
                         "name": "request",
                         "in": "body",
@@ -642,6 +708,18 @@ const docTemplate = `{
                 "summary": "Record a Top-Up entry",
                 "parameters": [
                     {
+                        "type": "string",
+                        "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
+                        "name": "X-Idempotency-Key",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "API Version (default: v1)",
+                        "name": "X-API-Version",
+                        "in": "header"
+                    },
+                    {
                         "description": "Top-Up Entry Data",
                         "name": "request",
                         "in": "body",
@@ -691,6 +769,18 @@ const docTemplate = `{
                 ],
                 "summary": "Update a cashflow entry",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
+                        "name": "X-Idempotency-Key",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "API Version (default: v1)",
+                        "name": "X-API-Version",
+                        "in": "header"
+                    },
                     {
                         "type": "integer",
                         "description": "Entry ID",
@@ -744,6 +834,18 @@ const docTemplate = `{
                 "summary": "Delete a cashflow entry",
                 "parameters": [
                     {
+                        "type": "string",
+                        "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
+                        "name": "X-Idempotency-Key",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "API Version (default: v1)",
+                        "name": "X-API-Version",
+                        "in": "header"
+                    },
+                    {
                         "type": "integer",
                         "description": "Entry ID",
                         "name": "id",
@@ -785,6 +887,18 @@ const docTemplate = `{
                 ],
                 "summary": "Update payment status (Remarks)",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
+                        "name": "X-Idempotency-Key",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "API Version (default: v1)",
+                        "name": "X-API-Version",
+                        "in": "header"
+                    },
                     {
                         "type": "integer",
                         "description": "Entry ID",
@@ -834,6 +948,12 @@ const docTemplate = `{
                 "summary": "Get all customers",
                 "parameters": [
                     {
+                        "type": "string",
+                        "description": "API Version (default: v1)",
+                        "name": "X-API-Version",
+                        "in": "header"
+                    },
+                    {
                         "type": "integer",
                         "default": 1,
                         "description": "Page number",
@@ -880,6 +1000,18 @@ const docTemplate = `{
                 ],
                 "summary": "Create new customer",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
+                        "name": "X-Idempotency-Key",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "API Version (default: v1)",
+                        "name": "X-API-Version",
+                        "in": "header"
+                    },
                     {
                         "description": "Customer Data",
                         "name": "request",
@@ -928,6 +1060,12 @@ const docTemplate = `{
                 "summary": "Get customer by ID",
                 "parameters": [
                     {
+                        "type": "string",
+                        "description": "API Version (default: v1)",
+                        "name": "X-API-Version",
+                        "in": "header"
+                    },
+                    {
                         "type": "integer",
                         "description": "Customer ID",
                         "name": "id",
@@ -961,6 +1099,18 @@ const docTemplate = `{
                 ],
                 "summary": "Update existing customer",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
+                        "name": "X-Idempotency-Key",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "API Version (default: v1)",
+                        "name": "X-API-Version",
+                        "in": "header"
+                    },
                     {
                         "type": "integer",
                         "description": "Customer ID",
@@ -1014,6 +1164,18 @@ const docTemplate = `{
                 "summary": "Soft delete customer",
                 "parameters": [
                     {
+                        "type": "string",
+                        "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
+                        "name": "X-Idempotency-Key",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "API Version (default: v1)",
+                        "name": "X-API-Version",
+                        "in": "header"
+                    },
+                    {
                         "type": "integer",
                         "description": "Customer ID",
                         "name": "id",
@@ -1045,6 +1207,14 @@ const docTemplate = `{
                     "invoices"
                 ],
                 "summary": "Get invoices list",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "API Version (default: v1)",
+                        "name": "X-API-Version",
+                        "in": "header"
+                    }
+                ],
                 "responses": {}
             },
             "post": {
@@ -1063,6 +1233,20 @@ const docTemplate = `{
                     "invoices"
                 ],
                 "summary": "Create new invoice",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
+                        "name": "X-Idempotency-Key",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "API Version (default: v1)",
+                        "name": "X-API-Version",
+                        "in": "header"
+                    }
+                ],
                 "responses": {}
             }
         },
@@ -1080,6 +1264,14 @@ const docTemplate = `{
                     "invoices"
                 ],
                 "summary": "Get invoice summary KPI",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "API Version (default: v1)",
+                        "name": "X-API-Version",
+                        "in": "header"
+                    }
+                ],
                 "responses": {}
             }
         },
@@ -1097,6 +1289,14 @@ const docTemplate = `{
                     "invoices"
                 ],
                 "summary": "Get invoice by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "API Version (default: v1)",
+                        "name": "X-API-Version",
+                        "in": "header"
+                    }
+                ],
                 "responses": {}
             },
             "put": {
@@ -1115,6 +1315,20 @@ const docTemplate = `{
                     "invoices"
                 ],
                 "summary": "Update invoice",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
+                        "name": "X-Idempotency-Key",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "API Version (default: v1)",
+                        "name": "X-API-Version",
+                        "in": "header"
+                    }
+                ],
                 "responses": {}
             },
             "delete": {
@@ -1130,6 +1344,20 @@ const docTemplate = `{
                     "invoices"
                 ],
                 "summary": "Soft delete invoice",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
+                        "name": "X-Idempotency-Key",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "API Version (default: v1)",
+                        "name": "X-API-Version",
+                        "in": "header"
+                    }
+                ],
                 "responses": {}
             }
         },
@@ -1147,6 +1375,20 @@ const docTemplate = `{
                     "invoices"
                 ],
                 "summary": "Mark invoice as paid",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
+                        "name": "X-Idempotency-Key",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "API Version (default: v1)",
+                        "name": "X-API-Version",
+                        "in": "header"
+                    }
+                ],
                 "responses": {}
             }
         },
@@ -1458,6 +1700,12 @@ const docTemplate = `{
                 "summary": "List users",
                 "parameters": [
                     {
+                        "type": "string",
+                        "description": "API Version (default: v1)",
+                        "name": "X-API-Version",
+                        "in": "header"
+                    },
+                    {
                         "type": "integer",
                         "default": 1,
                         "description": "Page number",
@@ -1524,6 +1772,18 @@ const docTemplate = `{
                 "summary": "Create new user",
                 "parameters": [
                     {
+                        "type": "string",
+                        "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
+                        "name": "X-Idempotency-Key",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "API Version (default: v1)",
+                        "name": "X-API-Version",
+                        "in": "header"
+                    },
+                    {
                         "description": "New User Data",
                         "name": "request",
                         "in": "body",
@@ -1573,6 +1833,12 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "description": "API Version (default: v1)",
+                        "name": "X-API-Version",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
                         "description": "User UUID",
                         "name": "id",
                         "in": "path",
@@ -1612,6 +1878,18 @@ const docTemplate = `{
                 ],
                 "summary": "Update user",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
+                        "name": "X-Idempotency-Key",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "API Version (default: v1)",
+                        "name": "X-API-Version",
+                        "in": "header"
+                    },
                     {
                         "type": "string",
                         "description": "User UUID",
@@ -1667,6 +1945,18 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
+                        "name": "X-Idempotency-Key",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "API Version (default: v1)",
+                        "name": "X-API-Version",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
                         "description": "User UUID",
                         "name": "id",
                         "in": "path",
@@ -1708,6 +1998,18 @@ const docTemplate = `{
                 ],
                 "summary": "Reset user password",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
+                        "name": "X-Idempotency-Key",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "API Version (default: v1)",
+                        "name": "X-API-Version",
+                        "in": "header"
+                    },
                     {
                         "type": "string",
                         "description": "User UUID",
@@ -1757,6 +2059,12 @@ const docTemplate = `{
                 "summary": "Get all vendors",
                 "parameters": [
                     {
+                        "type": "string",
+                        "description": "API Version (default: v1)",
+                        "name": "X-API-Version",
+                        "in": "header"
+                    },
+                    {
                         "type": "integer",
                         "default": 1,
                         "description": "Page number",
@@ -1797,6 +2105,18 @@ const docTemplate = `{
                 ],
                 "summary": "Create new vendor",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
+                        "name": "X-Idempotency-Key",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "API Version (default: v1)",
+                        "name": "X-API-Version",
+                        "in": "header"
+                    },
                     {
                         "description": "Vendor Data",
                         "name": "request",
@@ -1845,6 +2165,12 @@ const docTemplate = `{
                 "summary": "Get vendor by ID",
                 "parameters": [
                     {
+                        "type": "string",
+                        "description": "API Version (default: v1)",
+                        "name": "X-API-Version",
+                        "in": "header"
+                    },
+                    {
                         "type": "integer",
                         "description": "Vendor ID",
                         "name": "id",
@@ -1878,6 +2204,18 @@ const docTemplate = `{
                 ],
                 "summary": "Update vendor by ID",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
+                        "name": "X-Idempotency-Key",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "API Version (default: v1)",
+                        "name": "X-API-Version",
+                        "in": "header"
+                    },
                     {
                         "type": "integer",
                         "description": "Vendor ID",
@@ -1930,6 +2268,18 @@ const docTemplate = `{
                 ],
                 "summary": "Soft delete vendor by ID",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Idempotency Key (UUID unik pencegah duplikasi transaksi)",
+                        "name": "X-Idempotency-Key",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "API Version (default: v1)",
+                        "name": "X-API-Version",
+                        "in": "header"
+                    },
                     {
                         "type": "integer",
                         "description": "Vendor ID",
@@ -2357,10 +2707,22 @@ const docTemplate = `{
         }
     },
     "securityDefinitions": {
+        "ApiVersion": {
+            "description": "Target API Version Routing (e.g. v1, v2)",
+            "type": "apiKey",
+            "name": "X-API-Version",
+            "in": "header"
+        },
         "BearerAuth": {
             "description": "Type \"Bearer\" followed by a space and the session token.",
             "type": "apiKey",
             "name": "Authorization",
+            "in": "header"
+        },
+        "IdempotencyKey": {
+            "description": "Unique UUID idempotency key for mutation operations (POST/PUT/PATCH/DELETE)",
+            "type": "apiKey",
+            "name": "X-Idempotency-Key",
             "in": "header"
         }
     }
@@ -2373,7 +2735,7 @@ var SwaggerInfo = &swag.Spec{
 	BasePath:         "/api/v1",
 	Schemes:          []string{},
 	Title:            "Cashflow & Shipment Management API",
-	Description:      "High Performance Backend Service for PT. Adijayantara Logistics Indonesia.",
+	Description:      "High Performance Backend Service for PT. Adijayantara Logistics Indonesia.\nArchitecture & Headers:\n- X-API-Version: Target API versioning (e.g. 'v1', 'v2')\n- X-Idempotency-Key: Unique UUID token for safe mutations (POST/PUT/PATCH/DELETE) to prevent duplicates\n- X-Request-ID: Distributed tracing correlation ID",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

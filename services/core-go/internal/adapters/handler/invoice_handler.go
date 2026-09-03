@@ -59,6 +59,7 @@ func extractInvoiceFilter(r *http.Request) ports.InvoiceFilter {
 // @Tags         invoices
 // @Produce      json
 // @Security     BearerAuth
+// @Param        X-API-Version header string false "API Version (default: v1)"
 // @Router       /invoices [get]
 func (h *InvoiceHandler) List(w http.ResponseWriter, r *http.Request) {
 	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
@@ -85,6 +86,7 @@ func (h *InvoiceHandler) List(w http.ResponseWriter, r *http.Request) {
 // @Tags         invoices
 // @Produce      json
 // @Security     BearerAuth
+// @Param        X-API-Version header string false "API Version (default: v1)"
 // @Router       /invoices/summary [get]
 func (h *InvoiceHandler) GetSummary(w http.ResponseWriter, r *http.Request) {
 	filter := extractInvoiceFilter(r)
@@ -101,6 +103,7 @@ func (h *InvoiceHandler) GetSummary(w http.ResponseWriter, r *http.Request) {
 // @Tags         invoices
 // @Produce      json
 // @Security     BearerAuth
+// @Param        X-API-Version header string false "API Version (default: v1)"
 // @Router       /invoices/{id} [get]
 func (h *InvoiceHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
@@ -125,6 +128,8 @@ func (h *InvoiceHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
+// @Param        X-Idempotency-Key header string false "Idempotency Key (UUID unik pencegah duplikasi transaksi)"
+// @Param        X-API-Version     header string false "API Version (default: v1)"
 // @Router       /invoices [post]
 func (h *InvoiceHandler) Create(w http.ResponseWriter, r *http.Request) {
 	var input services.CreateInvoiceInput
@@ -148,6 +153,8 @@ func (h *InvoiceHandler) Create(w http.ResponseWriter, r *http.Request) {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
+// @Param        X-Idempotency-Key header string false "Idempotency Key (UUID unik pencegah duplikasi transaksi)"
+// @Param        X-API-Version     header string false "API Version (default: v1)"
 // @Router       /invoices/{id} [put]
 func (h *InvoiceHandler) Update(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
@@ -177,6 +184,8 @@ func (h *InvoiceHandler) Update(w http.ResponseWriter, r *http.Request) {
 // @Tags         invoices
 // @Produce      json
 // @Security     BearerAuth
+// @Param        X-Idempotency-Key header string false "Idempotency Key (UUID unik pencegah duplikasi transaksi)"
+// @Param        X-API-Version     header string false "API Version (default: v1)"
 // @Router       /invoices/{id}/pay [patch]
 func (h *InvoiceHandler) MarkPaid(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
@@ -199,6 +208,8 @@ func (h *InvoiceHandler) MarkPaid(w http.ResponseWriter, r *http.Request) {
 // @Tags         invoices
 // @Produce      json
 // @Security     BearerAuth
+// @Param        X-Idempotency-Key header string false "Idempotency Key (UUID unik pencegah duplikasi transaksi)"
+// @Param        X-API-Version     header string false "API Version (default: v1)"
 // @Router       /invoices/{id} [delete]
 func (h *InvoiceHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")

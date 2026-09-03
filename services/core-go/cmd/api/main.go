@@ -26,6 +26,10 @@ import (
 // @title         Cashflow & Shipment Management API
 // @version       1.0
 // @description   High Performance Backend Service for PT. Adijayantara Logistics Indonesia.
+// @description   Architecture & Headers:
+// @description   - X-API-Version: Target API versioning (e.g. 'v1', 'v2')
+// @description   - X-Idempotency-Key: Unique UUID token for safe mutations (POST/PUT/PATCH/DELETE) to prevent duplicates
+// @description   - X-Request-ID: Distributed tracing correlation ID
 // @termsOfService http://swagger.io/terms/
 
 // @contact.name   API Support
@@ -42,6 +46,16 @@ import (
 // @in header
 // @name Authorization
 // @description Type "Bearer" followed by a space and the session token.
+
+// @securityDefinitions.apikey ApiVersion
+// @in header
+// @name X-API-Version
+// @description Target API Version Routing (e.g. v1, v2)
+
+// @securityDefinitions.apikey IdempotencyKey
+// @in header
+// @name X-Idempotency-Key
+// @description Unique UUID idempotency key for mutation operations (POST/PUT/PATCH/DELETE)
 
 func loadEnvFiles() {
 	envFiles := []string{".env", "../.env", "services/core-go/.env", ".env.example", "services/core-go/.env.example"}

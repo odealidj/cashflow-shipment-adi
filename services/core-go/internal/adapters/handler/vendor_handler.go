@@ -24,6 +24,7 @@ func NewVendorHandler(vendorService *services.VendorService) *VendorHandler {
 // @Tags         vendors
 // @Produce      json
 // @Security     BearerAuth
+// @Param        X-API-Version header string false "API Version (default: v1)"
 // @Param        page query int false "Page number" default(1)
 // @Param        limit query int false "Items per page" default(50)
 // @Success      200  {object}  response.APIResponse
@@ -51,6 +52,7 @@ func (h *VendorHandler) List(w http.ResponseWriter, r *http.Request) {
 // @Tags         vendors
 // @Produce      json
 // @Security     BearerAuth
+// @Param        X-API-Version header string false "API Version (default: v1)"
 // @Param        id path int true "Vendor ID"
 // @Success      200  {object}  response.APIResponse
 // @Router       /vendors/{id} [get]
@@ -77,6 +79,8 @@ func (h *VendorHandler) Get(w http.ResponseWriter, r *http.Request) {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
+// @Param        X-Idempotency-Key header string false "Idempotency Key (UUID unik pencegah duplikasi transaksi)"
+// @Param        X-API-Version     header string false "API Version (default: v1)"
 // @Param        request body domain.Vendor true "Vendor Data"
 // @Success      201  {object}  response.APIResponse
 // @Failure      400  {object}  response.APIResponse
@@ -103,6 +107,8 @@ func (h *VendorHandler) Create(w http.ResponseWriter, r *http.Request) {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
+// @Param        X-Idempotency-Key header string false "Idempotency Key (UUID unik pencegah duplikasi transaksi)"
+// @Param        X-API-Version     header string false "API Version (default: v1)"
 // @Param        id path int true "Vendor ID"
 // @Param        request body domain.Vendor true "Vendor Data"
 // @Success      200  {object}  response.APIResponse
@@ -137,6 +143,8 @@ func (h *VendorHandler) Update(w http.ResponseWriter, r *http.Request) {
 // @Tags         vendors
 // @Produce      json
 // @Security     BearerAuth
+// @Param        X-Idempotency-Key header string false "Idempotency Key (UUID unik pencegah duplikasi transaksi)"
+// @Param        X-API-Version     header string false "API Version (default: v1)"
 // @Param        id path int true "Vendor ID"
 // @Success      200  {object}  response.APIResponse
 // @Router       /vendors/{id} [delete]

@@ -26,6 +26,7 @@ func NewUserHandler(userService *services.UserService) *UserHandler {
 // @Tags         users
 // @Produce      json
 // @Security     BearerAuth
+// @Param        X-API-Version header string false "API Version (default: v1)"
 // @Param        page    query  int     false  "Page number" default(1)
 // @Param        limit   query  int     false  "Items per page" default(15)
 // @Param        search  query  string  false  "Search by name, email, or phone"
@@ -67,6 +68,7 @@ func (h *UserHandler) List(w http.ResponseWriter, r *http.Request) {
 // @Tags         users
 // @Produce      json
 // @Security     BearerAuth
+// @Param        X-API-Version header string false "API Version (default: v1)"
 // @Param        id   path      string  true  "User UUID"
 // @Success      200  {object}  response.APIResponse
 // @Failure      404  {object}  response.APIResponse
@@ -95,6 +97,8 @@ func (h *UserHandler) Get(w http.ResponseWriter, r *http.Request) {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
+// @Param        X-Idempotency-Key header string false "Idempotency Key (UUID unik pencegah duplikasi transaksi)"
+// @Param        X-API-Version     header string false "API Version (default: v1)"
 // @Param        request body   services.CreateUserInput  true  "New User Data"
 // @Success      201  {object}  response.APIResponse
 // @Failure      400  {object}  response.APIResponse
@@ -125,6 +129,8 @@ func (h *UserHandler) Create(w http.ResponseWriter, r *http.Request) {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
+// @Param        X-Idempotency-Key header string false "Idempotency Key (UUID unik pencegah duplikasi transaksi)"
+// @Param        X-API-Version     header string false "API Version (default: v1)"
 // @Param        id      path   string                    true  "User UUID"
 // @Param        request body   services.UpdateUserInput  true  "Updated User Data"
 // @Success      200  {object}  response.APIResponse
@@ -168,6 +174,8 @@ type ResetPasswordRequest struct {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
+// @Param        X-Idempotency-Key header string false "Idempotency Key (UUID unik pencegah duplikasi transaksi)"
+// @Param        X-API-Version     header string false "API Version (default: v1)"
 // @Param        id      path   string                true  "User UUID"
 // @Param        request body   ResetPasswordRequest  true  "New Password"
 // @Success      200  {object}  response.APIResponse
@@ -204,6 +212,8 @@ func (h *UserHandler) ResetPassword(w http.ResponseWriter, r *http.Request) {
 // @Tags         users
 // @Produce      json
 // @Security     BearerAuth
+// @Param        X-Idempotency-Key header string false "Idempotency Key (UUID unik pencegah duplikasi transaksi)"
+// @Param        X-API-Version     header string false "API Version (default: v1)"
 // @Param        id   path      string  true  "User UUID"
 // @Success      200  {object}  response.APIResponse
 // @Failure      400  {object}  response.APIResponse

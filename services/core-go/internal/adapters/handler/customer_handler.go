@@ -24,6 +24,7 @@ func NewCustomerHandler(customerService *services.CustomerService) *CustomerHand
 // @Tags         customers
 // @Produce      json
 // @Security     BearerAuth
+// @Param        X-API-Version header string false "API Version (default: v1)"
 // @Param        page query int false "Page number" default(1)
 // @Param        limit query int false "Items per page" default(50)
 // @Param        search query string false "Search query"
@@ -53,6 +54,7 @@ func (h *CustomerHandler) List(w http.ResponseWriter, r *http.Request) {
 // @Tags         customers
 // @Produce      json
 // @Security     BearerAuth
+// @Param        X-API-Version header string false "API Version (default: v1)"
 // @Param        id path int true "Customer ID"
 // @Success      200  {object}  response.APIResponse
 // @Router       /customers/{id} [get]
@@ -79,6 +81,8 @@ func (h *CustomerHandler) Get(w http.ResponseWriter, r *http.Request) {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
+// @Param        X-Idempotency-Key header string false "Idempotency Key (UUID unik pencegah duplikasi transaksi)"
+// @Param        X-API-Version     header string false "API Version (default: v1)"
 // @Param        request body domain.Customer true "Customer Data"
 // @Success      201  {object}  response.APIResponse
 // @Failure      400  {object}  response.APIResponse
@@ -105,6 +109,8 @@ func (h *CustomerHandler) Create(w http.ResponseWriter, r *http.Request) {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
+// @Param        X-Idempotency-Key header string false "Idempotency Key (UUID unik pencegah duplikasi transaksi)"
+// @Param        X-API-Version     header string false "API Version (default: v1)"
 // @Param        id path int true "Customer ID"
 // @Param        request body domain.Customer true "Customer Data"
 // @Success      200  {object}  response.APIResponse
@@ -139,6 +145,8 @@ func (h *CustomerHandler) Update(w http.ResponseWriter, r *http.Request) {
 // @Tags         customers
 // @Produce      json
 // @Security     BearerAuth
+// @Param        X-Idempotency-Key header string false "Idempotency Key (UUID unik pencegah duplikasi transaksi)"
+// @Param        X-API-Version     header string false "API Version (default: v1)"
 // @Param        id path int true "Customer ID"
 // @Success      200  {object}  response.APIResponse
 // @Router       /customers/{id} [delete]

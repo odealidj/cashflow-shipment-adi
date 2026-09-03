@@ -62,6 +62,7 @@ func extractListFilter(r *http.Request) ports.ListFilter {
 // @Tags         cashflow
 // @Produce      json
 // @Security     BearerAuth
+// @Param        X-API-Version header string false "API Version (default: v1)"
 // @Param        page query int false "Page number" default(1)
 // @Param        limit query int false "Items per page" default(50)
 // @Param        sort query string false "Sort direction (ASC/DESC)" default(ASC)
@@ -98,6 +99,8 @@ func (h *CashflowHandler) List(w http.ResponseWriter, r *http.Request) {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
+// @Param        X-Idempotency-Key header string false "Idempotency Key (UUID unik pencegah duplikasi transaksi)"
+// @Param        X-API-Version     header string false "API Version (default: v1)"
 // @Param        request body domain.CashflowEntry true "Top-Up Entry Data"
 // @Success      201  {object}  response.APIResponse
 // @Failure      400  {object}  response.APIResponse
@@ -128,6 +131,8 @@ func (h *CashflowHandler) CreateTopUp(w http.ResponseWriter, r *http.Request) {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
+// @Param        X-Idempotency-Key header string false "Idempotency Key (UUID unik pencegah duplikasi transaksi)"
+// @Param        X-API-Version     header string false "API Version (default: v1)"
 // @Param        request body domain.CashflowEntry true "Shipment Entry Data"
 // @Success      201  {object}  response.APIResponse
 // @Failure      400  {object}  response.APIResponse
@@ -158,6 +163,8 @@ func (h *CashflowHandler) CreateShipment(w http.ResponseWriter, r *http.Request)
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
+// @Param        X-Idempotency-Key header string false "Idempotency Key (UUID unik pencegah duplikasi transaksi)"
+// @Param        X-API-Version     header string false "API Version (default: v1)"
 // @Param        id path int true "Entry ID"
 // @Param        request body domain.CashflowEntry true "Updated Entry Data"
 // @Success      200  {object}  response.APIResponse
@@ -193,6 +200,8 @@ func (h *CashflowHandler) Update(w http.ResponseWriter, r *http.Request) {
 // @Tags         cashflow
 // @Produce      json
 // @Security     BearerAuth
+// @Param        X-Idempotency-Key header string false "Idempotency Key (UUID unik pencegah duplikasi transaksi)"
+// @Param        X-API-Version     header string false "API Version (default: v1)"
 // @Param        id path int true "Entry ID"
 // @Success      200  {object}  response.APIResponse
 // @Failure      400  {object}  response.APIResponse
@@ -224,6 +233,8 @@ type UpdateStatusRequest struct {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
+// @Param        X-Idempotency-Key header string false "Idempotency Key (UUID unik pencegah duplikasi transaksi)"
+// @Param        X-API-Version     header string false "API Version (default: v1)"
 // @Param        id path int true "Entry ID"
 // @Param        request body UpdateStatusRequest true "Payment Status Data"
 // @Success      200  {object}  response.APIResponse
