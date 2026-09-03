@@ -29,11 +29,14 @@ Built using a **Polyglot Monorepo** structure (`apps/` & `services/`), with **He
 - *(Roadmap)* **`apps/mobile/`**: Mobile app native for field operators (Flutter).
 
 ### Services (`services/`)
+- **`services/gateway-go/`**: Custom Go API Gateway (Single Entry Point, Dual-Routing & Auto-Rewrite, X-Request-ID, X-Idempotency-Key via Redis, Error Upstream Shield).
 - **`services/core-go/`**: Core REST API & Business Logic built with [Go (Golang)](https://go.dev/) using Hexagonal Architecture, `go-chi/chi`, `pgxpool`, `sqlx`, and `Excelize`.
+- *(Roadmap)* **`services/tracking-go/`**: Layanan pelacakan armada logistik dan GPS real-time.
 - *(Roadmap)* **`services/engine-rust/`**: High-performance computing & background processing engine built with Rust.
 
 ### Infrastructure
-- **Database:** PostgreSQL
+- **Database:** PostgreSQL 15 (`cashflow_db`)
+- **Cache & Session:** Redis 7 (`cashflow_redis` untuk L2 Session dan Idempotency Lock)
 - **Containerization:** Docker Compose / Podman
 
 ---
@@ -46,18 +49,45 @@ Built using a **Polyglot Monorepo** structure (`apps/` & `services/`), with **He
 - [Docker](https://www.docker.com/) or [Podman](https://podman.io/)
 
 ### Quick Start (Using Makefile) ⚡
-Anda dapat menjalankan aplikasi dengan 3 perintah mudah berikut:
+
+Sistem menyediakan berbagai opsi eksekusi yang fleksibel, baik secara lokal di Host OS (untuk kenyamanan development) maupun di dalam Docker Container (untuk keseragaman production):
+
+#### A. Menjalankan Seluruh Sistem Secara Cepat (Rekomendasi)
 
 ```bash
-# 1. Jalankan PostgreSQL Database (Infrastructure)
-make infra-up
+# Opsi 1: Menjalankan Seluruh Backend di Docker Container
+make run-all-go
 
-# 2. Jalankan Core Go Service (Terminal 1)
-make run-local-core-go
+# Opsi 2: Menjalankan Seluruh Backend di Host OS (Core :8081 + Gateway :8080)
+make infra-up            # Nyalakan PostgreSQL & Redis
+make run-local-all-go    # Nyalakan Core Go & API Gateway di Host OS
 
-# 3. Jalankan Next.js Web & Mobile PWA (Terminal 2)
+# Di Terminal Lain: Jalankan Frontend Web & Mobile PWA
 make run-local-web-next
 ```
+
+---
+
+#### B. Daftar Lengkap Perintah Makefile
+
+| Perintah Makefile | Lingkungan | Deskripsi & Fungsi |
+| :--- | :---: | :--- |
+| **Infrastruktur Database & Cache** | | |
+| `make infra-up` | Container | Menjalankan container PostgreSQL 15 (`cashflow_db:5432`) dan Redis 7 (`cashflow_redis:6379`). |
+| `make infra-down` | Container | Menghentikan dan membersihkan container infrastruktur. |
+| `make infra-logs` | Container | Melihat stream log container database dan Redis secara real-time. |
+| **Backend Go Services (Host OS)** | | |
+| `make run-local-core-go` | Host OS | Menjalankan Core Go API secara mandiri pada port `8080` (mode standalone). |
+| `make run-local-api-gateway-go` | Host OS | Menjalankan API Gateway pada port `8080` (mem-proxy request ke Core di `localhost:8081`). |
+| `make run-local-all-go` | Host OS | Menjalankan Core Go (`:8081`) dan API Gateway (`:8080`) secara paralel di Host OS dengan graceful shutdown saat `Ctrl+C`. |
+| **Backend Go Services (Docker Container)** | | |
+| `make run-core-go` | Container | Membangun dan menjalankan Core Go API di dalam container Docker (`:8081`). |
+| `make run-api-gateway-go` | Container | Membangun dan menjalankan API Gateway di dalam container Docker (`:8080`). |
+| `make run-all-go` | Container | Membangun dan menjalankan seluruh stack backend (Postgres, Redis, Core Go, Gateway) di Docker. |
+| **Frontend & Utilitas** | | |
+| `make run-local-web-next` | Host OS | Menjalankan Next.js Web App (`/dashboard`) dan Mobile PWA (`/m`) pada port `3000`. |
+| `make swagger-gen` | Host OS | Men-generate ulang spesifikasi Swagger OpenAPI (`docs/docs.go`, `swagger.json`). |
+| `make generate-ui-assets` | Host OS | Meng-generate tangkapan layar komposit seluruh halaman UI mobile untuk dokumentasi. |
 
 ---
 
@@ -107,15 +137,19 @@ cashflow-shipment-app/
 │       │   └── hooks/       # useAutoCalculate, useCashflowMobile, usePinAuth
 │       └── package.json
 ├── services/
+│   ├── gateway-go/          # Custom Go API Gateway (Reverse Proxy, Idempotency, Request-ID)
+│   │   ├── cmd/gateway/     # Entrypoint Gateway
+│   │   ├── internal/        # Proxy router, Idempotency, Request-ID, CORS
+│   │   └── Dockerfile       # Container definition
 │   └── core-go/             # Golang Core API Service (Hexagonal Architecture)
 │       ├── cmd/api/         # Entrypoint & HTTP Router
-│       ├── migrations/      # PostgreSQL DB Migrations (cashflow_entries 14-kolom)
+│       ├── migrations/      # PostgreSQL DB Migrations
 │       ├── internal/        # Domain, ports, adapters
-│       └── go.mod
-├── docs/                    # Dokumentasi Proses Bisnis & Panduan UI Mobile
+│       └── Dockerfile       # Container definition
+├── docs/                    # Dokumentasi Teknis & Proses Bisnis
 ├── scripts/                 # Utility scripts (generate_mobile_ui_assets.py)
-├── Makefile                 # Automation shortcuts
-├── docker-compose.yml       # PostgreSQL database container configuration
+├── Makefile                 # 6 perintah orkestrasi service Go & utilitas
+├── docker-compose.yml       # Orchestration container: Postgres, Redis, Core Go, Gateway
 └── README.md
 ```
 
