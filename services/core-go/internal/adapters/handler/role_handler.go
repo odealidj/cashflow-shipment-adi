@@ -87,11 +87,7 @@ func (h *RoleHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	role, err := h.roleService.CreateRole(r.Context(), input)
 	if err != nil {
-		if response.IsDuplicateKeyError(err) {
-			response.Conflict(w, err.Error())
-			return
-		}
-		response.Error(w, http.StatusBadRequest, "Gagal membuat role: "+err.Error())
+		response.HandleError(w, err)
 		return
 	}
 

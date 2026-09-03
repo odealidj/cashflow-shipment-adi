@@ -164,11 +164,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.authService.Register(r.Context(), user, req.Password); err != nil {
-		if response.IsDuplicateKeyError(err) {
-			response.Conflict(w, "Email atau nomor telepon sudah terdaftar di sistem")
-			return
-		}
-		response.Error(w, http.StatusBadRequest, "Gagal mendaftarkan akun: "+err.Error())
+		response.HandleError(w, err)
 		return
 	}
 

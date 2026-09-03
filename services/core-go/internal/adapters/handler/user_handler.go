@@ -111,11 +111,7 @@ func (h *UserHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	user, err := h.userService.Create(r.Context(), input, currentUserRole)
 	if err != nil {
-		if response.IsDuplicateKeyError(err) {
-			response.Conflict(w, err.Error())
-			return
-		}
-		response.Error(w, http.StatusBadRequest, err.Error())
+		response.HandleError(w, err)
 		return
 	}
 
@@ -154,11 +150,7 @@ func (h *UserHandler) Update(w http.ResponseWriter, r *http.Request) {
 
 	user, err := h.userService.Update(r.Context(), id, input, currentUserID, currentUserRole)
 	if err != nil {
-		if response.IsDuplicateKeyError(err) {
-			response.Conflict(w, err.Error())
-			return
-		}
-		response.Error(w, http.StatusBadRequest, err.Error())
+		response.HandleError(w, err)
 		return
 	}
 

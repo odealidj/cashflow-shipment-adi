@@ -2,6 +2,7 @@ package response
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"strings"
 )
@@ -107,4 +108,76 @@ func IsDuplicateKeyError(err error) bool {
 		strings.Contains(msg, "sudah terdaftar") ||
 		strings.Contains(msg, "sudah digunakan") ||
 		strings.Contains(msg, "23505")
+}
+
+// CleanErrorMessage maps raw internal database/driver errors into clean, human-friendly business messages
+func CleanErrorMessage(err error) string {
+	if err == nil {
+		return ""
+	}
+	msg := err.Error()
+	lower := strings.ToLower(msg)
+
+	// 1. PostgreSQL Unique Constraints (Code 23505)
+	if strings.Contains(lower, "invoices_invoice_no") || strings.Contains(lower, "idx_invoices_invoice_no") {
+		return "Nomor invoice sudah terdaftar di sistem. Silakan gunakan nomor invoice berbeda."
+	}
+	if strings.Contains(lower, "users_email") || strings.Contains(lower, "idx_users_email") {
+		return "Alamat email sudah terdaftar di sistem. Silakan gunakan email lain."
+	}
+	if strings.Contains(lower, "users_phone") || strings.Contains(lower, "idx_users_phone") {
+		return "Nomor telepon sudah terdaftar di sistem."
+	}
+	if strings.Contains(lower, "customers_name") || strings.Contains(lower, "idx_customers_name") {
+		return "Customer dengan nama ini sudah terdaftar di sistem."
+	}
+	if strings.Contains(lower, "vendors_name") || strings.Contains(lower, "idx_vendors_name") {
+		return "Vendor dengan nama ini sudah terdaftar di sistem."
+	}
+	if strings.Contains(lower, "roles_code") || strings.Contains(lower, "idx_roles_code") {
+		return "Kode peran (role) sudah digunakan, silakan gunakan kode lain."
+	}
+
+	// 2. Generic duplicate key fallback
+	if IsDuplicateKeyError(err) {
+		return "Data yang Anda masukkan sudah terdaftar di sistem (duplikasi). Silakan gunakan data berbeda."
+	}
+
+	// 3. PostgreSQL Foreign Key Constraints (Code 23503)
+	if strings.Contains(lower, "foreign key constraint") || strings.Contains(lower, "23503") {
+		return "Data referensi tidak valid atau data ini masih digunakan oleh transaksi lain."
+	}
+
+	// 4. Strip raw driver prefix like "pq: " if present
+	if strings.HasPrefix(msg, "pq: ") {
+		return "Terjadi kendala saat memproses data ke database. Silakan periksa format input Anda."
+	}
+
+	return msg
+}
+
+// HandleError is the centralized Go error responder (analogous to Global Exception Handling in .NET)
+// It logs the technical error on the server, automatically maps duplicate keys to HTTP 409,
+// sanitizes raw driver/database errors, and responds with a human-friendly message.
+func HandleError(w http.ResponseWriter, err error, defaultStatusCode ...int) {
+	if err == nil {
+		return
+	}
+
+	// Always log raw error on server console for internal tracking/debugging
+	log.Printf("[API Error Handled] %v", err)
+
+	cleanMsg := CleanErrorMessage(err)
+
+	if IsDuplicateKeyError(err) {
+		Conflict(w, cleanMsg)
+		return
+	}
+
+	statusCode := http.StatusBadRequest
+	if len(defaultStatusCode) > 0 {
+		statusCode = defaultStatusCode[0]
+	}
+
+	Error(w, statusCode, cleanMsg)
 }

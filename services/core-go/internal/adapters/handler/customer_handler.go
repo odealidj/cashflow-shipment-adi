@@ -92,11 +92,7 @@ func (h *CustomerHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.customerService.CreateCustomer(r.Context(), &customer); err != nil {
-		if response.IsDuplicateKeyError(err) {
-			response.Conflict(w, err.Error())
-			return
-		}
-		response.Error(w, http.StatusBadRequest, err.Error())
+		response.HandleError(w, err)
 		return
 	}
 
@@ -131,11 +127,7 @@ func (h *CustomerHandler) Update(w http.ResponseWriter, r *http.Request) {
 	customer.ID = id
 
 	if err := h.customerService.UpdateCustomer(r.Context(), &customer); err != nil {
-		if response.IsDuplicateKeyError(err) {
-			response.Conflict(w, err.Error())
-			return
-		}
-		response.Error(w, http.StatusBadRequest, err.Error())
+		response.HandleError(w, err)
 		return
 	}
 

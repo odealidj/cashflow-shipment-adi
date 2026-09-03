@@ -135,11 +135,7 @@ func (h *InvoiceHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	inv, err := h.invoiceService.CreateInvoice(r.Context(), input)
 	if err != nil {
-		if response.IsDuplicateKeyError(err) {
-			response.Conflict(w, err.Error())
-			return
-		}
-		response.Error(w, http.StatusBadRequest, err.Error())
+		response.HandleError(w, err)
 		return
 	}
 
@@ -169,11 +165,7 @@ func (h *InvoiceHandler) Update(w http.ResponseWriter, r *http.Request) {
 
 	inv, err := h.invoiceService.UpdateInvoice(r.Context(), id, input)
 	if err != nil {
-		if response.IsDuplicateKeyError(err) {
-			response.Conflict(w, err.Error())
-			return
-		}
-		response.Error(w, http.StatusBadRequest, err.Error())
+		response.HandleError(w, err)
 		return
 	}
 

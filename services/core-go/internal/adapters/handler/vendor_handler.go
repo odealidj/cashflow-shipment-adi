@@ -90,11 +90,7 @@ func (h *VendorHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.vendorService.CreateVendor(r.Context(), &vendor); err != nil {
-		if response.IsDuplicateKeyError(err) {
-			response.Conflict(w, "Nama vendor sudah terdaftar di sistem")
-			return
-		}
-		response.Error(w, http.StatusBadRequest, "Failed to create vendor: "+err.Error())
+		response.HandleError(w, err)
 		return
 	}
 
@@ -129,11 +125,7 @@ func (h *VendorHandler) Update(w http.ResponseWriter, r *http.Request) {
 	vendor.ID = id
 
 	if err := h.vendorService.UpdateVendor(r.Context(), &vendor); err != nil {
-		if response.IsDuplicateKeyError(err) {
-			response.Conflict(w, "Nama vendor sudah terdaftar di sistem")
-			return
-		}
-		response.Error(w, http.StatusBadRequest, "Failed to update vendor: "+err.Error())
+		response.HandleError(w, err)
 		return
 	}
 
