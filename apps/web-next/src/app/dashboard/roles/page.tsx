@@ -21,7 +21,8 @@ import {
   Sparkles,
   ArrowRight,
   Layers,
-  ChevronRight
+  ChevronRight,
+  RotateCcw
 } from "lucide-react";
 import { fetchWithAuth, API_BASE_URL } from "@/lib/apiClient";
 import { useAuth } from "@/hooks/useAuth";
@@ -328,6 +329,63 @@ export default function RolesManagementPage() {
     JSON.stringify([...selectedPermissions].sort()) !== 
     JSON.stringify([...initialPermissions].sort());
 
+  // Master Standar Izin Bawaan Sistem (Factory Default Roles)
+  const SYSTEM_DEFAULT_ROLE_PERMISSIONS: Record<string, string[]> = {
+    admin: [
+      "cashflow.view", "cashflow.create", "cashflow.edit", "cashflow.delete", "cashflow.export", "cashflow.import",
+      "invoices.view", "invoices.create", "invoices.edit", "invoices.delete", "invoices.mark_paid", "invoices.print",
+      "customers.view", "customers.manage",
+      "vendors.view", "vendors.manage",
+      "presets.view", "presets.manage",
+      "users.view", "users.create", "users.edit", "users.delete", "users.reset_password",
+      "roles.view", "roles.manage"
+    ],
+    finance: [
+      "cashflow.view", "cashflow.create", "cashflow.edit", "cashflow.export", "cashflow.import",
+      "invoices.view", "invoices.create", "invoices.edit", "invoices.mark_paid", "invoices.print",
+      "customers.view", "vendors.view", "presets.view"
+    ],
+    direktur: [
+      "cashflow.view", "cashflow.export",
+      "invoices.view", "invoices.print",
+      "customers.view", "vendors.view", "presets.view",
+      "users.view", "users.edit", "users.delete", "users.reset_password",
+      "roles.view"
+    ],
+    owner: [
+      "cashflow.view", "cashflow.export",
+      "invoices.view", "invoices.print",
+      "customers.view", "vendors.view", "presets.view",
+      "users.view", "users.edit", "users.delete", "users.reset_password",
+      "roles.view"
+    ]
+  };
+
+  // Solusi 1: Batalkan perubahan dan kembalikan ke kondisi semula
+  const handleDiscardChanges = () => {
+    setSelectedPermissions([...initialPermissions]);
+    setMessage({ 
+      text: "Perubahan wewenang dibatalkan. Kembali ke kondisi tersimpan.", 
+      type: "success" 
+    });
+    setTimeout(() => setMessage(null), 4000);
+  };
+
+  // Solusi Tambahan: Setel kembali ke standar bawaan sistem
+  const handleResetToSystemDefault = () => {
+    if (!selectedRole || !SYSTEM_DEFAULT_ROLE_PERMISSIONS[selectedRole.code]) return;
+    const defaults = SYSTEM_DEFAULT_ROLE_PERMISSIONS[selectedRole.code];
+    setSelectedPermissions([...defaults]);
+    setMessage({ 
+      text: `Daftar hak akses peran '${selectedRole.name}' telah disesuaikan dengan rekomendasi standar sistem. Klik 'Simpan Perubahan' untuk menerapkan secara permanen.`, 
+      type: "success" 
+    });
+  };
+
+  // Solusi 2: Hitung diff penambahan dan pencabutan izin
+  const addedPermissionsCount = selectedPermissions.filter(c => !initialPermissions.includes(c)).length;
+  const removedPermissionsCount = initialPermissions.filter(c => !selectedPermissions.includes(c)).length;
+
   const getModuleLabel = (moduleName: string) => {
     switch (moduleName) {
       case "CASHFLOW": return "Kas & Operasional (Cashflow)";
@@ -342,9 +400,9 @@ export default function RolesManagementPage() {
   };
 
   return (
-    <div className="space-y-6 pb-12">
+    <div className="flex flex-col lg:h-[calc(100vh-4.5rem)] lg:min-h-[600px] gap-4 pb-8 lg:pb-0">
       {/* 1. Header Section */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs">
+      <div className="shrink-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-xs">
         <div>
           <div className="flex items-center gap-2.5">
             <div className="w-10 h-10 rounded-2xl bg-sky-50 flex items-center justify-center text-sky-700 border border-sky-100 shadow-xs">
@@ -374,7 +432,7 @@ export default function RolesManagementPage() {
 
       {/* Global Alert Notification */}
       {message && (
-        <div className={`p-4 rounded-2xl text-xs font-bold flex items-center justify-between gap-3 shadow-xs animate-fade-in ${
+        <div className={`shrink-0 p-4 rounded-2xl text-xs font-bold flex items-center justify-between gap-3 shadow-xs animate-fade-in ${
           message.type === "success" 
             ? "bg-emerald-50 text-emerald-800 border border-emerald-200" 
             : "bg-rose-50 text-rose-800 border border-rose-200"
@@ -389,13 +447,13 @@ export default function RolesManagementPage() {
         </div>
       )}
 
-      {/* 2. Main Two-Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      {/* 2. Main Two-Column Layout (Fills remaining height proportionally) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:flex-1 lg:min-h-0">
         
-        {/* LEFT COLUMN: Daftar Peran (4 Cols) */}
-        <div className="lg:col-span-4 space-y-4">
-          <div className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-xs">
-            <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
+        {/* LEFT COLUMN: Daftar Peran (4 Cols on lg, 3.5 Cols on xl) */}
+        <div className="lg:col-span-4 xl:col-span-3.5 lg:h-full lg:min-h-0">
+          <div className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-xs flex flex-col max-lg:max-h-[360px] lg:h-full overflow-hidden">
+            <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100 shrink-0">
               <div className="flex items-center gap-2">
                 <Layers className="w-4 h-4 text-slate-500" />
                 <h2 className="text-sm font-black text-slate-800 uppercase tracking-wider">
@@ -407,7 +465,7 @@ export default function RolesManagementPage() {
               </span>
             </div>
 
-            <div className="space-y-2.5">
+            <div className="space-y-2.5 flex-1 overflow-y-auto pr-1 soft-scrollbar">
               {loading ? (
                 <div className="py-8 text-center text-xs text-slate-400">Memuat peran...</div>
               ) : roles.map((role) => {
@@ -418,7 +476,14 @@ export default function RolesManagementPage() {
                 return (
                   <div
                     key={role.id}
-                    onClick={() => setSelectedRole(role)}
+                    onClick={() => {
+                      if (hasUnsavedChanges && selectedRole?.id !== role.id) {
+                        if (!confirm(`Perubahan hak akses pada peran '${selectedRole?.name}' belum disimpan. Apakah Anda yakin ingin membatalkan dan berganti peran?`)) {
+                          return;
+                        }
+                      }
+                      setSelectedRole(role);
+                    }}
                     className={`p-4 rounded-2xl border transition-all cursor-pointer relative overflow-hidden group ${
                       isSelected 
                         ? "bg-gradient-to-r from-sky-50/90 to-blue-50/50 border-sky-300 shadow-sm ring-2 ring-sky-500/20" 
@@ -475,13 +540,13 @@ export default function RolesManagementPage() {
           </div>
         </div>
 
-        {/* RIGHT COLUMN: Matriks Hak Akses (8 Cols) */}
-        <div className="lg:col-span-8 space-y-4">
+        {/* RIGHT COLUMN: Matriks Hak Akses (8 Cols on lg, 8.5 Cols on xl) */}
+        <div className="lg:col-span-8 xl:col-span-8.5 lg:h-full lg:min-h-0">
           {selectedRole ? (
-            <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden">
+            <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden flex flex-col max-lg:min-h-[520px] lg:h-full">
               
-              {/* Header Kartu Matriks */}
-              <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex flex-wrap items-center justify-between gap-4">
+              {/* Header Kartu Matriks (Fixed Top inside Card) */}
+              <div className="p-5 px-6 border-b border-slate-100 bg-slate-50/70 shrink-0 flex flex-wrap items-center justify-between gap-4">
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-black text-sky-700 uppercase tracking-wider">
@@ -532,6 +597,18 @@ export default function RolesManagementPage() {
                     </button>
                   )}
 
+                  {/* Batalkan Perubahan Button (Solusi 1) */}
+                  {selectedRole.code !== "super_admin" && hasUnsavedChanges && can("roles.manage") && (
+                    <button
+                      onClick={handleDiscardChanges}
+                      className="px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
+                      title="Batalkan perubahan dan kembalikan ke kondisi tersimpan"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
+                      <span>Batalkan</span>
+                    </button>
+                  )}
+
                   {/* Simpan Perubahan Button */}
                   {selectedRole.code !== "super_admin" && can("roles.manage") && (
                     <button
@@ -552,7 +629,7 @@ export default function RolesManagementPage() {
 
               {/* Notice Banner jika Super Admin */}
               {selectedRole.code === "super_admin" && (
-                <div className="m-6 mb-0 p-4 rounded-2xl bg-purple-50/70 border border-purple-200 text-xs text-purple-900 flex items-start gap-3">
+                <div className="m-5 mb-0 p-3.5 rounded-2xl bg-purple-50/70 border border-purple-200 text-xs text-purple-900 flex items-start gap-3 shrink-0">
                   <Lock className="w-5 h-5 text-purple-600 shrink-0 mt-0.5" />
                   <div>
                     <h4 className="font-bold">Role IT Super Admin Kebal Mutlak (*Fail-Safe Root*)</h4>
@@ -563,34 +640,65 @@ export default function RolesManagementPage() {
                 </div>
               )}
 
-              {/* Quick Select All Toolbar */}
+              {/* Quick Select All & Reset to Default Toolbar */}
               {selectedRole.code !== "super_admin" && can("roles.manage") && (
-                <div className="px-6 py-3 bg-slate-50/80 border-b border-slate-100 flex items-center justify-between text-xs">
+                <div className="px-6 py-2.5 bg-slate-50/80 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3 text-xs shrink-0">
                   <div className="flex items-center gap-2">
                     <button
                       onClick={handleSelectAll}
                       className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-700 font-bold hover:bg-slate-100 transition shadow-2xs flex items-center gap-1 cursor-pointer"
+                      title="Centang semua hak akses pada semua modul"
                     >
                       <CheckSquare className="w-3.5 h-3.5 text-sky-600" />
-                      <span>Pilih Semua Izin</span>
+                      <span>Pilih Semua</span>
                     </button>
                     <button
                       onClick={handleDeselectAll}
                       className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-700 font-bold hover:bg-slate-100 transition shadow-2xs flex items-center gap-1 cursor-pointer"
+                      title="Hapus semua centang hak akses"
                     >
                       <Square className="w-3.5 h-3.5 text-slate-400" />
-                      <span>Kosongkan Semua</span>
+                      <span>Kosongkan</span>
                     </button>
+
+                    {/* Tombol Standar Sistem (Khusus Role Bawaan Sistem) */}
+                    {SYSTEM_DEFAULT_ROLE_PERMISSIONS[selectedRole.code] && (
+                      <button
+                        onClick={handleResetToSystemDefault}
+                        className="px-2.5 py-1 rounded-lg bg-sky-50 border border-sky-200 text-sky-800 font-bold hover:bg-sky-100 transition shadow-2xs flex items-center gap-1 cursor-pointer"
+                        title="Setel daftar hak akses sesuai rekomendasi standar bawaan sistem"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5 text-sky-700" />
+                        <span>Standar Sistem</span>
+                      </button>
+                    )}
                   </div>
 
-                  <span className="text-[11px] font-bold text-slate-500">
-                    <b className="text-sky-700 font-black">{selectedPermissions.length}</b> izin aktif dipilih
-                  </span>
+                  {/* Ringkasan Status & Perubahan Diff */}
+                  <div className="flex items-center gap-3">
+                    {hasUnsavedChanges && (
+                      <div className="flex items-center gap-1.5 text-[11px] font-bold">
+                        {addedPermissionsCount > 0 && (
+                          <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                            +{addedPermissionsCount} baru
+                          </span>
+                        )}
+                        {removedPermissionsCount > 0 && (
+                          <span className="text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                            -{removedPermissionsCount} dicabut
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    <span className="text-[11px] font-bold text-slate-500">
+                      <b className="text-sky-700 font-black">{selectedPermissions.length}</b> izin aktif dipilih
+                    </span>
+                  </div>
                 </div>
               )}
 
-              {/* Permissions Checklist Grouped by Modules */}
-              <div className="p-6 space-y-6">
+              {/* Permissions Checklist Grouped by Modules (Scrollable Internal Area) */}
+              <div className="p-6 space-y-5 flex-1 overflow-y-auto soft-scrollbar">
                 {matrixLoading ? (
                   <div className="py-16 text-center text-xs text-slate-400">
                     Memuat matriks wewenang...
@@ -631,8 +739,13 @@ export default function RolesManagementPage() {
                         {/* Permissions Grid in Module */}
                         <div className="p-3 grid grid-cols-1 md:grid-cols-2 gap-2.5 bg-slate-50/30">
                           {group.permissions.map((perm) => {
+                            const wasInitiallyChecked = initialPermissions.includes(perm.code);
                             const isChecked = selectedRole.code === "super_admin" || selectedPermissions.includes(perm.code);
                             const isSuperAdminRole = selectedRole.code === "super_admin";
+
+                            // Solusi 2: Deteksi perubahan izin secara visual
+                            const isNewlyAdded = !isSuperAdminRole && isChecked && !wasInitiallyChecked;
+                            const isNewlyRemoved = !isSuperAdminRole && !isChecked && wasInitiallyChecked;
 
                             return (
                               <label
@@ -641,6 +754,10 @@ export default function RolesManagementPage() {
                                 className={`p-3 rounded-xl border flex items-start gap-3 transition-all ${
                                   isSuperAdminRole
                                     ? "bg-purple-50/50 border-purple-200 opacity-90 cursor-default"
+                                    : isNewlyAdded
+                                    ? "bg-emerald-50/80 border-emerald-300 ring-2 ring-emerald-500/20 text-emerald-950 cursor-pointer shadow-xs"
+                                    : isNewlyRemoved
+                                    ? "bg-amber-50/60 border-dashed border-amber-300 ring-2 ring-amber-500/20 text-amber-950 cursor-pointer shadow-xs"
                                     : isChecked
                                     ? "bg-sky-50/80 border-sky-200 text-sky-950 cursor-pointer shadow-2xs"
                                     : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50 cursor-pointer"
@@ -652,19 +769,49 @@ export default function RolesManagementPage() {
                                     checked={isChecked}
                                     disabled={isSuperAdminRole || !can("roles.manage")}
                                     onChange={() => {}} // handled by parent label click
-                                    className="w-4 h-4 rounded text-sky-600 focus:ring-sky-500 border-slate-300 cursor-pointer"
+                                    className={`w-4 h-4 rounded cursor-pointer ${
+                                      isNewlyAdded
+                                        ? "text-emerald-600 focus:ring-emerald-500 border-emerald-400"
+                                        : isNewlyRemoved
+                                        ? "text-amber-600 focus:ring-amber-500 border-amber-400"
+                                        : "text-sky-600 focus:ring-sky-500 border-slate-300"
+                                    }`}
                                   />
                                 </div>
                                 <div className="min-w-0 flex-1">
                                   <div className="flex items-center justify-between gap-2">
-                                    <p className={`text-xs font-bold ${isChecked ? "text-sky-900" : "text-slate-800"}`}>
+                                    <p className={`text-xs font-bold ${
+                                      isNewlyAdded 
+                                        ? "text-emerald-950" 
+                                        : isNewlyRemoved 
+                                        ? "text-amber-950 line-through opacity-80" 
+                                        : isChecked 
+                                        ? "text-sky-900" 
+                                        : "text-slate-800"
+                                    }`}>
                                       {perm.name}
                                     </p>
-                                    <span className="text-[9px] font-mono font-bold text-slate-400 bg-white px-1.5 py-0.5 rounded border border-slate-200 shrink-0">
-                                      {perm.code}
-                                    </span>
+                                    
+                                    <div className="flex items-center gap-1.5 shrink-0">
+                                      {/* Solusi 2: Badge Penanda Visual Perubahan */}
+                                      {isNewlyAdded && (
+                                        <span className="text-[9px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-100 border border-emerald-200 px-1.5 py-0.5 rounded-md flex items-center gap-0.5 shadow-2xs">
+                                          + Ditambahkan
+                                        </span>
+                                      )}
+                                      {isNewlyRemoved && (
+                                        <span className="text-[9px] font-black uppercase tracking-wider text-amber-800 bg-amber-100 border border-amber-200 px-1.5 py-0.5 rounded-md flex items-center gap-0.5 shadow-2xs">
+                                          - Dicabut
+                                        </span>
+                                      )}
+                                      <span className="text-[9px] font-mono font-bold text-slate-400 bg-white px-1.5 py-0.5 rounded border border-slate-200">
+                                        {perm.code}
+                                      </span>
+                                    </div>
                                   </div>
-                                  <p className="text-[11px] text-slate-500 mt-0.5 leading-normal">
+                                  <p className={`text-[11px] mt-0.5 leading-normal ${
+                                    isNewlyAdded ? "text-emerald-700" : isNewlyRemoved ? "text-amber-700" : "text-slate-500"
+                                  }`}>
                                     {perm.description || "Akses izin untuk fitur terkait"}
                                   </p>
                                 </div>
@@ -678,33 +825,50 @@ export default function RolesManagementPage() {
                 )}
               </div>
 
-              {/* Sticky Footer Bar if Unsaved Changes */}
+              {/* Sticky Bottom Bar if Unsaved Changes (Solusi 1 & 2) */}
               {hasUnsavedChanges && (
-                <div className="p-4 bg-sky-950 text-white flex items-center justify-between gap-4 sticky bottom-0 z-20 shadow-2xl">
-                  <div className="flex items-center gap-2 text-xs">
+                <div className="p-3 px-6 bg-[#1A283C] text-white flex flex-wrap items-center justify-between gap-3 shrink-0 shadow-xl border-t border-slate-700/80 animate-fade-in">
+                  <div className="flex items-center gap-2.5 text-xs">
                     <Sparkles className="w-4 h-4 text-sky-300 animate-spin" />
-                    <span>Anda memiliki perubahan hak akses yang belum disimpan.</span>
+                    <span>
+                      Ada perubahan yang belum disimpan:{" "}
+                      {addedPermissionsCount > 0 && (
+                        <b className="text-emerald-300 mr-1.5">+{addedPermissionsCount} Ditambahkan</b>
+                      )}
+                      {removedPermissionsCount > 0 && (
+                        <b className="text-amber-300">-{removedPermissionsCount} Dicabut</b>
+                      )}
+                    </span>
                   </div>
-                  <button
-                    onClick={handleSavePermissions}
-                    disabled={savingPermissions}
-                    className="px-4 py-2 rounded-xl bg-sky-500 hover:bg-sky-400 text-sky-950 text-xs font-black shadow-md flex items-center gap-1.5 transition-all cursor-pointer"
-                  >
-                    <Save className="w-3.5 h-3.5" />
-                    <span>{savingPermissions ? "Menyimpan..." : "Simpan Perubahan Sekarang"}</span>
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={handleDiscardChanges}
+                      className="px-3.5 py-1.5 rounded-xl border border-slate-600 bg-slate-800/80 hover:bg-slate-700 text-slate-200 hover:text-white text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+                      title="Batalkan perubahan dan kembalikan ke kondisi tersimpan"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      <span>Batalkan</span>
+                    </button>
+                    <button
+                      onClick={handleSavePermissions}
+                      disabled={savingPermissions}
+                      className="px-4 py-1.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-sky-950 text-xs font-black shadow-md flex items-center gap-1.5 transition-all cursor-pointer active:scale-95"
+                    >
+                      <Save className="w-3.5 h-3.5" />
+                      <span>{savingPermissions ? "Menyimpan..." : "Simpan Perubahan Sekarang"}</span>
+                    </button>
+                  </div>
                 </div>
               )}
 
             </div>
           ) : (
-            <div className="bg-white rounded-3xl p-12 border border-slate-200/80 text-center text-slate-400">
-              <Shield className="w-12 h-12 mx-auto text-slate-300 mb-3" />
+            <div className="bg-white rounded-3xl p-12 border border-slate-200/80 text-center text-slate-400 max-lg:min-h-[500px] lg:h-full flex flex-col items-center justify-center">
+              <Shield className="w-12 h-12 text-slate-300 mb-3" />
               <p className="text-sm font-bold">Pilih salah satu peran di sebelah kiri untuk melihat matriks hak aksesnya.</p>
             </div>
           )}
         </div>
-
       </div>
 
       {/* MODAL: Tambah Peran Baru */}

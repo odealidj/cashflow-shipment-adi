@@ -269,3 +269,89 @@ func (r *PostgresRoleRepo) CountActiveUsersByRoleCode(ctx context.Context, roleC
 	}
 	return count, nil
 }
+
+func (r *PostgresRoleRepo) BootstrapRolesAndPermissions(
+	ctx context.Context, 
+	defaultRoles []domain.Role, 
+	defaultPermissions []domain.Permission, 
+	defaultRoleMappings map[string][]string,
+) error {
+	tx, err := r.db.BeginTxx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	// 1. Injeksi Master Roles (Idempoten: ON CONFLICT DO UPDATE status sistem)
+	roleQuery := `
+		INSERT INTO roles (code, name, description, is_system)
+		VALUES ($1, $2, $3, $4)
+		ON CONFLICT (code) DO UPDATE 
+		SET is_system = EXCLUDED.is_system
+	`
+	for _, role := range defaultRoles {
+		_, err := tx.ExecContext(ctx, roleQuery, role.Code, role.Name, role.Description, role.IsSystem)
+		if err != nil {
+			return err
+		}
+	}
+
+	// 2. Injeksi Master Permissions (Idempoten: ON CONFLICT DO UPDATE metadata modul & nama)
+	permQuery := `
+		INSERT INTO permissions (module, code, name, description)
+		VALUES ($1, $2, $3, $4)
+		ON CONFLICT (code) DO UPDATE 
+		SET module = EXCLUDED.module, name = EXCLUDED.name, description = EXCLUDED.description
+	`
+	for _, perm := range defaultPermissions {
+		_, err := tx.ExecContext(ctx, permQuery, perm.Module, perm.Code, perm.Name, perm.Description)
+		if err != nil {
+			return err
+		}
+	}
+
+	// 3. Injeksi Pemetaan Default Bersyarat (Hanya jika role belum pernah dipetakan izinnya)
+	for roleCode, permCodes := range defaultRoleMappings {
+		if len(permCodes) == 0 {
+			continue
+		}
+
+		var currentCount int
+		countQuery := `
+			SELECT COUNT(*) 
+			FROM role_permissions rp
+			JOIN roles r ON r.id = rp.role_id
+			WHERE r.code = $1
+		`
+		if err := tx.GetContext(ctx, &currentCount, countQuery, roleCode); err != nil {
+			return err
+		}
+
+		// Jika role belum memiliki izin (instalasi baru / cold start), injeksikan izin default
+		if currentCount == 0 {
+			mappingQuery := `
+				INSERT INTO role_permissions (role_id, permission_id)
+				SELECT r.id, p.id
+				FROM roles r, permissions p
+				WHERE r.code = $1 AND p.code = ANY($2)
+				ON CONFLICT DO NOTHING
+			`
+			if _, err := tx.ExecContext(ctx, mappingQuery, roleCode, pq.Array(permCodes)); err != nil {
+				return err
+			}
+		}
+	}
+
+	// 4. Pastikan akun user eksisting yang belum memiliki role_id disinkronkan ke role_id
+	linkUsersQuery := `
+		UPDATE users u
+		SET role_id = r.id
+		FROM roles r
+		WHERE u.role::text = r.code AND u.role_id IS NULL
+	`
+	if _, err := tx.ExecContext(ctx, linkUsersQuery); err != nil {
+		return err
+	}
+
+	return tx.Commit()
+}

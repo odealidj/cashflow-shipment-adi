@@ -112,7 +112,14 @@ func main() {
 	cashflowService := services.NewCashflowService(cashflowRepo, vendorService)
 	invoiceService := services.NewInvoiceService(invoiceRepo)
 
-	// Auto-bootstrap Super Admin IT account from Environment Variables if not present
+	// 1. Auto-bootstrap System Roles and Permissions (Idempotent Zero-Config Seeding)
+	if err := roleService.BootstrapSystemRolesAndPermissions(ctx); err != nil {
+		log.Printf("[Warning] Gagal auto-bootstrap peran dan hak akses sistem: %v\n", err)
+	} else {
+		log.Println("[Bootstrap] Peran sistem & matriks izin (PBAC) berhasil diinisialisasi secara otomatis")
+	}
+
+	// 2. Auto-bootstrap Super Admin IT account from Environment Variables if not present
 	superAdminEmail := os.Getenv("SUPERADMIN_EMAIL")
 	if superAdminEmail == "" {
 		superAdminEmail = "admin@example.com"

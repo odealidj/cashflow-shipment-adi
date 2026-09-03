@@ -24,4 +24,7 @@ type RoleRepository interface {
 
 	// Validasi Tata Kelola Pengguna
 	CountActiveUsersByRoleCode(ctx context.Context, roleCode string) (int, error)
+
+	// Inisialisasi & Bootstrap Idempoten
+	BootstrapRolesAndPermissions(ctx context.Context, defaultRoles []domain.Role, defaultPermissions []domain.Permission, defaultRoleMappings map[string][]string) error
 }

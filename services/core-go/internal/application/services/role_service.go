@@ -153,3 +153,87 @@ func (s *RoleService) UpdateRolePermissions(ctx context.Context, roleID uuid.UUI
 
 	return nil
 }
+
+// BootstrapSystemRolesAndPermissions menginjeksi peran sistem, kode izin, dan pemetaan default saat startup (Idempoten)
+func (s *RoleService) BootstrapSystemRolesAndPermissions(ctx context.Context) error {
+	descPtr := func(s string) *string { return &s }
+
+	defaultRoles := []domain.Role{
+		{Code: "super_admin", Name: "IT Super Admin", Description: descPtr("Hak akses penuh sistem, konfigurasi teknis, dan audit trail (*fail-safe root*)"), IsSystem: true},
+		{Code: "admin", Name: "Administrator Bisnis", Description: descPtr("Pengelola operasional, user management, dan seluruh fitur bisnis"), IsSystem: true},
+		{Code: "finance", Name: "Finance & Akuntansi", Description: descPtr("Pengelola transaksi kas operasional, tagihan shipment, dan rekonsiliasi pembayaran"), IsSystem: true},
+		{Code: "direktur", Name: "Direktur Perusahaan", Description: descPtr("Monitoring kinerja finansial, persetujuan shipment, dan supervisi operasional"), IsSystem: true},
+		{Code: "owner", Name: "Pemilik Perusahaan", Description: descPtr("Pemilik bisnis dengan wewenang pengawasan eksekutif dan audit keuangan"), IsSystem: true},
+	}
+
+	defaultPermissions := []domain.Permission{
+		// Module CASHFLOW
+		{Module: "CASHFLOW", Code: "cashflow.view", Name: "Menu & Halaman Kas Operasional", Description: descPtr("Menampilkan menu Kas di sidebar dan membaca data tabel kas operasional & pengiriman armada")},
+		{Module: "CASHFLOW", Code: "cashflow.create", Name: "Tambah Transaksi Kas", Description: descPtr("Membuat transaksi pemasukan/pengeluaran baru")},
+		{Module: "CASHFLOW", Code: "cashflow.edit", Name: "Edit Transaksi Kas", Description: descPtr("Mengubah rincian transaksi kas atau status shipment")},
+		{Module: "CASHFLOW", Code: "cashflow.delete", Name: "Hapus Transaksi Kas", Description: descPtr("Menghapus pencatatan transaksi kas")},
+		{Module: "CASHFLOW", Code: "cashflow.export", Name: "Export Data Kas & Pengiriman", Description: descPtr("Mengunduh laporan kas ke format Excel / CSV")},
+		{Module: "CASHFLOW", Code: "cashflow.import", Name: "Import Data Kas", Description: descPtr("Mengunggah dan mengimpor file data transaksi kas")},
+
+		// Module INVOICES
+		{Module: "INVOICES", Code: "invoices.view", Name: "Menu & Halaman Invoice Piutang", Description: descPtr("Menampilkan menu Invoice di sidebar dan membaca daftar tagihan piutang customer")},
+		{Module: "INVOICES", Code: "invoices.create", Name: "Buat Tagihan Invoice", Description: descPtr("Membuat invoice baru dari transaksi pengiriman")},
+		{Module: "INVOICES", Code: "invoices.edit", Name: "Edit Data Invoice", Description: descPtr("Memperbarui nominal, tanggal jatuh tempo, atau status invoice")},
+		{Module: "INVOICES", Code: "invoices.delete", Name: "Hapus Invoice", Description: descPtr("Membatalkan atau menghapus draft tagihan invoice")},
+		{Module: "INVOICES", Code: "invoices.mark_paid", Name: "Pelunasan Invoice", Description: descPtr("Mencatat pembayaran dan pelunasan piutang customer")},
+		{Module: "INVOICES", Code: "invoices.print", Name: "Cetak & PDF Invoice", Description: descPtr("Mencetak dokumen resmi invoice penagihan")},
+
+		// Module CUSTOMERS
+		{Module: "CUSTOMERS", Code: "customers.view", Name: "Menu & Master Klien (Customer)", Description: descPtr("Menampilkan menu Klien di sidebar dan membaca daftar rekanan pelanggan")},
+		{Module: "CUSTOMERS", Code: "customers.manage", Name: "Kelola Klien", Description: descPtr("Menambah, mengedit, atau menghapus master data pelanggan")},
+
+		// Module VENDORS
+		{Module: "VENDORS", Code: "vendors.view", Name: "Menu & Master Mitra Vendor", Description: descPtr("Menampilkan menu Mitra Armada di sidebar dan membaca daftar transporter/vendor")},
+		{Module: "VENDORS", Code: "vendors.manage", Name: "Kelola Vendor", Description: descPtr("Menambah, mengedit, atau menghapus master vendor armada")},
+
+		// Module PRESETS
+		{Module: "PRESETS", Code: "presets.view", Name: "Menu & Master Preset Aktivitas", Description: descPtr("Menampilkan menu Preset di sidebar dan membaca master rute & keterangan armada")},
+		{Module: "PRESETS", Code: "presets.manage", Name: "Kelola Preset Aktivitas", Description: descPtr("Menambah, mengedit, atau menghapus master preset aktivitas")},
+
+		// Module USERS
+		{Module: "USERS", Code: "users.view", Name: "Menu & Manajemen Pengguna", Description: descPtr("Menampilkan menu Manajemen Pengguna di sidebar dan melihat daftar akun staf")},
+		{Module: "USERS", Code: "users.create", Name: "Tambah Pengguna Baru", Description: descPtr("Menambahkan staf pengguna baru")},
+		{Module: "USERS", Code: "users.edit", Name: "Edit Pengguna & Peran", Description: descPtr("Mengubah data akun, peran jabatan, atau status pengguna")},
+		{Module: "USERS", Code: "users.delete", Name: "Nonaktifkan / Hapus Pengguna", Description: descPtr("Menonaktifkan akses login atau menghapus pengguna")},
+		{Module: "USERS", Code: "users.reset_password", Name: "Reset Password Pengguna", Description: descPtr("Mereset kata sandi akun pengguna")},
+
+		// Module ROLES
+		{Module: "ROLES", Code: "roles.view", Name: "Menu & Peran Hak Akses (PBAC)", Description: descPtr("Menampilkan menu Peran & Hak Akses di sidebar dan melihat matriks perizinan")},
+		{Module: "ROLES", Code: "roles.manage", Name: "Kelola Peran & Hak Akses", Description: descPtr("Membuat peran baru dan mengatur matriks hak akses tombol")},
+	}
+
+	allCodes := make([]string, len(defaultPermissions))
+	for i, p := range defaultPermissions {
+		allCodes[i] = p.Code
+	}
+
+	defaultRoleMappings := map[string][]string{
+		"admin": allCodes,
+		"finance": {
+			"cashflow.view", "cashflow.create", "cashflow.edit", "cashflow.export", "cashflow.import",
+			"invoices.view", "invoices.create", "invoices.edit", "invoices.mark_paid", "invoices.print",
+			"customers.view", "vendors.view", "presets.view",
+		},
+		"direktur": {
+			"cashflow.view", "cashflow.export",
+			"invoices.view", "invoices.print",
+			"customers.view", "vendors.view", "presets.view",
+			"users.view", "users.edit", "users.delete", "users.reset_password",
+			"roles.view",
+		},
+		"owner": {
+			"cashflow.view", "cashflow.export",
+			"invoices.view", "invoices.print",
+			"customers.view", "vendors.view", "presets.view",
+			"users.view", "users.edit", "users.delete", "users.reset_password",
+			"roles.view",
+		},
+	}
+
+	return s.roleRepo.BootstrapRolesAndPermissions(ctx, defaultRoles, defaultPermissions, defaultRoleMappings)
+}
