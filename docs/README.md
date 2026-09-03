@@ -11,7 +11,9 @@ Selamat datang di direktori dokumentasi resmi sistem aplikasi **PT. Adijayantara
 | Dokumen | Deskripsi |
 | :--- | :--- |
 | 📘 **[Arsitektur Teknis Sistem](./arsitektur_teknis_sistem.md)** | **Dokumen Utama**: Klasifikasi Modular Monolith, Hexagonal Architecture (Ports & Adapters), topologi three-tier, ERD Database, Monorepo layout, katalog REST API, dan panduan DevOps. |
+| 🛡️ **[Panduan Lengkap User, Role, PBAC & Auto-Bootstrap](./panduan_lengkap_user_role_pbac_dan_bootstrap.md)** | **Spesifikasi & Proses Bisnis Lengkap**: Tata kelola pengguna, 5 role default, peran kustom, aturan main (3 Aturan Emas), mekanisme injeksi otomatis (*Zero-Config Auto-Bootstrap*), katalog 25 izin, dan panduan operasional. |
 | 🔒 **[Spesifikasi RBAC & Two-Tier Session](./rbac_two_tier_session_specification.md)** | Arsitektur keamanan mendalam: Opaque Session via HttpOnly Cookie, Two-Tier Caching (L1 RAM Go `< 0.005 ms` + L2 Redis 7), 5 tingkat peran, dan protokol *Instant Force Logout*. |
+| 🎛️ **[Spesifikasi Matriks Hak Akses Dinamis](./dynamic_rbac_matrix_specification.md)** | Detail teknis tabel perizinan modular, permission codes, dan pemetaan endpoint API. |
 
 ### 2. Proses Bisnis, Kalkulasi & Kasus Operasional
 | Dokumen | Deskripsi |
