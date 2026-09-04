@@ -37,63 +37,110 @@ export function CashflowReportModal({
 
   // State Periode
   const currentMonth = useMemo(() => getCurrentMonthRange(), []);
-  const [dateFrom, setDateFrom] = useState(defaultDateFrom || currentMonth.date_from);
-  const [dateTo, setDateTo] = useState(defaultDateTo || currentMonth.date_to);
-
-  // Month navigation state
-  const [selectedYear, setSelectedYear] = useState(currentMonth.year);
-  const [selectedMonthIndex, setSelectedMonthIndex] = useState(currentMonth.monthIndex);
+  const [dateFrom, setDateFrom] = useState(defaultDateFrom ?? currentMonth.date_from);
+  const [dateTo, setDateTo] = useState(defaultDateTo ?? currentMonth.date_to);
 
   // Data State
   const [entries, setEntries] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Set default saat modal dibuka
-  useEffect(() => {
-    if (isOpen) {
-      if (defaultDateFrom && defaultDateTo) {
-        setDateFrom(defaultDateFrom);
-        setDateTo(defaultDateTo);
-        const fromParts = defaultDateFrom.split("-");
-        if (fromParts.length === 3) {
-          const y = parseInt(fromParts[0], 10);
-          const m = parseInt(fromParts[1], 10) - 1;
-          const range = getMonthRange(y, m);
-          if (range.date_from === defaultDateFrom && range.date_to === defaultDateTo) {
-            setSelectedYear(y);
-            setSelectedMonthIndex(m);
-          }
+  // Generate 18 Month Dropdown Options (12 months back, current, 5 months forward)
+  const monthOptions = useMemo(() => {
+    const options = [];
+    const now = new Date();
+    const currentY = now.getFullYear();
+    const currentM = now.getMonth();
+
+    for (let i = -12; i <= 5; i++) {
+      const d = new Date(currentY, currentM + i, 1);
+      const y = d.getFullYear();
+      const m = d.getMonth();
+      const range = getMonthRange(y, m);
+      const isCurrent = y === currentY && m === currentM;
+
+      options.push({
+        ...range,
+        isCurrent,
+        displayLabel: `${MONTH_NAMES[m]} ${y}${isCurrent ? " (Bulan Ini)" : ""}`
+      });
+    }
+    return options.reverse(); // Newest first
+  }, []);
+
+  // Determine current active dropdown key
+  const currentMonthKey = useMemo(() => {
+    if (!dateFrom && !dateTo) return "ALL";
+    for (const opt of monthOptions) {
+      if (opt.date_from === dateFrom && opt.date_to === dateTo) {
+        return opt.monthKey;
+      }
+    }
+    return "CUSTOM";
+  }, [dateFrom, dateTo, monthOptions]);
+
+  // Stepper Display Label
+  const selectedMonthLabel = useMemo(() => {
+    if (dateFrom && dateTo) {
+      const fromParts = dateFrom.split("-");
+      const toParts = dateTo.split("-");
+      if (fromParts.length === 3 && toParts.length === 3 && fromParts[0] === toParts[0] && fromParts[1] === toParts[1] && fromParts[2] === "01") {
+        const y = parseInt(fromParts[0], 10);
+        const m = parseInt(fromParts[1], 10) - 1;
+        const range = getMonthRange(y, m);
+        if (dateTo === range.date_to) {
+          return `${MONTH_NAMES[m]} ${y}`;
         }
       }
     }
-  }, [isOpen, defaultDateFrom, defaultDateTo]);
+    if (!dateFrom && !dateTo) return "Semua Periode";
+    return "Kustom Tanggal";
+  }, [dateFrom, dateTo]);
+
+  // Set default saat modal dibuka
+  useEffect(() => {
+    if (isOpen) {
+      setDateFrom(defaultDateFrom ?? currentMonth.date_from);
+      setDateTo(defaultDateTo ?? currentMonth.date_to);
+    }
+  }, [isOpen, defaultDateFrom, defaultDateTo, currentMonth]);
 
   // Fetch data laporan ketika filter periode berubah
   useEffect(() => {
     if (!isOpen) return;
 
+    let isMounted = true;
     const fetchReportData = async () => {
       setLoading(true);
       try {
         const query = new URLSearchParams();
         if (dateFrom) query.append("date_from", dateFrom);
         if (dateTo) query.append("date_to", dateTo);
-        query.append("sort_dir", "ASC");
+        query.append("sort", "ASC");
         query.append("limit", "1000"); // Ambil seluruh transaksi dalam periode cetak
 
         const resEntries = await fetchWithAuth(`http://localhost:8080/api/v1/cashflow?${query.toString()}`);
         const dataEntries = await resEntries.json();
+        if (!isMounted) return;
+
         if (dataEntries.status && dataEntries.data) {
-          setEntries(Array.isArray(dataEntries.data) ? dataEntries.data : (dataEntries.data.entries || []));
+          const raw = Array.isArray(dataEntries.data) ? dataEntries.data : (dataEntries.data.entries || []);
+          setEntries(raw);
+        } else {
+          setEntries([]);
         }
       } catch (err) {
         console.error("Gagal memuat data laporan:", err);
+        if (isMounted) setEntries([]);
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
 
     fetchReportData();
+
+    return () => {
+      isMounted = false;
+    };
   }, [isOpen, dateFrom, dateTo]);
 
   // Transformasi Data Khusus Tab 2 (Versi Dokumen Asli Kantor - Top-Up + Saldo Sebelumnya):
@@ -163,33 +210,66 @@ export function CashflowReportModal({
 
   if (!isOpen) return null;
 
-  // Handler Pindah Bulan
-  const handleSelectMonth = (year: number, monthIdx: number) => {
-    setSelectedYear(year);
-    setSelectedMonthIndex(monthIdx);
-    const range = getMonthRange(year, monthIdx);
-    setDateFrom(range.date_from);
-    setDateTo(range.date_to);
+  // Handler Pindah Bulan via Dropdown
+  const handleMonthDropdownChange = (val: string) => {
+    if (val === "ALL") {
+      setDateFrom("");
+      setDateTo("");
+    } else if (val !== "CUSTOM") {
+      const [yStr, mStr] = val.split("-");
+      const y = parseInt(yStr, 10);
+      const m = parseInt(mStr, 10) - 1;
+      const mRange = getMonthRange(y, m);
+      setDateFrom(mRange.date_from);
+      setDateTo(mRange.date_to);
+    }
   };
 
+  // Handler Stepper Bulan Sebelumnya
   const handlePrevMonth = () => {
-    let nextM = selectedMonthIndex - 1;
-    let nextY = selectedYear;
-    if (nextM < 0) {
-      nextM = 11;
-      nextY -= 1;
+    let baseYear: number;
+    let baseMonth: number;
+
+    if (dateFrom) {
+      const parts = dateFrom.split("-");
+      baseYear = parseInt(parts[0], 10);
+      baseMonth = parseInt(parts[1], 10) - 1;
+    } else {
+      const now = new Date();
+      baseYear = now.getFullYear();
+      baseMonth = now.getMonth();
     }
-    handleSelectMonth(nextY, nextM);
+
+    const prevRange = getMonthRange(baseYear, baseMonth - 1);
+    setDateFrom(prevRange.date_from);
+    setDateTo(prevRange.date_to);
   };
 
+  // Handler Stepper Bulan Berikutnya
   const handleNextMonth = () => {
-    let nextM = selectedMonthIndex + 1;
-    let nextY = selectedYear;
-    if (nextM > 11) {
-      nextM = 0;
-      nextY += 1;
+    let baseYear: number;
+    let baseMonth: number;
+
+    if (dateFrom) {
+      const parts = dateFrom.split("-");
+      baseYear = parseInt(parts[0], 10);
+      baseMonth = parseInt(parts[1], 10) - 1;
+    } else {
+      const now = new Date();
+      baseYear = now.getFullYear();
+      baseMonth = now.getMonth();
     }
-    handleSelectMonth(nextY, nextM);
+
+    const nextRange = getMonthRange(baseYear, baseMonth + 1);
+    setDateFrom(nextRange.date_from);
+    setDateTo(nextRange.date_to);
+  };
+
+  // Handler Tombol Cepat: Bulan Ini
+  const handleCurrentMonthClick = () => {
+    const cur = getCurrentMonthRange();
+    setDateFrom(cur.date_from);
+    setDateTo(cur.date_to);
   };
 
   const handlePrint = () => {
@@ -249,111 +329,72 @@ export function CashflowReportModal({
   const endingSaldo = entries.length > 0 ? entries[entries.length - 1].saldo : 0;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-7xl overflow-hidden flex flex-col h-[95vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200 print:p-0 print:static print:bg-transparent print:z-auto">
+      <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-7xl overflow-hidden flex flex-col h-[95vh] print:h-auto print:border-none print:shadow-none print:rounded-none">
         
         {/* ======================================================== */}
-        {/* TOOLBAR MODAL ATAS (SCREEN ONLY - TIDAK TERCETAK)        */}
+        {/* 1. HEADER UTAMA (STANDAR DENGAN TOMBOL CLOSE POJOK KANAN) */}
         {/* ======================================================== */}
-        <div className="bg-[#223249] p-4 text-white flex flex-wrap justify-between items-center gap-3 shrink-0 print:hidden shadow-md">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-sky-500/20 text-sky-300 flex items-center justify-center font-bold">
+        <div className="bg-gradient-to-r from-[#17253D] via-[#1E2E48] to-[#25395A] px-6 py-4 text-white flex justify-between items-center shrink-0 border-b border-white/10 print:hidden shadow-sm">
+          <div className="flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-2xl bg-sky-500/20 text-sky-300 flex items-center justify-center border border-sky-400/30 shadow-inner">
               <Printer className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-sm font-black tracking-wide flex items-center gap-2">
-                Cetak Laporan Transaksi Cashflow & Shipment
-              </h2>
-              <p className="text-[11px] text-sky-200/80 font-medium">
-                Periode: <span className="font-bold text-white">{formatActivePeriod(dateFrom, dateTo)}</span> ({entries.length} Transaksi)
+              <div className="flex items-center gap-2.5">
+                <h2 className="text-base font-black tracking-tight text-white">
+                  Cetak Laporan Transaksi Cashflow & Shipment
+                </h2>
+                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-sky-500/20 text-sky-200 border border-sky-400/30">
+                  {entries.length} Transaksi
+                </span>
+              </div>
+              <p className="text-xs text-sky-200/80 font-medium mt-0.5">
+                Periode Aktif: <span className="font-bold text-white">{formatActivePeriod(dateFrom, dateTo)}</span> • Format Siap Cetak A4 Landscape & Ekspor Excel
               </p>
             </div>
           </div>
 
-          {/* Switcher 2 Versi Tampilan Excel Dokumen */}
-          <div className="flex items-center bg-slate-800/90 p-1 rounded-xl border border-white/10 shadow-inner">
-            <button
-              onClick={() => setReportVersion("separated")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
-                reportVersion === "separated"
-                  ? "bg-sky-600 text-white shadow-xs"
-                  : "text-slate-300 hover:text-white"
-              }`}
-            >
-              <FileSpreadsheet className="w-3.5 h-3.5" />
-              <span>1. Excel (Top-Up Terpisah)</span>
-            </button>
-            <button
-              onClick={() => setReportVersion("rolling")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
-                reportVersion === "rolling"
-                  ? "bg-emerald-600 text-white shadow-xs"
-                  : "text-slate-300 hover:text-white"
-              }`}
-            >
-              <FileSpreadsheet className="w-3.5 h-3.5" />
-              <span>2. Excel (Top-Up + Saldo Sebelumnya)</span>
-            </button>
-          </div>
-
-          {/* Action Buttons: Unduh 2 Versi & Print */}
-          <div className="flex items-center gap-2">
-            {/* Tombol Unduh Versi 1: Top-Up Terpisah */}
-            <button
-              onClick={() => handleDownloadExcel("separated")}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer border ${
-                reportVersion === "separated"
-                  ? "bg-sky-500 text-white border-sky-400 shadow-xs"
-                  : "bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border-sky-500/40"
-              }`}
-              title="Unduh format Excel Versi 1: Top-Up di baris tersendiri (Standar Akuntansi)"
-            >
-              <Download className="w-3.5 h-3.5" />
-              <span>Unduh V1 (Top-Up Terpisah)</span>
-            </button>
-
-            {/* Tombol Unduh Versi 2: Top-Up + Saldo Sebelumnya */}
-            <button
-              onClick={() => handleDownloadExcel("rolling")}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer border ${
-                reportVersion === "rolling"
-                  ? "bg-emerald-600 text-white border-emerald-500 shadow-xs"
-                  : "bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border-emerald-500/40"
-              }`}
-              title="Unduh format Excel Versi 2: Top-Up + Saldo Sebelumnya (Persis Asli Kantor)"
-            >
-              <Download className="w-3.5 h-3.5" />
-              <span>Unduh V2 (Top-Up + Saldo)</span>
-            </button>
-
-            <button
-              onClick={handlePrint}
-              className="px-3.5 py-1.5 rounded-xl bg-slate-700 hover:bg-slate-600 text-white text-xs font-black flex items-center gap-1.5 transition cursor-pointer shadow-xs active:scale-95"
-              title="Cetak Dokumen atau Simpan ke PDF"
-            >
-              <Printer className="w-4 h-4" />
-              <span>Cetak / PDF</span>
-            </button>
-
-            <button
-              onClick={onClose}
-              className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition cursor-pointer"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
+          {/* Tombol Close Standar Pojok Kanan Atas */}
+          <button
+            onClick={onClose}
+            className="w-9 h-9 rounded-full bg-white/10 hover:bg-rose-600/90 text-white/80 hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-sm active:scale-95 shrink-0"
+            title="Tutup (Esc)"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
         {/* ======================================================== */}
-        {/* BAR KONTROL FILTER PERIODE (SCREEN ONLY)                 */}
+        {/* 2. SUB-TOOLBAR: KONTROL FILTER BULAN & AKSI EKSPOR       */}
         {/* ======================================================== */}
-        <div className="bg-slate-50 px-6 py-3 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3 shrink-0 print:hidden text-xs">
-          {/* Quick Month Selector */}
-          <div className="flex items-center gap-2">
-            <span className="font-extrabold text-slate-700 flex items-center gap-1">
-              <Calendar className="w-3.5 h-3.5 text-sky-700" />
+        <div className="bg-slate-50 border-b border-slate-200 px-6 py-3 flex flex-wrap items-center justify-between gap-3 shrink-0 print:hidden text-xs shadow-2xs">
+          
+          {/* SISI KIRI: FILTER PERIODE & PILIH BULAN */}
+          <div className="flex flex-wrap items-center gap-2.5">
+            <span className="font-extrabold text-slate-700 flex items-center gap-1.5 shrink-0">
+              <Calendar className="w-4 h-4 text-sky-700" />
               Pilih Bulan:
             </span>
+
+            {/* Dropdown 18 Bulan */}
+            <select
+              value={currentMonthKey}
+              onChange={(e) => handleMonthDropdownChange(e.target.value)}
+              className="bg-white border border-slate-300 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800 shadow-2xs focus:ring-2 focus:ring-sky-500 focus:outline-none cursor-pointer"
+            >
+              <option value="ALL">📅 Semua Periode</option>
+              {monthOptions.map((opt) => (
+                <option key={opt.monthKey} value={opt.monthKey}>
+                  📅 {opt.displayLabel}
+                </option>
+              ))}
+              {currentMonthKey === "CUSTOM" && (
+                <option value="CUSTOM">📅 Kustom Rentang Tanggal</option>
+              )}
+            </select>
+
+            {/* Stepper Bulan (< Bulan >) */}
             <div className="flex items-center bg-white border border-slate-300 rounded-xl overflow-hidden shadow-2xs">
               <button
                 onClick={handlePrevMonth}
@@ -362,8 +403,8 @@ export function CashflowReportModal({
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
-              <span className="px-3 py-1 font-bold text-slate-800 text-xs whitespace-nowrap">
-                {MONTH_NAMES[selectedMonthIndex]} {selectedYear}
+              <span className="px-2.5 py-1 font-bold text-slate-700 text-xs whitespace-nowrap min-w-[110px] text-center">
+                {selectedMonthLabel}
               </span>
               <button
                 onClick={handleNextMonth}
@@ -374,30 +415,86 @@ export function CashflowReportModal({
               </button>
             </div>
 
+            {/* Tombol Cepat: Bulan Ini */}
             <button
-              onClick={() => handleSelectMonth(currentMonth.year, currentMonth.monthIndex)}
-              className="px-2.5 py-1 rounded-lg bg-sky-100/70 hover:bg-sky-100 text-sky-800 font-bold text-[11px] border border-sky-200 transition cursor-pointer"
+              onClick={handleCurrentMonthClick}
+              className={`px-2.5 py-1.5 rounded-xl font-bold text-[11px] border transition cursor-pointer shadow-2xs ${
+                currentMonthKey === currentMonth.monthKey
+                  ? "bg-sky-600 text-white border-sky-600 shadow-xs"
+                  : "bg-white hover:bg-sky-50 text-sky-700 border-sky-200"
+              }`}
             >
-              Bulan Berjalan
+              Bulan Ini
             </button>
+
+            {/* Kustom Rentang Tanggal */}
+            <div className="flex items-center gap-1.5 bg-white border border-slate-300 rounded-xl px-2.5 py-1 shadow-2xs">
+              <span className="text-slate-400 font-medium text-[11px]">Kustom:</span>
+              <input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                className="text-xs text-slate-800 font-medium focus:outline-none cursor-pointer"
+              />
+              <span className="text-slate-400 text-[11px]">s/d</span>
+              <input
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                className="text-xs text-slate-800 font-medium focus:outline-none cursor-pointer"
+              />
+            </div>
           </div>
 
-          {/* Custom Date Range */}
-          <div className="flex items-center gap-2">
-            <span className="text-slate-500 font-semibold">Kustom Tanggal:</span>
-            <input
-              type="date"
-              value={dateFrom}
-              onChange={(e) => setDateFrom(e.target.value)}
-              className="bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs text-slate-800 font-medium focus:ring-2 focus:ring-sky-500 focus:outline-none"
-            />
-            <span className="text-slate-400">s/d</span>
-            <input
-              type="date"
-              value={dateTo}
-              onChange={(e) => setDateTo(e.target.value)}
-              className="bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs text-slate-800 font-medium focus:ring-2 focus:ring-sky-500 focus:outline-none"
-            />
+          {/* SISI KANAN: FORMAT SWITCHER & TOMBOL AKSI */}
+          <div className="flex flex-wrap items-center gap-2 ml-auto">
+            {/* Switcher 2 Versi Tampilan Excel */}
+            <div className="flex items-center bg-slate-200/80 p-0.5 rounded-xl border border-slate-300 shadow-inner">
+              <button
+                onClick={() => setReportVersion("separated")}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                  reportVersion === "separated"
+                    ? "bg-white text-slate-900 shadow-xs"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+                title="Format Versi 1: Baris Top-Up Terpisah (Standar Akuntansi)"
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5 text-sky-600" />
+                <span>1. Top-Up Terpisah</span>
+              </button>
+              <button
+                onClick={() => setReportVersion("rolling")}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                  reportVersion === "rolling"
+                    ? "bg-white text-slate-900 shadow-xs"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+                title="Format Versi 2: Top-Up + Saldo Berjalan (Sesuai File Excel Asli Kantor)"
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+                <span>2. Top-Up + Saldo</span>
+              </button>
+            </div>
+
+            {/* Tombol Unduh Excel */}
+            <button
+              onClick={() => handleDownloadExcel(reportVersion)}
+              className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs active:scale-95"
+              title="Unduh format Excel sesuai versi yang aktif"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Unduh Excel</span>
+            </button>
+
+            {/* Tombol Cetak / PDF */}
+            <button
+              onClick={handlePrint}
+              className="px-3.5 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs active:scale-95"
+              title="Cetak Dokumen atau Simpan ke PDF"
+            >
+              <Printer className="w-4 h-4" />
+              <span>Cetak / PDF</span>
+            </button>
           </div>
         </div>
 
