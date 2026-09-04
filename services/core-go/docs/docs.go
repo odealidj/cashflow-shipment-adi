@@ -1807,6 +1807,91 @@ const docTemplate = `{
                 }
             }
         },
+        "/system/metrics": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Aggregates real-time performance indicators, gateway throughput, database connection pool health, slow query ring-buffer, and daily business KPIs.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "system"
+                ],
+                "summary": "Get comprehensive system telemetry \u0026 metrics",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "API Version (default: v1)",
+                        "name": "X-API-Version",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.APIResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/handler.SystemMetricsResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/system/simulate-slow-query": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Executes a query with pg_sleep to trigger slow query alerts and ring-buffer tracking.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "system"
+                ],
+                "summary": "Simulate a slow query for testing telemetry",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "API Version (default: v1)",
+                        "name": "X-API-Version",
+                        "in": "header"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 150,
+                        "description": "Sleep duration in milliseconds (default: 150)",
+                        "name": "duration_ms",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/users": {
             "get": {
                 "security": [
@@ -2710,6 +2795,85 @@ const docTemplate = `{
                 }
             }
         },
+        "handler.BusinessKPIMetrics": {
+            "type": "object",
+            "properties": {
+                "invoices_created_today": {
+                    "type": "integer",
+                    "example": 12
+                },
+                "invoices_paid_today": {
+                    "type": "integer",
+                    "example": 9
+                },
+                "shipments_today": {
+                    "type": "integer",
+                    "example": 34
+                },
+                "topups_today": {
+                    "type": "integer",
+                    "example": 8
+                }
+            }
+        },
+        "handler.DBPoolMetrics": {
+            "type": "object",
+            "properties": {
+                "idle": {
+                    "type": "integer",
+                    "example": 3
+                },
+                "in_use": {
+                    "type": "integer",
+                    "example": 2
+                },
+                "max_open": {
+                    "type": "integer",
+                    "example": 25
+                },
+                "open": {
+                    "type": "integer",
+                    "example": 5
+                },
+                "wait_count": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "wait_duration_ms": {
+                    "type": "number",
+                    "example": 0
+                }
+            }
+        },
+        "handler.GatewayMetrics": {
+            "type": "object",
+            "properties": {
+                "error_rate_pct": {
+                    "type": "number",
+                    "example": 0.2
+                },
+                "idempotency_hits": {
+                    "type": "integer",
+                    "example": 42
+                },
+                "idempotency_misses": {
+                    "type": "integer",
+                    "example": 1520
+                },
+                "p95_latency_ms": {
+                    "type": "number",
+                    "example": 18.4
+                },
+                "rps": {
+                    "type": "number",
+                    "example": 14.5
+                },
+                "total_requests": {
+                    "type": "integer",
+                    "example": 2450
+                }
+            }
+        },
         "handler.IdempotencyKeyResponse": {
             "type": "object",
             "properties": {
@@ -2763,6 +2927,32 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "password": {
+                    "type": "string"
+                }
+            }
+        },
+        "handler.SystemMetricsResponse": {
+            "type": "object",
+            "properties": {
+                "business_kpi": {
+                    "$ref": "#/definitions/handler.BusinessKPIMetrics"
+                },
+                "database_pool": {
+                    "$ref": "#/definitions/handler.DBPoolMetrics"
+                },
+                "gateway": {
+                    "$ref": "#/definitions/handler.GatewayMetrics"
+                },
+                "prometheus_connected": {
+                    "type": "boolean"
+                },
+                "slow_queries": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/telemetry.SlowQueryRecord"
+                    }
+                },
+                "timestamp": {
                     "type": "string"
                 }
             }
@@ -2890,6 +3080,29 @@ const docTemplate = `{
                 },
                 "status": {
                     "$ref": "#/definitions/domain.UserStatus"
+                }
+            }
+        },
+        "telemetry.SlowQueryRecord": {
+            "type": "object",
+            "properties": {
+                "duration_ms": {
+                    "type": "number"
+                },
+                "has_error": {
+                    "type": "boolean"
+                },
+                "operation": {
+                    "type": "string"
+                },
+                "query_preview": {
+                    "type": "string"
+                },
+                "repository": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "string"
                 }
             }
         }

@@ -14,7 +14,8 @@ import {
   ChevronRight,
   ChevronDown,
   Users,
-  ShieldCheck
+  ShieldCheck,
+  Activity
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -52,6 +53,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const isActRoutesActive = pathname.startsWith("/dashboard/activity-routes");
   const isUsersActive = pathname.startsWith("/dashboard/users");
   const isRolesActive = pathname.startsWith("/dashboard/roles");
+  const isMetricsActive = pathname.startsWith("/dashboard/system-metrics");
 
   // Auto expand parent group when active child route is selected
   useEffect(() => {
@@ -348,7 +350,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             )}
 
             {/* GRUP 4: PENGATURAN SISTEM */}
-            {(can("users.view") || can("roles.view")) && (
+            {(can("users.view") || can("roles.view") || can("system.view") || isSuperAdmin) && (
               <div className="pt-2 border-t border-white/10">
                 {!isCollapsed && (
                   <div className="px-3 pb-1 text-[10px] font-black text-slate-400/90 uppercase tracking-widest">
@@ -387,6 +389,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     >
                       <ShieldCheck className="w-5 h-5 text-sky-300 shrink-0" />
                       {!isCollapsed && <span className="truncate">Peran & Hak Akses</span>}
+                    </Link>
+                  )}
+
+                  {(can("system.view") || isSuperAdmin) && (
+                    <Link 
+                      href="/dashboard/system-metrics" 
+                      title="Telemetri & Metrik Sistem"
+                      className={`flex items-center gap-3 rounded-xl transition-all text-xs font-bold ${
+                        isCollapsed ? "justify-center p-3" : "px-3.5 py-2.5"
+                      } ${
+                        isMetricsActive 
+                        ? "bg-amber-600 text-white shadow-xs" 
+                        : "text-slate-300 hover:text-white hover:bg-white/10"
+                      }`}
+                    >
+                      <Activity className="w-5 h-5 text-amber-300 shrink-0" />
+                      {!isCollapsed && <span className="truncate">Telemetri & Metrik</span>}
                     </Link>
                   )}
                 </div>

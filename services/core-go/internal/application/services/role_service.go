@@ -205,6 +205,9 @@ func (s *RoleService) BootstrapSystemRolesAndPermissions(ctx context.Context) er
 		// Module ROLES
 		{Module: "ROLES", Code: "roles.view", Name: "Menu & Peran Hak Akses (PBAC)", Description: descPtr("Menampilkan menu Peran & Hak Akses di sidebar dan melihat matriks perizinan")},
 		{Module: "ROLES", Code: "roles.manage", Name: "Kelola Peran & Hak Akses", Description: descPtr("Membuat peran baru dan mengatur matriks hak akses tombol")},
+
+		// Module SYSTEM
+		{Module: "SYSTEM", Code: "system.view", Name: "Menu & Metrik Sistem Telemetri", Description: descPtr("Menampilkan menu Metrik Sistem dan performa infrastruktur real-time")},
 	}
 
 	allCodes := make([]string, len(defaultPermissions))

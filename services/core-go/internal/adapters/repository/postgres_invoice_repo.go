@@ -7,6 +7,7 @@ import (
 
 	"github.com/cashflow-shipment-app/backend/internal/core/domain"
 	"github.com/cashflow-shipment-app/backend/internal/core/ports"
+	"github.com/cashflow-shipment-app/backend/internal/infrastructure/telemetry"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -18,7 +19,12 @@ func NewPostgresInvoiceRepo(db *sqlx.DB) *PostgresInvoiceRepo {
 	return &PostgresInvoiceRepo{db: db}
 }
 
-func (r *PostgresInvoiceRepo) Create(ctx context.Context, inv *domain.Invoice) error {
+func (r *PostgresInvoiceRepo) Create(ctx context.Context, inv *domain.Invoice) (err error) {
+	start := time.Now()
+	defer func() {
+		telemetry.TrackQuery("invoice_repo", "Create", "INSERT INTO invoices ...", start, err)
+	}()
+
 	query := `
 		INSERT INTO invoices (
 			invoice_no, client_name, shipment_date, top_terms, top_days,
@@ -34,7 +40,12 @@ func (r *PostgresInvoiceRepo) Create(ctx context.Context, inv *domain.Invoice) e
 	).Scan(&inv.ID, &inv.CreatedAt, &inv.UpdatedAt)
 }
 
-func (r *PostgresInvoiceRepo) Update(ctx context.Context, inv *domain.Invoice) error {
+func (r *PostgresInvoiceRepo) Update(ctx context.Context, inv *domain.Invoice) (err error) {
+	start := time.Now()
+	defer func() {
+		telemetry.TrackQuery("invoice_repo", "Update", "UPDATE invoices ...", start, err)
+	}()
+
 	query := `
 		UPDATE invoices SET
 			client_name = $1,
@@ -50,7 +61,7 @@ func (r *PostgresInvoiceRepo) Update(ctx context.Context, inv *domain.Invoice) e
 			updated_at = CURRENT_TIMESTAMP
 		WHERE id = $11 AND deleted_at IS NULL;
 	`
-	_, err := r.db.ExecContext(
+	_, err = r.db.ExecContext(
 		ctx, query,
 		inv.ClientName, inv.ShipmentDate, inv.TopTerms, inv.TopDays,
 		inv.DueDate, inv.Amount, inv.Status, inv.PaidAt, inv.Notes,
@@ -92,9 +103,11 @@ func (r *PostgresInvoiceRepo) GetByInvoiceNo(ctx context.Context, invoiceNo stri
 	return &inv, nil
 }
 
-func (r *PostgresInvoiceRepo) ListAll(ctx context.Context, offset, limit int, filter ports.InvoiceFilter) ([]domain.Invoice, int, error) {
-	var invoices []domain.Invoice
-	var total int
+func (r *PostgresInvoiceRepo) ListAll(ctx context.Context, offset, limit int, filter ports.InvoiceFilter) (invoices []domain.Invoice, total int, err error) {
+	start := time.Now()
+	defer func() {
+		telemetry.TrackQuery("invoice_repo", "ListAll", "SELECT ... FROM invoices ...", start, err)
+	}()
 
 	where := "WHERE deleted_at IS NULL"
 	args := []interface{}{}
@@ -128,7 +141,7 @@ func (r *PostgresInvoiceRepo) ListAll(ctx context.Context, offset, limit int, fi
 
 	// Count query
 	countQuery := fmt.Sprintf("SELECT COUNT(*) FROM invoices %s", where)
-	err := r.db.GetContext(ctx, &total, countQuery, args...)
+	err = r.db.GetContext(ctx, &total, countQuery, args...)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -154,7 +167,12 @@ func (r *PostgresInvoiceRepo) ListAll(ctx context.Context, offset, limit int, fi
 	return invoices, total, err
 }
 
-func (r *PostgresInvoiceRepo) GetSummary(ctx context.Context, filter ports.InvoiceFilter) (map[string]interface{}, error) {
+func (r *PostgresInvoiceRepo) GetSummary(ctx context.Context, filter ports.InvoiceFilter) (res map[string]interface{}, err error) {
+	start := time.Now()
+	defer func() {
+		telemetry.TrackQuery("invoice_repo", "GetSummary", "SELECT SUM(amount)... FROM invoices ...", start, err)
+	}()
+
 	where := "WHERE deleted_at IS NULL"
 	args := []interface{}{}
 	argIdx := 1
@@ -191,7 +209,7 @@ func (r *PostgresInvoiceRepo) GetSummary(ctx context.Context, filter ports.Invoi
 	var totalAmount, paidAmount, unpaidAmount, overdueAmount float64
 	var totalCount, paidCount, unpaidCount, overdueCount int
 
-	err := r.db.QueryRowContext(ctx, query, args...).Scan(
+	err = r.db.QueryRowContext(ctx, query, args...).Scan(
 		&totalAmount, &totalCount,
 		&paidAmount, &paidCount,
 		&unpaidAmount, &unpaidCount,
@@ -213,13 +231,18 @@ func (r *PostgresInvoiceRepo) GetSummary(ctx context.Context, filter ports.Invoi
 	}, nil
 }
 
-func (r *PostgresInvoiceRepo) MarkPaid(ctx context.Context, id int) error {
+func (r *PostgresInvoiceRepo) MarkPaid(ctx context.Context, id int) (err error) {
+	start := time.Now()
+	defer func() {
+		telemetry.TrackQuery("invoice_repo", "MarkPaid", "UPDATE invoices SET status = 'PAID' ...", start, err)
+	}()
+
 	now := time.Now()
 	query := `
 		UPDATE invoices 
 		SET status = 'PAID', paid_at = $1, updated_at = CURRENT_TIMESTAMP
 		WHERE id = $2 AND deleted_at IS NULL;
 	`
-	_, err := r.db.ExecContext(ctx, query, now, id)
+	_, err = r.db.ExecContext(ctx, query, now, id)
 	return err
 }

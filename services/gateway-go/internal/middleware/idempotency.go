@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cashflow-shipment-app/gateway/internal/metrics"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -54,6 +55,7 @@ func Idempotency(rdb *redis.Client, ttl time.Duration) func(http.Handler) http.H
 			// 1. Check existing record in Redis
 			val, err := rdb.Get(r.Context(), redisKey).Result()
 			if err == nil {
+				metrics.RecordIdempotencyHit()
 				if val == "PROCESSING" {
 					w.Header().Set("Content-Type", "application/json")
 					w.WriteHeader(http.StatusConflict)
@@ -83,6 +85,7 @@ func Idempotency(rdb *redis.Client, ttl time.Duration) func(http.Handler) http.H
 			// 2. Acquire atomic lock (SetNX) with 60-second processing TTL
 			locked, err := rdb.SetNX(r.Context(), redisKey, "PROCESSING", 60*time.Second).Result()
 			if err != nil || !locked {
+				metrics.RecordIdempotencyHit()
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusConflict)
 				_ = json.NewEncoder(w).Encode(map[string]interface{}{
@@ -92,6 +95,8 @@ func Idempotency(rdb *redis.Client, ttl time.Duration) func(http.Handler) http.H
 				})
 				return
 			}
+
+			metrics.RecordIdempotencyMiss()
 
 			// 3. Record downstream response
 			recorder := &responseRecorder{

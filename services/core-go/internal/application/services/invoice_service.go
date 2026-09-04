@@ -9,6 +9,7 @@ import (
 
 	"github.com/cashflow-shipment-app/backend/internal/core/domain"
 	"github.com/cashflow-shipment-app/backend/internal/core/ports"
+	"github.com/cashflow-shipment-app/backend/internal/infrastructure/telemetry"
 	"github.com/google/uuid"
 )
 
@@ -108,6 +109,7 @@ func (s *InvoiceService) CreateInvoice(ctx context.Context, input CreateInvoiceI
 	if err := s.repo.Create(ctx, invoice); err != nil {
 		return nil, err
 	}
+	telemetry.RecordInvoiceCreated()
 
 	return invoice, nil
 }
@@ -179,7 +181,11 @@ func (s *InvoiceService) UpdateInvoice(ctx context.Context, id int, input Create
 }
 
 func (s *InvoiceService) MarkAsPaid(ctx context.Context, id int) error {
-	return s.repo.MarkPaid(ctx, id)
+	if err := s.repo.MarkPaid(ctx, id); err != nil {
+		return err
+	}
+	telemetry.RecordInvoicePaid()
+	return nil
 }
 
 func (s *InvoiceService) DeleteInvoice(ctx context.Context, id int) error {

@@ -10,6 +10,7 @@ import (
 
 	"github.com/cashflow-shipment-app/backend/internal/core/domain"
 	"github.com/cashflow-shipment-app/backend/internal/core/ports"
+	"github.com/cashflow-shipment-app/backend/internal/infrastructure/telemetry"
 	"github.com/google/uuid"
 	"github.com/xuri/excelize/v2"
 )
@@ -38,7 +39,11 @@ func (s *CashflowService) RecordTopUp(ctx context.Context, entry *domain.Cashflo
 	if entry.Remarks == "" {
 		entry.Remarks = domain.PaymentPaid
 	}
-	return s.cashflowRepo.Create(ctx, entry)
+	if err := s.cashflowRepo.Create(ctx, entry); err != nil {
+		return err
+	}
+	telemetry.RecordCashflowEntryCreated("TOP_UP")
+	return nil
 }
 
 func (s *CashflowService) RecordShipment(ctx context.Context, entry *domain.CashflowEntry) error {
@@ -73,7 +78,11 @@ func (s *CashflowService) RecordShipment(ctx context.Context, entry *domain.Cash
 		entry.Remarks = domain.PaymentUnpaid
 	}
 
-	return s.cashflowRepo.Create(ctx, entry)
+	if err := s.cashflowRepo.Create(ctx, entry); err != nil {
+		return err
+	}
+	telemetry.RecordCashflowEntryCreated("SHIPMENT")
+	return nil
 }
 
 func (s *CashflowService) UpdateEntry(ctx context.Context, entry *domain.CashflowEntry, userID uuid.UUID) error {

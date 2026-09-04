@@ -5,9 +5,11 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/cashflow-shipment-app/backend/internal/core/domain"
 	"github.com/cashflow-shipment-app/backend/internal/core/ports"
+	"github.com/cashflow-shipment-app/backend/internal/infrastructure/telemetry"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 )
@@ -20,7 +22,12 @@ func NewPostgresCashflowRepo(db *sqlx.DB) *PostgresCashflowRepo {
 	return &PostgresCashflowRepo{db: db}
 }
 
-func (r *PostgresCashflowRepo) Create(ctx context.Context, entry *domain.CashflowEntry) error {
+func (r *PostgresCashflowRepo) Create(ctx context.Context, entry *domain.CashflowEntry) (err error) {
+	start := time.Now()
+	defer func() {
+		telemetry.TrackQuery("cashflow_repo", "Create", "INSERT INTO cashflow_entries ...", start, err)
+	}()
+
 	tx, err := r.db.BeginTxx(ctx, nil)
 	if err != nil {
 		return err
@@ -106,9 +113,11 @@ func (r *PostgresCashflowRepo) GetByID(ctx context.Context, id int) (*domain.Cas
 	return &entry, nil
 }
 
-func (r *PostgresCashflowRepo) ListAll(ctx context.Context, offset, limit int, filter ports.ListFilter) ([]domain.CashflowEntry, int, error) {
-	var entries []domain.CashflowEntry
-	var total int
+func (r *PostgresCashflowRepo) ListAll(ctx context.Context, offset, limit int, filter ports.ListFilter) (entries []domain.CashflowEntry, total int, err error) {
+	start := time.Now()
+	defer func() {
+		telemetry.TrackQuery("cashflow_repo", "ListAll", fmt.Sprintf("SELECT * FROM cashflow_entries LIMIT %d OFFSET %d", limit, offset), start, err)
+	}()
 
 	// Build dynamic WHERE clause
 	where := "WHERE 1=1"
@@ -150,7 +159,7 @@ func (r *PostgresCashflowRepo) ListAll(ctx context.Context, offset, limit int, f
 
 	// Count query
 	countQuery := fmt.Sprintf("SELECT COUNT(*) FROM cashflow_entries %s", where)
-	err := r.db.GetContext(ctx, &total, countQuery, args...)
+	err = r.db.GetContext(ctx, &total, countQuery, args...)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -201,13 +210,18 @@ func (r *PostgresCashflowRepo) UpdateRemarks(ctx context.Context, id int, status
 	return nil
 }
 
-func (r *PostgresCashflowRepo) GetSummary(ctx context.Context, filter ports.ListFilter) (map[string]interface{}, error) {
+func (r *PostgresCashflowRepo) GetSummary(ctx context.Context, filter ports.ListFilter) (result map[string]interface{}, err error) {
+	start := time.Now()
+	defer func() {
+		telemetry.TrackQuery("cashflow_repo", "GetSummary", "SELECT currentSaldo, totalKredit, totalDebit, ... FROM cashflow_entries", start, err)
+	}()
+
 	var currentSaldo, totalKredit, totalDebit, totalProfit, avgMargin float64
 	var unpaidCount int
 	var unpaidAmount float64
 
 	// Query Saldo Terkini (Real-time current wallet balance, all-time latest)
-	err := r.db.QueryRowContext(ctx, `SELECT COALESCE((SELECT saldo FROM cashflow_entries ORDER BY sequence_no DESC LIMIT 1), 0)`).Scan(&currentSaldo)
+	err = r.db.QueryRowContext(ctx, `SELECT COALESCE((SELECT saldo FROM cashflow_entries ORDER BY sequence_no DESC LIMIT 1), 0)`).Scan(&currentSaldo)
 	if err != nil {
 		return nil, err
 	}

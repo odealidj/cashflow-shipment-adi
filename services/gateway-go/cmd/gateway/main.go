@@ -14,6 +14,7 @@ import (
 	"github.com/cashflow-shipment-app/gateway/internal/middleware"
 	"github.com/cashflow-shipment-app/gateway/internal/proxy"
 	"github.com/go-chi/chi/v5"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -55,8 +56,12 @@ func main() {
 	r := chi.NewRouter()
 	r.Use(middleware.Cors())
 	r.Use(middleware.RequestID)
+	r.Use(middleware.Metrics)
 	r.Use(middleware.Logger)
 	r.Use(middleware.Idempotency(rdb, cfg.IdempotencyTTL))
+
+	// Prometheus Metrics Scrape Endpoint
+	r.Handle("/metrics", promhttp.Handler())
 
 	// Delegate all traffic to Gateway Reverse Proxy
 	r.Mount("/", proxyRouter)

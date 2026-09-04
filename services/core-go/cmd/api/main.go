@@ -16,10 +16,12 @@ import (
 	"github.com/cashflow-shipment-app/backend/internal/adapters/handler"
 	"github.com/cashflow-shipment-app/backend/internal/adapters/repository"
 	"github.com/cashflow-shipment-app/backend/internal/application/services"
+	"github.com/cashflow-shipment-app/backend/internal/infrastructure/telemetry"
 	"github.com/cashflow-shipment-app/backend/internal/middleware"
 	"github.com/go-chi/chi/v5"
 	chiMiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	httpSwagger "github.com/swaggo/http-swagger/v2"
 )
 
@@ -104,6 +106,9 @@ func main() {
 	}
 	defer dbPool.Close()
 
+	// Bind DB Connection Pool metrics to Prometheus GaugeFuncs
+	telemetry.RegisterDBPoolMetrics(dbPool)
+
 	// Initialize Redis Client
 	redisClient, err := repository.NewRedisClient(ctx, redisUrl)
 	if err != nil {
@@ -171,6 +176,7 @@ func main() {
 	cashflowHandler := handler.NewCashflowHandler(cashflowService)
 	invoiceHandler := handler.NewInvoiceHandler(invoiceService)
 	utilityHandler := handler.NewUtilityHandler()
+	systemMetricsHandler := handler.NewSystemMetricsHandler(dbPool)
 
 	r := chi.NewRouter()
 
@@ -188,6 +194,10 @@ func main() {
 	r.Use(chiMiddleware.RequestID)
 	r.Use(chiMiddleware.Logger)
 	r.Use(chiMiddleware.Recoverer)
+	r.Use(middleware.Metrics)
+
+	// Prometheus Metrics Scrape Endpoint
+	r.Handle("/metrics", promhttp.Handler())
 
 	// Swagger Endpoint
 	r.Get("/swagger/*", httpSwagger.Handler(
@@ -297,6 +307,13 @@ func main() {
 				r.With(middleware.RequirePermission("invoices.edit")).Put("/{id}", invoiceHandler.Update)
 				r.With(middleware.RequirePermission("invoices.mark_paid")).Patch("/{id}/pay", invoiceHandler.MarkPaid)
 				r.With(middleware.RequirePermission("invoices.delete")).Delete("/{id}", invoiceHandler.Delete)
+			})
+
+			// System Metrics & Telemetry (PBAC Protected)
+			r.Route("/system", func(r chi.Router) {
+				r.Use(middleware.RequirePermission("system.view"))
+				r.Get("/metrics", systemMetricsHandler.GetMetrics)
+				r.Post("/simulate-slow-query", systemMetricsHandler.SimulateSlowQuery)
 			})
 		})
 	})

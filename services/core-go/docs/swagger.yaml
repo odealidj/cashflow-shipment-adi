@@ -169,6 +169,63 @@ definitions:
       updated_at:
         type: string
     type: object
+  handler.BusinessKPIMetrics:
+    properties:
+      invoices_created_today:
+        example: 12
+        type: integer
+      invoices_paid_today:
+        example: 9
+        type: integer
+      shipments_today:
+        example: 34
+        type: integer
+      topups_today:
+        example: 8
+        type: integer
+    type: object
+  handler.DBPoolMetrics:
+    properties:
+      idle:
+        example: 3
+        type: integer
+      in_use:
+        example: 2
+        type: integer
+      max_open:
+        example: 25
+        type: integer
+      open:
+        example: 5
+        type: integer
+      wait_count:
+        example: 0
+        type: integer
+      wait_duration_ms:
+        example: 0
+        type: number
+    type: object
+  handler.GatewayMetrics:
+    properties:
+      error_rate_pct:
+        example: 0.2
+        type: number
+      idempotency_hits:
+        example: 42
+        type: integer
+      idempotency_misses:
+        example: 1520
+        type: integer
+      p95_latency_ms:
+        example: 18.4
+        type: number
+      rps:
+        example: 14.5
+        type: number
+      total_requests:
+        example: 2450
+        type: integer
+    type: object
   handler.IdempotencyKeyResponse:
     properties:
       expires_in_hours:
@@ -206,6 +263,23 @@ definitions:
   handler.ResetPasswordRequest:
     properties:
       password:
+        type: string
+    type: object
+  handler.SystemMetricsResponse:
+    properties:
+      business_kpi:
+        $ref: '#/definitions/handler.BusinessKPIMetrics'
+      database_pool:
+        $ref: '#/definitions/handler.DBPoolMetrics'
+      gateway:
+        $ref: '#/definitions/handler.GatewayMetrics'
+      prometheus_connected:
+        type: boolean
+      slow_queries:
+        items:
+          $ref: '#/definitions/telemetry.SlowQueryRecord'
+        type: array
+      timestamp:
         type: string
     type: object
   handler.UpdatePermissionsInput:
@@ -289,6 +363,21 @@ definitions:
         $ref: '#/definitions/domain.UserRole'
       status:
         $ref: '#/definitions/domain.UserStatus'
+    type: object
+  telemetry.SlowQueryRecord:
+    properties:
+      duration_ms:
+        type: number
+      has_error:
+        type: boolean
+      operation:
+        type: string
+      query_preview:
+        type: string
+      repository:
+        type: string
+      timestamp:
+        type: string
     type: object
 host: localhost:8080
 info:
@@ -1446,6 +1535,59 @@ paths:
       summary: List all available system permissions
       tags:
       - roles
+  /system/metrics:
+    get:
+      description: Aggregates real-time performance indicators, gateway throughput,
+        database connection pool health, slow query ring-buffer, and daily business
+        KPIs.
+      parameters:
+      - description: 'API Version (default: v1)'
+        in: header
+        name: X-API-Version
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/handler.SystemMetricsResponse'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Get comprehensive system telemetry & metrics
+      tags:
+      - system
+  /system/simulate-slow-query:
+    post:
+      description: Executes a query with pg_sleep to trigger slow query alerts and
+        ring-buffer tracking.
+      parameters:
+      - description: 'API Version (default: v1)'
+        in: header
+        name: X-API-Version
+        type: string
+      - default: 150
+        description: 'Sleep duration in milliseconds (default: 150)'
+        in: query
+        name: duration_ms
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Simulate a slow query for testing telemetry
+      tags:
+      - system
   /users:
     get:
       description: Retrieves list of users with pagination, search, role, and status
