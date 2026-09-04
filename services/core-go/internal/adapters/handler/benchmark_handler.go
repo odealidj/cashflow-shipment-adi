@@ -16,7 +16,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/cashflow-shipment-app/backend/internal/infrastructure/telemetry"
 	"github.com/cashflow-shipment-app/backend/pkg/response"
+	"github.com/jmoiron/sqlx"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -29,12 +31,13 @@ const (
 
 type BenchmarkHandler struct {
 	redisClient   *redis.Client
+	db            *sqlx.DB
 	workspaceRoot string
 	cancelsMutex  sync.Mutex
 	activeCancels map[string]context.CancelFunc
 }
 
-func NewBenchmarkHandler(redisClient *redis.Client, workspaceRoot string) *BenchmarkHandler {
+func NewBenchmarkHandler(redisClient *redis.Client, db *sqlx.DB, workspaceRoot string) *BenchmarkHandler {
 	if workspaceRoot == "" {
 		// Default: search up for tests/k6 or current working dir
 		if _, err := os.Stat("tests/k6"); err == nil {
@@ -47,6 +50,7 @@ func NewBenchmarkHandler(redisClient *redis.Client, workspaceRoot string) *Bench
 	}
 	return &BenchmarkHandler{
 		redisClient:   redisClient,
+		db:            db,
 		workspaceRoot: workspaceRoot,
 		activeCancels: make(map[string]context.CancelFunc),
 	}
@@ -64,6 +68,17 @@ type BenchmarkCheck struct {
 	Success bool   `json:"success"`
 }
 
+type DatabaseBenchmarkAnalysis struct {
+	PoolMaxOpen        int     `json:"pool_max_open"`
+	PeakInUse          int     `json:"peak_in_use"`
+	PeakUtilizationPct float64 `json:"peak_utilization_pct"`
+	WaitCountDelta     int64   `json:"wait_count_delta"`
+	WaitDurationMs     float64 `json:"wait_duration_ms"`
+	SlowQueriesCount   int     `json:"slow_queries_count"`
+	DBVerdict          string  `json:"db_verdict"` // SEHAT, WASPADA, BOTTLENECK
+	DBRecommendation   string  `json:"db_recommendation"`
+}
+
 type ExecutiveSummary struct {
 	VerdictStatus   string   `json:"verdict_status"` // EXCELLENT, GOOD, WARNING, CRITICAL
 	VerdictTitle    string   `json:"verdict_title"`
@@ -72,27 +87,28 @@ type ExecutiveSummary struct {
 }
 
 type BenchmarkReport struct {
-	JobID          string           `json:"job_id"`
-	Scenario       string           `json:"scenario"`
-	ScenarioLabel  string           `json:"scenario_label"`
-	Timestamp      string           `json:"timestamp"`
-	VUs            int              `json:"vus"`
-	Duration       string           `json:"duration"`
-	TotalRequests  int64            `json:"total_requests"`
-	RPS            float64          `json:"rps"`
-	SuccessRatePct float64          `json:"success_rate_pct"`
-	FailedRequests int64            `json:"failed_requests"`
-	LatencyMinMs   float64          `json:"latency_min_ms"`
-	LatencyMedMs   float64          `json:"latency_med_ms"`
-	LatencyAvgMs   float64          `json:"latency_avg_ms"`
-	LatencyP90Ms   float64          `json:"latency_p90_ms"`
-	LatencyP95Ms   float64          `json:"latency_p95_ms"`
-	LatencyP99Ms   float64          `json:"latency_p99_ms"`
-	LatencyMaxMs   float64          `json:"latency_max_ms"`
-	DataReceivedKB float64          `json:"data_received_kb"`
-	DataSentKB     float64          `json:"data_sent_kb"`
-	Checks         []BenchmarkCheck `json:"checks"`
-	Summary        ExecutiveSummary `json:"summary"`
+	JobID            string                    `json:"job_id"`
+	Scenario         string                    `json:"scenario"`
+	ScenarioLabel    string                    `json:"scenario_label"`
+	Timestamp        string                    `json:"timestamp"`
+	VUs              int                       `json:"vus"`
+	Duration         string                    `json:"duration"`
+	TotalRequests    int64                     `json:"total_requests"`
+	RPS              float64                   `json:"rps"`
+	SuccessRatePct   float64                   `json:"success_rate_pct"`
+	FailedRequests   int64                     `json:"failed_requests"`
+	LatencyMinMs     float64                   `json:"latency_min_ms"`
+	LatencyMedMs     float64                   `json:"latency_med_ms"`
+	LatencyAvgMs     float64                   `json:"latency_avg_ms"`
+	LatencyP90Ms     float64                   `json:"latency_p90_ms"`
+	LatencyP95Ms     float64                   `json:"latency_p95_ms"`
+	LatencyP99Ms     float64                   `json:"latency_p99_ms"`
+	LatencyMaxMs     float64                   `json:"latency_max_ms"`
+	DataReceivedKB   float64                   `json:"data_received_kb"`
+	DataSentKB       float64                   `json:"data_sent_kb"`
+	Checks           []BenchmarkCheck          `json:"checks"`
+	DatabaseAnalysis DatabaseBenchmarkAnalysis `json:"database_analysis"`
+	Summary          ExecutiveSummary          `json:"summary"`
 }
 
 type BenchmarkJobStatus struct {
@@ -382,6 +398,22 @@ func (h *BenchmarkHandler) executeBenchmarkAsync(ctx context.Context, jobID, sce
 	startTime := time.Now()
 	doneChan := make(chan error, 1)
 
+	// Snapshot initial DB connection stats
+	var startWaitCount int64
+	var startWaitDuration time.Duration
+	var peakInUse int
+	var poolMaxOpen int = 25
+	if h.db != nil {
+		stats := h.db.Stats()
+		startWaitCount = stats.WaitCount
+		startWaitDuration = stats.WaitDuration
+		peakInUse = stats.InUse
+		poolMaxOpen = stats.MaxOpenConnections
+		if poolMaxOpen <= 0 {
+			poolMaxOpen = 25
+		}
+	}
+
 	// Build k6 command
 	// Default target URL is local API Gateway
 	targetURL := "http://localhost:8080"
@@ -445,9 +477,15 @@ func (h *BenchmarkHandler) executeBenchmarkAsync(ctx context.Context, jobID, sce
 			if err != nil {
 				log.Printf("[Benchmark Warning] k6 exit with error/threshold: %v", err)
 			}
-			h.processCompletedBenchmark(jobID, scenario, meta, summaryExportPath)
+			h.processCompletedBenchmark(jobID, scenario, meta, summaryExportPath, startTime, startWaitCount, startWaitDuration, peakInUse, poolMaxOpen)
 			return
 		case <-ticker.C:
+			if h.db != nil {
+				curInUse := h.db.Stats().InUse
+				if curInUse > peakInUse {
+					peakInUse = curInUse
+				}
+			}
 			elapsed := int(time.Since(startTime).Seconds())
 			progress := int(float64(elapsed) / float64(meta.durationSec) * 100)
 			if progress > 98 {
@@ -498,7 +536,7 @@ func (h *BenchmarkHandler) updateStatusFailed(jobID, msg string) {
 }
 
 // Process raw k6 summary JSON into a rich BenchmarkReport
-func (h *BenchmarkHandler) processCompletedBenchmark(jobID, scenario string, meta scenarioMeta, summaryFile string) {
+func (h *BenchmarkHandler) processCompletedBenchmark(jobID, scenario string, meta scenarioMeta, summaryFile string, startTime time.Time, startWaitCount int64, startWaitDuration time.Duration, peakInUse, poolMaxOpen int) {
 	data, err := os.ReadFile(summaryFile)
 	if err != nil {
 		h.updateStatusFailed(jobID, fmt.Sprintf("Gagal membaca file hasil k6: %v", err))
@@ -581,6 +619,73 @@ func (h *BenchmarkHandler) processCompletedBenchmark(jobID, scenario string, met
 		}
 	}
 
+	// Database impact analysis during benchmark
+	var waitCountDelta int64
+	var waitDurationMs float64
+	if h.db != nil {
+		finalStats := h.db.Stats()
+		if finalStats.InUse > peakInUse {
+			peakInUse = finalStats.InUse
+		}
+		if finalStats.WaitCount >= startWaitCount {
+			waitCountDelta = finalStats.WaitCount - startWaitCount
+		}
+		if finalStats.WaitDuration >= startWaitDuration {
+			waitDurationMs = float64(finalStats.WaitDuration-startWaitDuration) / float64(time.Millisecond)
+		}
+	}
+
+	slowQueries := 0
+	recentSlow := telemetry.GlobalSlowQueryTracker.GetRecent()
+	for _, sq := range recentSlow {
+		if sq.Timestamp.After(startTime) {
+			slowQueries++
+		}
+	}
+
+	var utilPct float64
+	if poolMaxOpen > 0 {
+		utilPct = (float64(peakInUse) / float64(poolMaxOpen)) * 100.0
+	}
+	if utilPct > 100.0 {
+		utilPct = 100.0
+	}
+
+	var dbVerdict, dbRec string
+	if waitCountDelta == 0 && utilPct < 80.0 && slowQueries == 0 {
+		dbVerdict = "SEHAT"
+		dbRec = fmt.Sprintf("Kapasitas pool %d koneksi sangat memadai. Tidak terjadi antrean koneksi maupun slow query selama pengujian beban.", poolMaxOpen)
+	} else if waitCountDelta > 20 || waitDurationMs > 500.0 || utilPct >= 96.0 || slowQueries >= 10 {
+		dbVerdict = "BOTTLENECK"
+		if waitCountDelta > 0 {
+			dbRec = fmt.Sprintf("Terjadi antrean koneksi signifikan (+%d request, total tunggu %.1f ms). Pertimbangkan menaikkan pool ke 50 atau mengoptimalkan transaksi lambat.", waitCountDelta, waitDurationMs)
+		} else if slowQueries > 0 {
+			dbRec = fmt.Sprintf("Utilisasi koneksi penuh (%d/%d) dan terdeteksi %d slow query (>100ms). Disarankan mengoptimalkan query/indexing atau menaikkan pool ke 50.", peakInUse, poolMaxOpen, slowQueries)
+		} else {
+			dbRec = fmt.Sprintf("Utilisasi pool mencapai titik jenuh (%d/%d koneksi, %.0f%%). Pertimbangkan menaikkan pool ke 50 saat traffic tinggi.", peakInUse, poolMaxOpen, utilPct)
+		}
+	} else {
+		dbVerdict = "WASPADA"
+		if waitCountDelta > 0 {
+			dbRec = fmt.Sprintf("Kapasitas pool mencapai %.1f%% dengan antrean kecil (+%d request). Kapasitas masih mencukupi namun perlu dipantau saat traffic melonjak.", utilPct, waitCountDelta)
+		} else if slowQueries > 0 {
+			dbRec = fmt.Sprintf("Terdeteksi %d slow query (>100ms) meskipun antrean koneksi masih aman (+0 request). Periksa query pada endpoint terkait.", slowQueries)
+		} else {
+			dbRec = fmt.Sprintf("Kapasitas pool terpakai %.1f%% (%d/%d koneksi). Tidak ada antrean query tertahan.", utilPct, peakInUse, poolMaxOpen)
+		}
+	}
+
+	report.DatabaseAnalysis = DatabaseBenchmarkAnalysis{
+		PoolMaxOpen:        poolMaxOpen,
+		PeakInUse:          peakInUse,
+		PeakUtilizationPct: utilPct,
+		WaitCountDelta:     waitCountDelta,
+		WaitDurationMs:     waitDurationMs,
+		SlowQueriesCount:   slowQueries,
+		DBVerdict:          dbVerdict,
+		DBRecommendation:   dbRec,
+	}
+
 	// Generate Executive Summary
 	report.Summary = generateExecutiveSummary(&report)
 
@@ -635,6 +740,11 @@ func generateExecutiveSummary(r *BenchmarkReport) ExecutiveSummary {
 		findings = append(findings, fmt.Sprintf("Tingkat keberhasilan %.2f%% (%d request gagal diproses).", r.SuccessRatePct, r.FailedRequests))
 	}
 
+	// Temuan Database
+	findings = append(findings, fmt.Sprintf("Koneksi DB Puncak: %d/%d (%.1f%%), Antrean: +%d request (total tunggu: %.1f ms), Slow Queries: %d.",
+		r.DatabaseAnalysis.PeakInUse, r.DatabaseAnalysis.PoolMaxOpen, r.DatabaseAnalysis.PeakUtilizationPct,
+		r.DatabaseAnalysis.WaitCountDelta, r.DatabaseAnalysis.WaitDurationMs, r.DatabaseAnalysis.SlowQueriesCount))
+
 	allChecksPassed := true
 	for _, c := range r.Checks {
 		if !c.Success {
@@ -650,11 +760,20 @@ func generateExecutiveSummary(r *BenchmarkReport) ExecutiveSummary {
 	recommendations := []string{}
 	if summary.VerdictStatus == "EXCELLENT" || summary.VerdictStatus == "GOOD" {
 		recommendations = append(recommendations, "Kapasitas server saat ini sangat aman untuk melayani operasional armada dan pencatatan kas normal.")
-		recommendations = append(recommendations, "Konfigurasi Connection Pool PostgreSQL (25 koneksi) dan Redis atomic lock bekerja optimal.")
+		if r.DatabaseAnalysis.DBRecommendation != "" {
+			recommendations = append(recommendations, r.DatabaseAnalysis.DBRecommendation)
+		} else {
+			recommendations = append(recommendations, "Konfigurasi Connection Pool PostgreSQL (25 koneksi) dan Redis atomic lock bekerja optimal.")
+		}
 	} else if summary.VerdictStatus == "WARNING" {
+		if r.DatabaseAnalysis.DBRecommendation != "" {
+			recommendations = append(recommendations, r.DatabaseAnalysis.DBRecommendation)
+		}
 		recommendations = append(recommendations, "Perhatikan query database pada halaman terkait. Pertimbangkan penambahan composite index.")
-		recommendations = append(recommendations, "Jika armada terus bertambah, naikkan batas Connection Pool PostgreSQL menjadi 50 koneksi.")
 	} else {
+		if r.DatabaseAnalysis.DBRecommendation != "" {
+			recommendations = append(recommendations, r.DatabaseAnalysis.DBRecommendation)
+		}
 		recommendations = append(recommendations, "Segera lakukan profiling query lambat menggunakan tombol 'Slow Query Inspector' di dashboard.")
 		recommendations = append(recommendations, "Periksa log container Go untuk memastikan tidak ada goroutine leak atau unclosed database transaction.")
 	}
@@ -766,7 +885,30 @@ func generateMarkdownReport(r *BenchmarkReport) string {
 	sb.WriteString(fmt.Sprintf("| **Tingkat Keberhasilan** | %.2f%% |\n", r.SuccessRatePct))
 	sb.WriteString("\n---\n\n")
 
-	sb.WriteString("## 3. Distribusi Latensi Respons (HTTP Duration Quantiles)\n\n")
+	dbIcon := "🟢"
+	if r.DatabaseAnalysis.DBVerdict == "WASPADA" {
+		dbIcon = "🟡"
+	} else if r.DatabaseAnalysis.DBVerdict == "BOTTLENECK" {
+		dbIcon = "🔴"
+	}
+
+	sb.WriteString("## 3. Analisis Dampak Terhadap Database PostgreSQL\n\n")
+	sb.WriteString("| Metrik Database | Nilai Selama Uji Beban | Evaluasi & Makna |\n")
+	sb.WriteString("| :--- | :--- | :--- |\n")
+	sb.WriteString(fmt.Sprintf("| **Puncak Koneksi Digunakan (Peak In-Use)** | %d / %d (%.1f%%) | Beban puncak koneksi aktif yang dibuka oleh pool Go |\n",
+		r.DatabaseAnalysis.PeakInUse, r.DatabaseAnalysis.PoolMaxOpen, r.DatabaseAnalysis.PeakUtilizationPct))
+	sb.WriteString(fmt.Sprintf("| **Antrean Koneksi Terjadi (Wait Count)** | +%d request | Jumlah request yang terpaksa mengantre menunggu slot koneksi kosong |\n",
+		r.DatabaseAnalysis.WaitCountDelta))
+	sb.WriteString(fmt.Sprintf("| **Total Waktu Tunggu Antrian** | %.2f ms | Akumulasi durasi latency akibat antrean koneksi |\n",
+		r.DatabaseAnalysis.WaitDurationMs))
+	sb.WriteString(fmt.Sprintf("| **Slow Query Terdeteksi (>100ms)** | %d query | Query lambat yang tertangkap ring-buffer selama pengujian |\n",
+		r.DatabaseAnalysis.SlowQueriesCount))
+	sb.WriteString(fmt.Sprintf("| **Status Kesehatan Database** | %s %s | Evaluasi kestabilan kapasitas pool database |\n",
+		dbIcon, r.DatabaseAnalysis.DBVerdict))
+	sb.WriteString(fmt.Sprintf("\n**Rekomendasi Optimalisasi Database:**\n- %s\n", r.DatabaseAnalysis.DBRecommendation))
+	sb.WriteString("\n---\n\n")
+
+	sb.WriteString("## 4. Distribusi Latensi Respons (HTTP Duration Quantiles)\n\n")
 	sb.WriteString("| Metrik Latensi | Waktu Respons | Keterangan & Makna |\n")
 	sb.WriteString("| :--- | :--- | :--- |\n")
 	sb.WriteString(fmt.Sprintf("| **Min** | %.2f ms | Respon tercepat yang tercatat |\n", r.LatencyMinMs))
@@ -778,7 +920,7 @@ func generateMarkdownReport(r *BenchmarkReport) string {
 	sb.WriteString(fmt.Sprintf("| **Max** | %.2f ms | Titik paling lambat selama pengujian |\n", r.LatencyMaxMs))
 	sb.WriteString("\n---\n\n")
 
-	sb.WriteString("## 4. Hasil Validasi (k6 Assertions / Checks)\n\n")
+	sb.WriteString("## 5. Hasil Validasi (k6 Assertions / Checks)\n\n")
 	sb.WriteString("| Nama Pemeriksaan | Lolos | Gagal | Status |\n")
 	sb.WriteString("| :--- | :--- | :--- | :--- |\n")
 	for _, c := range r.Checks {
@@ -790,7 +932,7 @@ func generateMarkdownReport(r *BenchmarkReport) string {
 	}
 	sb.WriteString("\n---\n\n")
 
-	sb.WriteString("## 5. Panduan Cara Membaca Metrik bagi Admin IT\n\n")
+	sb.WriteString("## 6. Panduan Cara Membaca Metrik bagi Admin IT\n\n")
 	sb.WriteString("1. **Mengapa P95 Lebih Penting daripada Average?**\n")
 	sb.WriteString("   - Nilai *Average* dapat menipu jika ada 1 request yang sangat cepat menutupi 99 request yang lambat. Nilai **P95** menjamin pengalaman 95% pengguna nyata di lapangan.\n\n")
 	sb.WriteString("2. **Batas Toleransi Error Rate:**\n")

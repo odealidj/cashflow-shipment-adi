@@ -7,8 +7,11 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/exec"
 	"runtime"
 	"strconv"
+	"strings"
+	"sync"
 	"time"
 
 	"github.com/cashflow-shipment-app/backend/internal/infrastructure/telemetry"
@@ -55,13 +58,111 @@ type GatewayMetrics struct {
 	IdempotencyMisses int64   `json:"idempotency_misses" example:"1520"`
 }
 
+type PostgresContainerMetrics struct {
+	CPUPercent float64 `json:"cpu_percent" example:"6.4"`
+	MemUsageMB float64 `json:"mem_usage_mb" example:"36.2"`
+	PIDs       int     `json:"pids" example:"11"`
+}
+
+var (
+	pgStatsCache     PostgresContainerMetrics
+	pgStatsLastFetch time.Time
+	pgStatsMutex     sync.Mutex
+)
+
+func fetchPostgresContainerStats() PostgresContainerMetrics {
+	pgStatsMutex.Lock()
+	defer pgStatsMutex.Unlock()
+
+	// Return cached stats if fetched within 3 seconds
+	if time.Since(pgStatsLastFetch) < 3*time.Second && pgStatsLastFetch != (time.Time{}) {
+		return pgStatsCache
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 1500*time.Millisecond)
+	defer cancel()
+
+	tools := []string{"podman", "docker"}
+	var rawOutput []byte
+	var err error
+
+	for _, tool := range tools {
+		cmd := exec.CommandContext(ctx, tool, "stats", "--no-stream", "--format", "json", "cashflow_db")
+		rawOutput, err = cmd.Output()
+		if err == nil && len(rawOutput) > 0 {
+			break
+		}
+	}
+
+	if err != nil || len(rawOutput) == 0 {
+		return pgStatsCache
+	}
+
+	var entries []struct {
+		CPUPercent string `json:"cpu_percent"`
+		AvgCPU     string `json:"avg_cpu"`
+		MemUsage   string `json:"mem_usage"`
+		PIDs       string `json:"pids"`
+	}
+
+	if unmarshalErr := json.Unmarshal(rawOutput, &entries); unmarshalErr != nil {
+		var single struct {
+			CPUPercent string `json:"cpu_percent"`
+			AvgCPU     string `json:"avg_cpu"`
+			MemUsage   string `json:"mem_usage"`
+			PIDs       string `json:"pids"`
+		}
+		if err2 := json.Unmarshal(rawOutput, &single); err2 == nil {
+			entries = append(entries, single)
+		}
+	}
+
+	if len(entries) > 0 {
+		e := entries[0]
+		cpuStr := strings.TrimSuffix(strings.TrimSpace(e.CPUPercent), "%")
+		if cpuStr == "" {
+			cpuStr = strings.TrimSuffix(strings.TrimSpace(e.AvgCPU), "%")
+		}
+		cpuVal, _ := strconv.ParseFloat(cpuStr, 64)
+
+		memVal := 0.0
+		if parts := strings.Split(e.MemUsage, "/"); len(parts) > 0 {
+			rawMem := strings.TrimSpace(parts[0])
+			if strings.HasSuffix(rawMem, "MB") || strings.HasSuffix(rawMem, "MiB") {
+				rawMem = strings.TrimSuffix(strings.TrimSuffix(rawMem, "MB"), "MiB")
+				memVal, _ = strconv.ParseFloat(strings.TrimSpace(rawMem), 64)
+			} else if strings.HasSuffix(rawMem, "kB") || strings.HasSuffix(rawMem, "KiB") {
+				rawMem = strings.TrimSuffix(strings.TrimSuffix(rawMem, "kB"), "KiB")
+				f, _ := strconv.ParseFloat(strings.TrimSpace(rawMem), 64)
+				memVal = f / 1024.0
+			} else if strings.HasSuffix(rawMem, "GB") || strings.HasSuffix(rawMem, "GiB") {
+				rawMem = strings.TrimSuffix(strings.TrimSuffix(rawMem, "GB"), "GiB")
+				f, _ := strconv.ParseFloat(strings.TrimSpace(rawMem), 64)
+				memVal = f * 1024.0
+			}
+		}
+
+		pidsVal, _ := strconv.Atoi(strings.TrimSpace(e.PIDs))
+
+		pgStatsCache = PostgresContainerMetrics{
+			CPUPercent: cpuVal,
+			MemUsageMB: memVal,
+			PIDs:       pidsVal,
+		}
+		pgStatsLastFetch = time.Now()
+	}
+
+	return pgStatsCache
+}
+
 type DBPoolMetrics struct {
-	Open           int     `json:"open" example:"5"`
-	InUse          int     `json:"in_use" example:"2"`
-	Idle           int     `json:"idle" example:"3"`
-	MaxOpen        int     `json:"max_open" example:"25"`
-	WaitCount      int64   `json:"wait_count" example:"0"`
-	WaitDurationMs float64 `json:"wait_duration_ms" example:"0.0"`
+	Open           int                      `json:"open" example:"5"`
+	InUse          int                      `json:"in_use" example:"2"`
+	Idle           int                      `json:"idle" example:"3"`
+	MaxOpen        int                      `json:"max_open" example:"25"`
+	WaitCount      int64                    `json:"wait_count" example:"0"`
+	WaitDurationMs float64                  `json:"wait_duration_ms" example:"0.0"`
+	Postgres       PostgresContainerMetrics `json:"postgres"`
 }
 
 type BusinessKPIMetrics struct {
@@ -110,6 +211,7 @@ func (h *SystemMetricsHandler) GetMetrics(w http.ResponseWriter, r *http.Request
 	if maxOpen <= 0 {
 		maxOpen = 25
 	}
+	pgStats := fetchPostgresContainerStats()
 	dbPool := DBPoolMetrics{
 		Open:           stats.OpenConnections,
 		InUse:          stats.InUse,
@@ -117,6 +219,7 @@ func (h *SystemMetricsHandler) GetMetrics(w http.ResponseWriter, r *http.Request
 		MaxOpen:        maxOpen,
 		WaitCount:      stats.WaitCount,
 		WaitDurationMs: float64(stats.WaitDuration.Microseconds()) / 1000.0,
+		Postgres:       pgStats,
 	}
 
 	// 2. Business KPI Metrics from PostgreSQL (today's counts)

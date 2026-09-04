@@ -41,6 +41,12 @@ interface GatewayMetrics {
   idempotency_misses: number;
 }
 
+interface PostgresContainerMetrics {
+  cpu_percent: string;
+  mem_usage_mb: string;
+  pids: string;
+}
+
 interface DBPoolMetrics {
   open: number;
   in_use: number;
@@ -48,6 +54,7 @@ interface DBPoolMetrics {
   max_open: number;
   wait_count: number;
   wait_duration_ms: number;
+  postgres?: PostgresContainerMetrics;
 }
 
 interface BusinessKPIMetrics {
@@ -102,6 +109,17 @@ interface ExecutiveSummary {
   recommendations: string[];
 }
 
+interface DatabaseBenchmarkAnalysis {
+  pool_max_open: number;
+  peak_in_use: number;
+  peak_utilization_pct: number;
+  wait_count_delta: number;
+  wait_duration_ms: number;
+  slow_queries_count: number;
+  db_verdict: "SEHAT" | "WASPADA" | "BOTTLENECK" | string;
+  db_recommendation: string;
+}
+
 interface BenchmarkReport {
   job_id: string;
   scenario: string;
@@ -123,6 +141,7 @@ interface BenchmarkReport {
   data_received_kb: number;
   data_sent_kb: number;
   checks: BenchmarkCheck[];
+  database_analysis?: DatabaseBenchmarkAnalysis;
   summary: ExecutiveSummary;
 }
 
@@ -611,25 +630,51 @@ export default function SystemMetricsPage() {
             </div>
           </div>
 
-          {/* Wait Count & Wait Duration */}
-          <div className="grid grid-cols-2 gap-3 mt-3.5 pt-3 border-t border-slate-100">
+          {/* Wait Count, Wait Duration, Postgres CPU & RAM */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mt-3.5 pt-3 border-t border-slate-100">
             <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/70">
-              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Wait Count (Antrian Pool)</span>
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Wait Count</span>
               <p className="text-lg font-black text-slate-800 mt-0.5">
                 {metrics?.database_pool.wait_count || 0}
               </p>
               <span className="text-[10px] text-slate-500 font-medium">
-                {metrics?.database_pool.wait_count === 0 ? "Tidak ada query tertahan antrian" : "Terjadi bottleneck koneksi!"}
+                {metrics?.database_pool.wait_count === 0 ? "Tanpa antrean" : "Bottleneck!"}
               </span>
             </div>
 
             <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/70">
-              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Wait Duration</span>
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Wait Duration</span>
               <p className="text-lg font-black text-slate-800 mt-0.5">
                 {metrics?.database_pool.wait_duration_ms.toFixed(1) || "0.0"} ms
               </p>
               <span className="text-[10px] text-slate-500 font-medium">
-                Waktu tunggu alokasi koneksi DB
+                Latensi antrean
+              </span>
+            </div>
+
+            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/70">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Postgres CPU</span>
+                <Cpu className="w-3.5 h-3.5 text-indigo-500" />
+              </div>
+              <p className="text-lg font-black text-indigo-700 mt-0.5">
+                {metrics?.database_pool.postgres?.cpu_percent || "0.0%"}
+              </p>
+              <span className="text-[10px] text-slate-500 font-medium">
+                Beban container DB
+              </span>
+            </div>
+
+            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/70">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Postgres RAM</span>
+                <Server className="w-3.5 h-3.5 text-sky-500" />
+              </div>
+              <p className="text-lg font-black text-slate-800 mt-0.5">
+                {metrics?.database_pool.postgres?.mem_usage_mb || "0 MB"}
+              </p>
+              <span className="text-[10px] text-slate-500 font-medium">
+                {metrics?.database_pool.postgres?.pids ? `${metrics.database_pool.postgres.pids} threads` : "Memory usage"}
               </span>
             </div>
           </div>
@@ -1468,6 +1513,94 @@ export default function SystemMetricsPage() {
                 </div>
               </div>
 
+              {/* Analisis Dampak Database PostgreSQL Selama Uji Beban */}
+              {selectedReport.database_analysis && (
+                <div className="p-4 rounded-xl border border-indigo-100 bg-gradient-to-br from-indigo-50/70 via-white to-sky-50/50 space-y-3 shadow-2xs">
+                  <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-indigo-100/60">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1.5 rounded-lg bg-indigo-600 text-white shadow-2xs">
+                        <Database className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h5 className="text-xs font-black text-slate-900">
+                          Analisis Dampak Database PostgreSQL Selama Uji Beban
+                        </h5>
+                        <p className="text-[10px] text-slate-500 font-medium">
+                          Observasi pool koneksi, waktu tunggu antrian, dan performa database
+                        </p>
+                      </div>
+                    </div>
+                    <div>
+                      {selectedReport.database_analysis.db_verdict === "SEHAT" && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-black bg-emerald-100 text-emerald-800 border border-emerald-300">
+                          🟢 SEHAT
+                        </span>
+                      )}
+                      {selectedReport.database_analysis.db_verdict === "WASPADA" && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-black bg-amber-100 text-amber-800 border border-amber-300">
+                          🟡 WASPADA
+                        </span>
+                      )}
+                      {selectedReport.database_analysis.db_verdict === "BOTTLENECK" && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-black bg-rose-100 text-rose-800 border border-rose-300">
+                          🔴 BOTTLENECK
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
+                    <div className="p-2.5 rounded-lg bg-white border border-slate-200/80 shadow-2xs">
+                      <span className="text-[10px] font-bold text-slate-500 uppercase block">Puncak Koneksi Digunakan</span>
+                      <p className="text-base font-black text-slate-800 mt-0.5">
+                        {selectedReport.database_analysis.peak_in_use} / {selectedReport.database_analysis.pool_max_open}
+                        <span className="text-xs font-bold text-indigo-600 ml-1">
+                          ({selectedReport.database_analysis.peak_utilization_pct.toFixed(0)}%)
+                        </span>
+                      </p>
+                      <span className="text-[10px] text-slate-400 font-medium">Beban puncak aktif</span>
+                    </div>
+
+                    <div className="p-2.5 rounded-lg bg-white border border-slate-200/80 shadow-2xs">
+                      <span className="text-[10px] font-bold text-slate-500 uppercase block">Antrian Koneksi Terjadi</span>
+                      <p className="text-base font-black text-slate-800 mt-0.5">
+                        +{selectedReport.database_analysis.wait_count_delta} <span className="text-xs font-medium text-slate-500">request</span>
+                      </p>
+                      <span className="text-[10px] text-slate-400 font-medium">
+                        {selectedReport.database_analysis.wait_count_delta === 0 ? "Tanpa antrian tertahan" : "Mengantre slot pool"}
+                      </span>
+                    </div>
+
+                    <div className="p-2.5 rounded-lg bg-white border border-slate-200/80 shadow-2xs">
+                      <span className="text-[10px] font-bold text-slate-500 uppercase block">Total Waktu Tunggu Antrian</span>
+                      <p className="text-base font-black text-slate-800 mt-0.5">
+                        {selectedReport.database_analysis.wait_duration_ms.toFixed(1)} <span className="text-xs font-medium text-slate-500">ms</span>
+                      </p>
+                      <span className="text-[10px] text-slate-400 font-medium">Akumulasi latensi antrean</span>
+                    </div>
+
+                    <div className="p-2.5 rounded-lg bg-white border border-slate-200/80 shadow-2xs">
+                      <span className="text-[10px] font-bold text-slate-500 uppercase block">Slow Query Terdeteksi</span>
+                      <p className="text-base font-black text-slate-800 mt-0.5">
+                        {selectedReport.database_analysis.slow_queries_count} <span className="text-xs font-medium text-slate-500">query</span>
+                      </p>
+                      <span className="text-[10px] text-slate-400 font-medium">Ambang batas &gt; 100ms</span>
+                    </div>
+                  </div>
+
+                  {/* Rekomendasi Database Otomatis */}
+                  <div className="p-2.5 rounded-lg bg-indigo-50/80 border border-indigo-100 flex items-start gap-2 text-xs">
+                    <span className="text-indigo-600 font-bold text-sm leading-none shrink-0 mt-0.5">💡</span>
+                    <div>
+                      <span className="font-bold text-indigo-950 text-[11px] block">Rekomendasi Kapasitas DB:</span>
+                      <span className="text-indigo-900 text-[11px] leading-relaxed">
+                        {selectedReport.database_analysis.db_recommendation}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Latency Quantiles Table */}
               <div className="rounded-xl border border-slate-200 overflow-hidden">
                 <div className="bg-slate-50 px-3.5 py-2 border-b border-slate-200 font-bold text-slate-700 text-xs flex items-center justify-between">
@@ -1591,9 +1724,18 @@ export default function SystemMetricsPage() {
                       className="p-3.5 rounded-xl border border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50/60 transition-all flex flex-wrap items-center justify-between gap-3 text-xs"
                     >
                       <div className="space-y-1">
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <span className="font-bold text-slate-900">{rep.scenario_label}</span>
                           {getVerdictBadge(rep.summary.verdict_status)}
+                          {rep.database_analysis && (
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-black border ${
+                              rep.database_analysis.db_verdict === 'SEHAT' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' :
+                              rep.database_analysis.db_verdict === 'WASPADA' ? 'bg-amber-50 text-amber-800 border-amber-200' :
+                              'bg-rose-50 text-rose-800 border-rose-200'
+                            }`}>
+                              DB: {rep.database_analysis.db_verdict} ({rep.database_analysis.peak_in_use}/{rep.database_analysis.pool_max_open})
+                            </span>
+                          )}
                         </div>
                         <p className="text-[11px] text-slate-500">
                           {rep.timestamp} • {rep.vus} VUs • {rep.duration} • Total {rep.total_requests} req

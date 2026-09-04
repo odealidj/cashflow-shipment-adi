@@ -178,7 +178,7 @@ func main() {
 	utilityHandler := handler.NewUtilityHandler()
 	startTime := time.Now()
 	systemMetricsHandler := handler.NewSystemMetricsHandler(dbPool, redisClient, startTime)
-	benchmarkHandler := handler.NewBenchmarkHandler(redisClient, "")
+	benchmarkHandler := handler.NewBenchmarkHandler(redisClient, dbPool, "")
 
 	r := chi.NewRouter()
 
