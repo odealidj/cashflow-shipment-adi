@@ -438,10 +438,21 @@ export default function SystemMetricsPage() {
           <button
             onClick={() => fetchMetrics(true)}
             disabled={isRefreshing}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 active:bg-sky-800 text-white text-xs font-bold transition-all shadow-xs disabled:opacity-50"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 active:bg-sky-800 text-white text-xs font-bold transition-all shadow-xs disabled:opacity-50 cursor-pointer"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
             <span>Segarkan</span>
+          </button>
+
+          {/* Uji Slow Query Trigger Button */}
+          <button
+            onClick={handleSimulateSlowQuery}
+            disabled={simulatingSlow}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-95 text-white text-xs font-bold transition-all shadow-xs disabled:opacity-50 cursor-pointer"
+            title="Memicu query PostgreSQL pg_sleep 150ms untuk menguji Slow Query Inspector"
+          >
+            <Flame className={`w-3.5 h-3.5 ${simulatingSlow ? "animate-bounce" : ""}`} />
+            <span>{simulatingSlow ? "Menguji..." : "Uji Slow Query (150ms)"}</span>
           </button>
         </div>
       </div>
@@ -1160,12 +1171,31 @@ export default function SystemMetricsPage() {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             <span className="px-2.5 py-1 text-xs font-black rounded-lg bg-slate-100 text-slate-700 border border-slate-200">
               {metrics?.slow_queries.length || 0} Query Terdeteksi
             </span>
+            <button
+              onClick={handleSimulateSlowQuery}
+              disabled={simulatingSlow}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-bold text-xs transition-all shadow-xs cursor-pointer disabled:opacity-50"
+              title="Memicu query simulasi SELECT pg_sleep(0.150) untuk menguji ring-buffer dan Prometheus alert"
+            >
+              <Flame className={`w-3.5 h-3.5 ${simulatingSlow ? "animate-bounce" : ""}`} />
+              <span>{simulatingSlow ? "Mengeksekusi..." : "Uji Slow Query (150ms)"}</span>
+            </button>
           </div>
         </div>
+
+        {simulateSuccessMsg && (
+          <div className="mx-5 mt-4 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center justify-between animate-in fade-in">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>{simulateSuccessMsg}</span>
+            </div>
+            <span className="text-[10px] text-emerald-600 font-semibold">Tercatat di Slow Query Ring Buffer</span>
+          </div>
+        )}
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
@@ -1222,8 +1252,17 @@ export default function SystemMetricsPage() {
                       </div>
                       <p className="font-bold text-slate-700 text-xs">Semua Query Berjalan Cepat (&lt;100ms)</p>
                       <p className="text-[11px] text-slate-400 max-w-sm">
-                        Tidak ada eksekusi query lambat yang terdeteksi. Anda dapat menguji fitur ini dengan tombol &quot;Uji Query Lambat (150ms)&quot; di atas.
+                        Tidak ada eksekusi query lambat yang terdeteksi. Anda dapat menguji fitur ini dengan tombol &quot;Uji Slow Query (150ms)&quot;.
                       </p>
+                      <button
+                        type="button"
+                        onClick={handleSimulateSlowQuery}
+                        disabled={simulatingSlow}
+                        className="mt-2 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-bold text-xs transition-all shadow-xs cursor-pointer disabled:opacity-50"
+                      >
+                        <Flame className={`w-3.5 h-3.5 ${simulatingSlow ? "animate-bounce" : ""}`} />
+                        <span>{simulatingSlow ? "Mengeksekusi..." : "Uji Sekarang (150ms)"}</span>
+                      </button>
                     </div>
                   </td>
                 </tr>
