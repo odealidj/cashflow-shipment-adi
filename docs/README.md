@@ -16,6 +16,7 @@ Selamat datang di direktori dokumentasi resmi sistem aplikasi **PT. Adijayantara
 | 🔒 **[Spesifikasi RBAC & Two-Tier Session](./teknikal/rbac_two_tier_session_specification.md)** | Arsitektur keamanan mendalam: Opaque Session via HttpOnly Cookie, Two-Tier Caching (L1 RAM Go `< 0.005 ms` + L2 Redis 7), 5 tingkat peran, dan protokol *Instant Force Logout*. |
 | 🎛️ **[Spesifikasi Matriks Hak Akses Dinamis](./teknikal/dynamic_rbac_matrix_specification.md)** | Detail teknis tabel perizinan modular, permission codes, dan pemetaan endpoint API. |
 | 📡 **[Standarisasi Respon API & HTTP 409 Conflict](./teknikal/standarisasi_api_response.md)** | Format baku respon REST API (`status`, `message`, `data`, `meta`, `errors`), kontrak pagination koleksi array murni, dan penanganan duplikasi key (409 Conflict). |
+| 📊 **[Analisis Metrik Telemetri & Panduan Benchmark k6](./teknikal/analisis_metrik_telemetri_dan_panduan_benchmark.md)** | **Buku Panduan Observabilitas & Benchmark**: Bedah detail 5 panel dashboard, analisa metrik Connection Pool & Slow Queries, evaluasi 6 skenario k6, dan runbook mitigasi bottleneck. |
 
 ### 2. Proses Bisnis, Kalkulasi & Kasus Operasional
 | Dokumen | Deskripsi |
