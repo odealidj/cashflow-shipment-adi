@@ -7,11 +7,11 @@ const targetURL = __ENV.TARGET_URL || 'http://localhost:8080';
 const authToken = __ENV.AUTH_TOKEN || '';
 
 export const options = {
-  vus: parseInt(__ENV.VUS || '15'),
+  vus: parseInt(__ENV.VUS || '30'),
   duration: __ENV.DURATION || '60s',
   thresholds: {
     http_req_failed: ['rate<0.02'],
-    http_req_duration: ['p(95)<350'],
+    http_req_duration: ['p(95)<450'],
   },
 };
 

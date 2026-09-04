@@ -8,14 +8,14 @@ const authToken = __ENV.AUTH_TOKEN || '';
 
 export const options = {
   stages: [
-    { duration: '5s', target: 25 },
-    { duration: '10s', target: 60 },
-    { duration: '10s', target: 100 },
+    { duration: '5s', target: 50 },
+    { duration: '10s', target: 120 },
+    { duration: '15s', target: 200 },
     { duration: '5s', target: 0 },
   ],
   thresholds: {
-    http_req_failed: ['rate<0.10'],
-    http_req_duration: ['p(90)<800'],
+    http_req_failed: ['rate<0.15'],
+    http_req_duration: ['p(90)<1200'],
   },
 };
 

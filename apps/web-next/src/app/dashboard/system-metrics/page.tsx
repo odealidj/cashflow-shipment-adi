@@ -912,7 +912,7 @@ export default function SystemMetricsPage() {
                   <span className="text-xs font-black text-slate-800 group-hover:text-emerald-700">Average Load</span>
                   <BarChart3 className="w-3.5 h-3.5 text-emerald-600" />
                 </div>
-                <p className="text-[10px] font-bold text-emerald-600 mt-1">20 VUs • 15s</p>
+                <p className="text-[10px] font-bold text-emerald-600 mt-1">50 VUs • 20s</p>
                 <p className="text-[10px] text-slate-500 mt-0.5">Simulasi jam kerja normal</p>
               </button>
 
@@ -956,8 +956,8 @@ export default function SystemMetricsPage() {
                 onClick={() => setStrictModalScenario({
                   id: "stress",
                   label: "Heavy Stress Test",
-                  vus: 100,
-                  duration: "30 detik",
+                  vus: 200,
+                  duration: "35 detik",
                   target: "GET /api/v1/cashflow & GET /api/v1/invoices",
                   warningNote: "Mencari breaking point Connection Pool Postgres. Utilisasi DB Pool bisa mencapai 100% dan latency pengguna lain berpotensi naik."
                 })}
@@ -968,7 +968,7 @@ export default function SystemMetricsPage() {
                   <span className="text-xs font-black text-slate-800 group-hover:text-rose-700">Stress Test</span>
                   <Flame className="w-3.5 h-3.5 text-rose-600" />
                 </div>
-                <p className="text-[10px] font-bold text-rose-600 mt-1">100 VUs • 30s</p>
+                <p className="text-[10px] font-bold text-rose-600 mt-1">200 VUs • 35s</p>
                 <p className="text-[10px] text-slate-500 mt-0.5">Uji titik jenuh pool</p>
               </button>
 
@@ -977,8 +977,8 @@ export default function SystemMetricsPage() {
                 onClick={() => setStrictModalScenario({
                   id: "spike",
                   label: "Instant Spike Test",
-                  vus: 80,
-                  duration: "10 detik (Flash 2s)",
+                  vus: 160,
+                  duration: "12 detik (Flash 2s)",
                   target: "GET /api/v1/auth/me & GET /api/v1/health",
                   warningNote: "Mensimulasikan lonjakan instan (flash crowd pergantian shift armada). Menguji kecepatan sistem dalam memulihkan diri (auto-recovery)."
                 })}
@@ -989,7 +989,7 @@ export default function SystemMetricsPage() {
                   <span className="text-xs font-black text-slate-800 group-hover:text-rose-700">Spike Test</span>
                   <Zap className="w-3.5 h-3.5 text-rose-600" />
                 </div>
-                <p className="text-[10px] font-bold text-rose-600 mt-1">80 VUs • 10s</p>
+                <p className="text-[10px] font-bold text-rose-600 mt-1">160 VUs • 12s</p>
                 <p className="text-[10px] text-slate-500 mt-0.5">Uji lonjakan seketika</p>
               </button>
 
@@ -998,7 +998,7 @@ export default function SystemMetricsPage() {
                 onClick={() => setStrictModalScenario({
                   id: "soak",
                   label: "Soak / Endurance Test",
-                  vus: 15,
+                  vus: 30,
                   duration: "60 detik konstan",
                   target: "GET /api/v1/cashflow & GET /api/v1/system/ping",
                   warningNote: "Menguji ketahanan beban konstan 1 menit untuk mendeteksi kebocoran memori (memory leak), goroutine leak, atau pool leak."
@@ -1010,7 +1010,7 @@ export default function SystemMetricsPage() {
                   <span className="text-xs font-black text-slate-800 group-hover:text-rose-700">Soak Test</span>
                   <Clock className="w-3.5 h-3.5 text-rose-600" />
                 </div>
-                <p className="text-[10px] font-bold text-rose-600 mt-1">15 VUs • 60s</p>
+                <p className="text-[10px] font-bold text-rose-600 mt-1">30 VUs • 60s</p>
                 <p className="text-[10px] text-slate-500 mt-0.5">Deteksi kebocoran memori</p>
               </button>
             </div>

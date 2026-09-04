@@ -125,10 +125,10 @@ func getScenarioMeta(scenario string) (scenarioMeta, bool) {
 			durationSec: 5,
 		},
 		"load": {
-			label:       "Average Load Test (20 VUs, 15s)",
+			label:       "Average Load Test (50 VUs, 20s)",
 			scriptPath:  "tests/k6/scenarios/02_load_test.js",
-			defaultVUs:  20,
-			durationSec: 15,
+			defaultVUs:  50,
+			durationSec: 20,
 		},
 		"idempotency": {
 			label:       "Idempotency Burst Concurrency (30 VUs, 3s)",
@@ -137,21 +137,21 @@ func getScenarioMeta(scenario string) (scenarioMeta, bool) {
 			durationSec: 3,
 		},
 		"stress": {
-			label:       "Heavy Stress Test (100 VUs, 30s)",
+			label:       "Heavy Stress Test (200 VUs, 35s)",
 			scriptPath:  "tests/k6/scenarios/04_stress_test.js",
-			defaultVUs:  100,
-			durationSec: 30,
+			defaultVUs:  200,
+			durationSec: 35,
 		},
 		"spike": {
-			label:       "Instant Spike Test (80 VUs, 10s)",
+			label:       "Instant Spike Test (160 VUs, 12s)",
 			scriptPath:  "tests/k6/scenarios/05_spike_test.js",
-			defaultVUs:  80,
-			durationSec: 10,
+			defaultVUs:  160,
+			durationSec: 12,
 		},
 		"soak": {
-			label:       "Soak / Endurance Test (15 VUs, 60s)",
+			label:       "Soak / Endurance Test (30 VUs, 60s)",
 			scriptPath:  "tests/k6/scenarios/06_soak_test.js",
-			defaultVUs:  15,
+			defaultVUs:  30,
 			durationSec: 60,
 		},
 	}
@@ -796,7 +796,7 @@ func generateMarkdownReport(r *BenchmarkReport) string {
 	sb.WriteString("2. **Batas Toleransi Error Rate:**\n")
 	sb.WriteString("   - Normal: `0.00%`. Waspada: `0.5% - 2.0%`. Bahaya: `> 5.0%`.\n\n")
 	sb.WriteString("3. **Korelasi dengan Connection Pool PostgreSQL:**\n")
-	sb.WriteString("   - Jika P95 meningkat drastis saat VUs dinaikkan dari 20 ke 100, artinya koneksi database mulai mengantre (*wait queue*). Tambahkan `SetMaxOpenConns` di backend.\n\n")
+	sb.WriteString("   - Jika P95 meningkat drastis saat VUs dinaikkan dari 50 ke 200, artinya koneksi database mulai mengantre (*wait queue*). Pertimbangkan menaikkan `max_open` koneksi pool di backend.\n\n")
 	sb.WriteString("*Laporan ini digenerate secara otomatis oleh Antigravity Telemetry & k6 Benchmark Engine.* \n")
 
 	return sb.String()

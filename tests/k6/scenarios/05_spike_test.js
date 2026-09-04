@@ -8,9 +8,9 @@ const authToken = __ENV.AUTH_TOKEN || '';
 
 export const options = {
   stages: [
-    { duration: '2s', target: 80 },
-    { duration: '5s', target: 80 },
-    { duration: '3s', target: 0 },
+    { duration: '2s', target: 160 },
+    { duration: '6s', target: 160 },
+    { duration: '4s', target: 0 },
   ],
   thresholds: {
     http_req_failed: ['rate<0.15'],
