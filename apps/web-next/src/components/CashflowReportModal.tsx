@@ -310,6 +310,11 @@ export function CashflowReportModal({
     }).format(amount || 0);
   };
 
+  const formatNumber = (amount: number) => {
+    if (amount === undefined || amount === null || amount === 0) return "-";
+    return new Intl.NumberFormat("id-ID").format(amount);
+  };
+
   const formatDate = (dateStr: string) => {
     if (!dateStr) return "-";
     const d = new Date(dateStr);
@@ -331,7 +336,7 @@ export function CashflowReportModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200 print:p-0 print:static print:bg-transparent print:z-auto">
-      <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-7xl overflow-hidden flex flex-col h-[95vh] print:h-auto print:border-none print:shadow-none print:rounded-none">
+      <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-7xl overflow-hidden flex flex-col h-[95vh] print:h-auto print:border-none print:shadow-none print:rounded-none print:max-w-none print:w-full print:overflow-visible print:block">
         
         {/* ======================================================== */}
         {/* 1. HEADER UTAMA (STANDAR DENGAN TOMBOL CLOSE POJOK KANAN) */}
@@ -487,14 +492,14 @@ export function CashflowReportModal({
               <span>Unduh Excel</span>
             </button>
 
-            {/* Tombol Cetak / PDF */}
+            {/* Tombol Cetak PDF */}
             <button
               onClick={handlePrint}
               className="px-3.5 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs active:scale-95"
-              title="Cetak Dokumen atau Simpan ke PDF"
+              title="Cetak Dokumen atau Simpan ke PDF (A4 Landscape)"
             >
               <Printer className="w-4 h-4" />
-              <span>Cetak / PDF</span>
+              <span>CETAK PDF</span>
             </button>
           </div>
         </div>
@@ -502,7 +507,7 @@ export function CashflowReportModal({
         {/* ======================================================== */}
         {/* AREA DOKUMEN CETAK (PRINT PAPER VIEW)                    */}
         {/* ======================================================== */}
-        <div className="flex-1 overflow-y-auto soft-scrollbar p-6 lg:p-8 bg-slate-100 print:bg-white print:p-0 print:overflow-visible">
+        <div className="flex-1 overflow-y-auto soft-scrollbar p-6 lg:p-8 bg-slate-100 print:bg-white print:p-0 print:overflow-visible print:w-full">
           
           {loading ? (
             <div className="py-24 text-center text-slate-400">
@@ -520,7 +525,7 @@ export function CashflowReportModal({
             /* ==================================================== */
             /* TAMPILAN PRATINJAU CETAK DOKUMEN RESMI EXCEL         */
             /* ==================================================== */
-            <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200 print:border-none print:shadow-none print:p-0 mx-auto max-w-[1300px]">
+            <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200 print:border-none print:shadow-none print:p-0 print:m-0 print:w-full mx-auto max-w-[1300px] print:max-w-none">
               {/* 1. KOP SURAT RESMI (Rata Tengah Sesuai Dokumen DOCX & Excel) */}
               <div className="border-b-2 border-slate-900 pb-4 mb-4 relative">
                 <div className="flex items-center justify-between">
@@ -556,114 +561,106 @@ export function CashflowReportModal({
                 </div>
               </div>
 
-              {/* 2. SUB-HEADER DOKUMEN & PERIODE */}
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4">
-                <div className="flex items-center gap-2">
-                  <div className="inline-block bg-emerald-700 text-white text-xs font-black px-3 py-1 rounded font-mono tracking-wider uppercase">
-                    CASHFLOW SHIPMENT CONTROL
-                  </div>
-                  <span className={`text-[11px] font-bold px-2 py-0.5 rounded border ${
-                    reportVersion === "separated"
-                      ? "bg-sky-50 text-sky-700 border-sky-200"
-                      : "bg-emerald-50 text-emerald-800 border-emerald-200"
-                  }`}>
-                    {reportVersion === "separated"
-                      ? "Versi 1: Kolom Top-Up Terpisah"
-                      : "Versi 2: Top-Up + Saldo Sebelumnya"}
-                  </span>
-                </div>
-                <div className="text-right">
-                  <p className="text-xs font-bold text-slate-600">
+              {/* 2. JUDUL DOKUMEN & PERIODE (Sesuai Baris 4 & 5 Excel) */}
+              <div className="text-center mb-4 pb-2.5 border-b border-slate-700">
+                <h2 className="text-sm md:text-base font-black text-slate-900 tracking-wider uppercase font-sans">
+                  {reportVersion === "rolling"
+                    ? "CASHFLOW SHIPMENT CONTROL (VERSI 2: TOP-UP + SALDO SEBELUMNYA)"
+                    : "CASHFLOW SHIPMENT CONTROL (VERSI 1: TOP-UP TERPISAH)"}
+                </h2>
+                <div className="flex items-center justify-center gap-3 mt-1 text-xs font-bold text-slate-700 font-sans">
+                  <span>
                     PERIODE: <span className="font-black text-slate-900">{formatActivePeriod(dateFrom, dateTo)}</span>
-                  </p>
-                  <p className="text-[10px] text-slate-400 font-mono mt-0.5">
+                  </span>
+                  <span className="text-slate-300">•</span>
+                  <span className="text-[11px] text-slate-500 font-normal">
                     Tanggal Cetak: {new Date().toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" })}
-                  </p>
+                  </span>
                 </div>
               </div>
 
-              {/* Table Excel Asli 14 Kolom */}
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-[11px] border-collapse border border-slate-400">
+              {/* Table Excel Asli 14 Kolom (Format Baris 6 & 7 Excel) */}
+              <div className="overflow-x-auto print:overflow-visible print:w-full">
+                <table className="w-full text-left text-[10.5px] print:text-[8.5px] border-collapse border border-slate-400 print:border-slate-500 print:w-full">
                   <thead>
-                    <tr className="bg-[#E2EFDA] text-[#276A3C] font-black uppercase text-center border-b border-slate-400">
-                      <th className="border border-slate-400 px-2 py-2 w-28 text-right">
+                    <tr className="bg-[#E2EFDA] text-[#276A3C] font-black uppercase text-center border-b border-slate-400 print:bg-[#E2EFDA] print:text-[#276A3C]">
+                      <th className="border border-slate-400 px-1.5 py-1.5 text-center whitespace-nowrap">
                         {reportVersion === "rolling" ? "TOPUP+SALDO" : "KREDIT"}
                       </th>
-                      <th className="border border-slate-400 px-2 py-2 w-28 text-right">DEBIT</th>
-                      <th className="border border-slate-400 px-2 py-2 w-28 text-right bg-[#C6E0B4]">SALDO</th>
-                      <th className="border border-slate-400 px-2 py-2 w-24">DATE OF DEBIT</th>
-                      <th className="border border-slate-400 px-2 py-2 min-w-[180px]">ACT INFORMATION</th>
-                      <th className="border border-slate-400 px-2 py-2 min-w-[160px]">ACT EXPLAINATION</th>
-                      <th className="border border-slate-400 px-2 py-2 min-w-[130px]">VENDOR</th>
-                      <th className="border border-slate-400 px-2 py-2 w-16">T O P</th>
-                      <th className="border border-slate-400 px-2 py-2 w-24">DUE DATE</th>
-                      <th className="border border-slate-400 px-2 py-2 w-28 text-right">GRAND COST</th>
-                      <th className="border border-slate-400 px-2 py-2 w-28 text-right">GRAND SELLING</th>
-                      <th className="border border-slate-400 px-2 py-2 w-24 text-right">PROFIT</th>
-                      <th className="border border-slate-400 px-2 py-2 w-20 text-center">MARGIN %</th>
-                      <th className="border border-slate-400 px-2 py-2 w-20 text-center">REMARKS</th>
+                      <th className="border border-slate-400 px-1.5 py-1.5 text-center whitespace-nowrap">DEBIT</th>
+                      <th className="border border-slate-400 px-1.5 py-1.5 text-center whitespace-nowrap bg-[#C6E0B4] text-[#1E4620]">SALDO</th>
+                      <th className="border border-slate-400 px-1.5 py-1.5 text-center whitespace-nowrap">DATE OF DEBIT</th>
+                      <th className="border border-slate-400 px-2 py-1.5 text-center min-w-[140px] print:min-w-0">ACT INFORMATION</th>
+                      <th className="border border-slate-400 px-2 py-1.5 text-center min-w-[130px] print:min-w-0">ACT EXPLAINATION</th>
+                      <th className="border border-slate-400 px-2 py-1.5 text-center min-w-[110px] print:min-w-0">VENDOR</th>
+                      <th className="border border-slate-400 px-1.5 py-1.5 text-center whitespace-nowrap">T O P</th>
+                      <th className="border border-slate-400 px-1.5 py-1.5 text-center whitespace-nowrap">DUE DATE</th>
+                      <th className="border border-slate-400 px-1.5 py-1.5 text-center whitespace-nowrap">GRAND COST</th>
+                      <th className="border border-slate-400 px-1.5 py-1.5 text-center whitespace-nowrap">GRAND SELLING</th>
+                      <th className="border border-slate-400 px-1.5 py-1.5 text-center whitespace-nowrap">PROFIT</th>
+                      <th className="border border-slate-400 px-1.5 py-1.5 text-center whitespace-nowrap">MARGIN IN %</th>
+                      <th className="border border-slate-400 px-1.5 py-1.5 text-center whitespace-nowrap">REMARKS</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-300 font-mono text-slate-800">
                     {(reportVersion === "rolling" ? rollingMergedEntries : entries).map((entry, idx) => (
                       <tr key={entry.id || idx} className="hover:bg-slate-50 transition-colors">
                         {/* Kredit */}
-                        <td className="border border-slate-300 px-2 py-1.5 text-right font-bold text-emerald-800">
-                          {entry.kredit > 0 ? formatCurrency(entry.kredit) : "-"}
+                        <td className="border border-slate-300 px-1.5 py-1 text-right font-bold text-emerald-800 whitespace-nowrap">
+                          {entry.kredit > 0 ? formatNumber(entry.kredit) : "-"}
                         </td>
                         {/* Debit */}
-                        <td className="border border-slate-300 px-2 py-1.5 text-right font-bold text-rose-800">
-                          {entry.debit > 0 ? formatCurrency(entry.debit) : "-"}
+                        <td className="border border-slate-300 px-1.5 py-1 text-right font-bold text-rose-800 whitespace-nowrap">
+                          {entry.debit > 0 ? formatNumber(entry.debit) : "-"}
                         </td>
                         {/* Saldo */}
-                        <td className="border border-slate-300 px-2 py-1.5 text-right font-black bg-slate-50 text-slate-900">
-                          {formatCurrency(entry.saldo)}
+                        <td className="border border-slate-300 px-1.5 py-1 text-right font-black bg-slate-50/50 print:bg-transparent text-slate-900 whitespace-nowrap">
+                          {formatNumber(entry.saldo)}
                         </td>
                         {/* Date of Debit */}
-                        <td className="border border-slate-300 px-2 py-1.5 text-center font-sans">
+                        <td className="border border-slate-300 px-1.5 py-1 text-center font-sans whitespace-nowrap">
                           {formatDate(entry.date_of_entry)}
                         </td>
                         {/* Act Information */}
-                        <td className="border border-slate-300 px-2 py-1.5 font-sans font-bold text-slate-900">
+                        <td className="border border-slate-300 px-2 py-1 font-sans font-bold text-slate-900">
                           {entry.act_information || "-"}
                         </td>
                         {/* Act Explaination */}
-                        <td className="border border-slate-300 px-2 py-1.5 font-sans text-slate-600">
+                        <td className="border border-slate-300 px-2 py-1 font-sans text-slate-600">
                           {entry.act_explaination || "-"}
                         </td>
                         {/* Vendor */}
-                        <td className="border border-slate-300 px-2 py-1.5 font-sans font-semibold text-slate-900">
+                        <td className="border border-slate-300 px-2 py-1 font-sans font-semibold text-slate-900">
                           {entry.vendor_name_raw || "-"}
                         </td>
                         {/* TOP */}
-                        <td className="border border-slate-300 px-2 py-1.5 text-center font-sans">
+                        <td className="border border-slate-300 px-1.5 py-1 text-center font-sans whitespace-nowrap">
                           {entry.top_days ? `${entry.top_days} HARI` : "-"}
                         </td>
                         {/* Due Date */}
-                        <td className="border border-slate-300 px-2 py-1.5 text-center font-sans text-amber-800 font-semibold">
+                        <td className="border border-slate-300 px-1.5 py-1 text-center font-sans text-amber-800 font-semibold whitespace-nowrap">
                           {formatDate(entry.due_date)}
                         </td>
                         {/* Grand Cost */}
-                        <td className="border border-slate-300 px-2 py-1.5 text-right">
-                          {entry.grand_cost > 0 ? formatCurrency(entry.grand_cost) : "-"}
+                        <td className="border border-slate-300 px-1.5 py-1 text-right whitespace-nowrap">
+                          {entry.grand_cost > 0 ? formatNumber(entry.grand_cost) : "-"}
                         </td>
                         {/* Grand Selling */}
-                        <td className="border border-slate-300 px-2 py-1.5 text-right font-bold text-slate-900">
-                          {entry.grand_selling > 0 ? formatCurrency(entry.grand_selling) : "-"}
+                        <td className="border border-slate-300 px-1.5 py-1 text-right font-bold text-slate-900 whitespace-nowrap">
+                          {entry.grand_selling > 0 ? formatNumber(entry.grand_selling) : "-"}
                         </td>
                         {/* Profit */}
-                        <td className={`border border-slate-300 px-2 py-1.5 text-right font-bold ${
+                        <td className={`border border-slate-300 px-1.5 py-1 text-right font-bold whitespace-nowrap ${
                           entry.profit >= 0 ? "text-emerald-700" : "text-rose-600"
                         }`}>
-                          {entry.entry_type === "SHIPMENT" ? formatCurrency(entry.profit) : "-"}
+                          {entry.entry_type === "SHIPMENT" ? formatNumber(entry.profit) : "-"}
                         </td>
-                        {/* Margin */}
-                        <td className="border border-slate-300 px-2 py-1.5 text-center font-bold">
-                          {entry.entry_type === "SHIPMENT" ? `${(entry.margin_pct * 100).toFixed(1)}%` : "-"}
+                        {/* Margin In % */}
+                        <td className="border border-slate-300 px-1.5 py-1 text-center font-bold whitespace-nowrap">
+                          {entry.entry_type === "SHIPMENT" ? `${(entry.margin_pct * 100).toFixed(2)}%` : "-"}
                         </td>
                         {/* Remarks */}
-                        <td className="border border-slate-300 px-2 py-1.5 text-center font-sans font-bold text-[10px]">
+                        <td className="border border-slate-300 px-1.5 py-1 text-center font-sans font-bold text-[10px] whitespace-nowrap">
                           {entry.remarks || "-"}
                         </td>
                       </tr>
@@ -671,32 +668,32 @@ export function CashflowReportModal({
                   </tbody>
                   {/* Total Akumulasi Excel */}
                   <tfoot>
-                    <tr className="bg-[#F2F2F2] font-black font-mono text-slate-900 border-t-2 border-slate-500">
-                      <td className="border border-slate-400 px-2 py-2 text-right text-emerald-800">
-                        {formatCurrency(totalKredit)}
+                    <tr className="bg-[#F2F2F2] font-black font-mono text-slate-900 border-t-2 border-slate-500 print:bg-[#F2F2F2]">
+                      <td className="border border-slate-400 px-1.5 py-2 text-right text-emerald-800 whitespace-nowrap">
+                        {formatNumber(totalKredit)}
                       </td>
-                      <td className="border border-slate-400 px-2 py-2 text-right text-rose-800">
-                        {formatCurrency(totalDebit)}
+                      <td className="border border-slate-400 px-1.5 py-2 text-right text-rose-800 whitespace-nowrap">
+                        {formatNumber(totalDebit)}
                       </td>
-                      <td className="border border-slate-400 px-2 py-2 text-right bg-[#C6E0B4]">
-                        {formatCurrency(endingSaldo)}
+                      <td className="border border-slate-400 px-1.5 py-2 text-right bg-[#C6E0B4] text-[#1E4620] whitespace-nowrap">
+                        {formatNumber(endingSaldo)}
                       </td>
-                      <td colSpan={6} className="border border-slate-400 px-2 py-2 text-center font-sans text-xs uppercase tracking-wider">
-                        TOTAL AKUMULASI PERIODE LAPORAN
+                      <td colSpan={6} className="border border-slate-400 px-2 py-2 text-center font-sans text-xs uppercase tracking-wider font-bold">
+                        TOTAL AKUMULASI PERIODE
                       </td>
-                      <td className="border border-slate-400 px-2 py-2 text-right">
-                        {formatCurrency(totalGrandCost)}
+                      <td className="border border-slate-400 px-1.5 py-2 text-right whitespace-nowrap">
+                        {formatNumber(totalGrandCost)}
                       </td>
-                      <td className="border border-slate-400 px-2 py-2 text-right">
-                        {formatCurrency(totalGrandSelling)}
+                      <td className="border border-slate-400 px-1.5 py-2 text-right whitespace-nowrap">
+                        {formatNumber(totalGrandSelling)}
                       </td>
-                      <td className="border border-slate-400 px-2 py-2 text-right text-emerald-800">
-                        {formatCurrency(totalProfit)}
+                      <td className="border border-slate-400 px-1.5 py-2 text-right text-emerald-800 whitespace-nowrap">
+                        {formatNumber(totalProfit)}
                       </td>
-                      <td className="border border-slate-400 px-2 py-2 text-center">
-                        {avgMargin.toFixed(1)}%
+                      <td className="border border-slate-400 px-1.5 py-2 text-center whitespace-nowrap">
+                        {avgMargin.toFixed(2)}%
                       </td>
-                      <td className="border border-slate-400 px-2 py-2 text-center text-slate-500">
+                      <td className="border border-slate-400 px-1.5 py-2 text-center text-slate-500 whitespace-nowrap">
                         -
                       </td>
                     </tr>
@@ -705,20 +702,20 @@ export function CashflowReportModal({
               </div>
 
               {/* Tanda Tangan & Verifikasi Pembukuan */}
-              <div className="grid grid-cols-3 gap-8 mt-10 text-center text-xs font-sans">
+              <div className="grid grid-cols-3 gap-8 mt-8 text-center text-xs font-sans print:mt-6 print:text-[10px]">
                 <div>
                   <p className="text-slate-500">Dibuat Oleh:</p>
-                  <div className="h-16"></div>
+                  <div className="h-14 print:h-12"></div>
                   <p className="font-bold text-slate-900 border-t border-slate-300 pt-1">Staff Administrasi Kas</p>
                 </div>
                 <div>
                   <p className="text-slate-500">Diperiksa Oleh:</p>
-                  <div className="h-16"></div>
+                  <div className="h-14 print:h-12"></div>
                   <p className="font-bold text-slate-900 border-t border-slate-300 pt-1">Finance & Accounting</p>
                 </div>
                 <div>
                   <p className="text-slate-500">Disetujui Oleh:</p>
-                  <div className="h-16"></div>
+                  <div className="h-14 print:h-12"></div>
                   <p className="font-bold text-slate-900 border-t border-slate-300 pt-1">Direktur Operasional</p>
                 </div>
               </div>

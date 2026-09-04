@@ -270,7 +270,7 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
 
   return (
     <>
-      <div className="space-y-4">
+      <div className={`space-y-4 ${isReportOpen ? "print:hidden" : ""}`}>
         {/* MINI SUMMARY STRIP (KPI SNAPSHOT REAL-TIME: 5 KARTU SEJAJAR) */}
         {summary && (() => {
           const currentMonth = getCurrentMonthRange();
