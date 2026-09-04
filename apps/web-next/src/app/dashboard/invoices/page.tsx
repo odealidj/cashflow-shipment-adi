@@ -18,11 +18,15 @@ import {
   ArrowUpDown,
   Download,
   Edit2,
-  Edit3
+  Edit3,
+  SlidersHorizontal,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 import { CreateInvoiceModal } from "@/components/CreateInvoiceModal";
 import { EditInvoiceModal } from "@/components/EditInvoiceModal";
 import { InvoicePrintModal } from "@/components/InvoicePrintModal";
+import { InvoiceRecapReportModal } from "@/components/InvoiceRecapReportModal";
 import { DeleteInvoiceModal, InvoiceItem } from "@/components/DeleteInvoiceModal";
 import { fetchWithAuth } from "@/lib/apiClient";
 import { PageHeader } from "@/components/shared/PageHeader";
@@ -51,13 +55,15 @@ export default function InvoicesPage() {
   const [selectedInvoiceForEdit, setSelectedInvoiceForEdit] = useState<any>(null);
   const [selectedInvoiceForPrint, setSelectedInvoiceForPrint] = useState<any>(null);
   const [invoiceToDelete, setInvoiceToDelete] = useState<InvoiceItem | null>(null);
+  const [isRecapReportOpen, setIsRecapReportOpen] = useState(false);
 
-  // Filters State
+  // Filters State (Default: Bulan Ini saat pertama kali dibuka)
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [dateFrom, setDateFrom] = useState<string>("");
-  const [dateTo, setDateTo] = useState<string>("");
+  const [dateFrom, setDateFrom] = useState<string>(() => getCurrentMonthRange().date_from);
+  const [dateTo, setDateTo] = useState<string>(() => getCurrentMonthRange().date_to);
   const [sortDir, setSortDir] = useState<"ASC" | "DESC">("ASC");
+  const [isRangeFilterOpen, setIsRangeFilterOpen] = useState(false);
 
   // 18 Month Dropdown Options (Sama dengan CashflowTable)
   const monthOptions = useMemo(() => {
@@ -97,6 +103,93 @@ export default function InvoicesPage() {
     }
     return "CUSTOM";
   }, [dateFrom, dateTo]);
+
+  // Month navigation: previous month
+  const handlePrevMonth = () => {
+    let baseYear: number;
+    let baseMonth: number;
+    if (dateFrom) {
+      const parts = dateFrom.split("-");
+      baseYear = parseInt(parts[0], 10);
+      baseMonth = parseInt(parts[1], 10) - 1;
+    } else {
+      const now = new Date();
+      baseYear = now.getFullYear();
+      baseMonth = now.getMonth();
+    }
+    const prevRange = getMonthRange(baseYear, baseMonth - 1);
+    setDateFrom(prevRange.date_from);
+    setDateTo(prevRange.date_to);
+  };
+
+  // Month navigation: next month
+  const handleNextMonth = () => {
+    let baseYear: number;
+    let baseMonth: number;
+    if (dateFrom) {
+      const parts = dateFrom.split("-");
+      baseYear = parseInt(parts[0], 10);
+      baseMonth = parseInt(parts[1], 10) - 1;
+    } else {
+      const now = new Date();
+      baseYear = now.getFullYear();
+      baseMonth = now.getMonth();
+    }
+    const nextRange = getMonthRange(baseYear, baseMonth + 1);
+    setDateFrom(nextRange.date_from);
+    setDateTo(nextRange.date_to);
+  };
+
+  // Month navigation: select dropdown
+  const handleMonthSelect = (value: string) => {
+    if (value === "ALL") {
+      setDateFrom("");
+      setDateTo("");
+      return;
+    }
+    if (value === "CUSTOM") {
+      setIsRangeFilterOpen(true);
+      return;
+    }
+    const [yStr, mStr] = value.split("-");
+    const y = parseInt(yStr, 10);
+    const m = parseInt(mStr, 10) - 1;
+    const mRange = getMonthRange(y, m);
+    setDateFrom(mRange.date_from);
+    setDateTo(mRange.date_to);
+  };
+
+  // Quick preset shortcuts
+  const applyPreset = (preset: "THIS_MONTH" | "LAST_MONTH" | "ALL") => {
+    const now = new Date();
+    if (preset === "THIS_MONTH") {
+      const cur = getCurrentMonthRange();
+      setDateFrom(cur.date_from);
+      setDateTo(cur.date_to);
+    } else if (preset === "LAST_MONTH") {
+      const last = getMonthRange(now.getFullYear(), now.getMonth() - 1);
+      setDateFrom(last.date_from);
+      setDateTo(last.date_to);
+    } else if (preset === "ALL") {
+      setDateFrom("");
+      setDateTo("");
+    }
+  };
+
+  const curMonth = getCurrentMonthRange();
+  const isCurrentMonthActive =
+    dateFrom === curMonth.date_from && dateTo === curMonth.date_to;
+  const isLastMonthActive = (() => {
+    const now = new Date();
+    const last = getMonthRange(now.getFullYear(), now.getMonth() - 1);
+    return dateFrom === last.date_from && dateTo === last.date_to;
+  })();
+  const isAllPeriodActive = !dateFrom && !dateTo;
+
+  const hasActiveFilters =
+    statusFilter !== "ALL" ||
+    Boolean(searchQuery) ||
+    (!isCurrentMonthActive && (Boolean(dateFrom) || Boolean(dateTo)));
 
 
   // Pagination State
@@ -214,15 +307,18 @@ export default function InvoicesPage() {
   };
 
   const handleResetFilter = () => {
+    const cur = getCurrentMonthRange();
     setStatusFilter("ALL");
     setSearchQuery("");
-    setDateFrom("");
-    setDateTo("");
+    setDateFrom(cur.date_from);
+    setDateTo(cur.date_to);
     setSortDir("ASC");
+    setIsRangeFilterOpen(false);
   };
 
   return (
-    <div className="space-y-4">
+    <>
+      <div className={`space-y-4 ${isRecapReportOpen ? "print:hidden" : ""}`}>
       {/* 4 SUMMARY CARDS (SHARED DESIGN SYSTEM) */}
       {summary && (() => {
         const curMonth = getCurrentMonthRange();
@@ -294,7 +390,7 @@ export default function InvoicesPage() {
           <div className="flex flex-wrap items-center gap-2">
             {can("invoices.print") && (
               <button
-                onClick={() => window.print()}
+                onClick={() => setIsRecapReportOpen(true)}
                 className="px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 text-xs font-bold hover:bg-slate-50 transition shadow-2xs flex items-center gap-1.5 cursor-pointer"
               >
                 <Printer className="w-3.5 h-3.5 text-slate-500" />
@@ -314,11 +410,138 @@ export default function InvoicesPage() {
           </div>
         </div>
 
-        {/* 2. Integrated Filter Toolbar (Sub-Header) */}
+        {/* 2. Integrated Filter Toolbar (Sub-Header) - Persis Transaksi Cashflow & Shipment */}
         <div className="p-4 pb-3.5 bg-slate-50/40 border-b border-slate-100 space-y-3 transition-all">
-          {/* Baris 1: Status Tabs & Action Controls */}
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-1.5 bg-slate-200/60 p-1 rounded-xl">
+          {/* BARIS UTAMA: SEARCH, MONTH CONTROLLER, QUICK PRESETS, RANGE & FILTER, RESET */}
+          <div className="flex flex-wrap items-center justify-between gap-2.5">
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Quick Search */}
+              <div className="relative">
+                <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Cari nama klien / no. invoice / catatan..."
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  className="bg-white border border-slate-200 rounded-xl pl-9 pr-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-600 w-56 sm:w-64 shadow-2xs font-medium"
+                />
+              </div>
+
+              {/* MONTH CONTROLLER (PER-BULAN DENGAN PREV/NEXT) */}
+              <div className="flex items-center bg-white border border-slate-200 rounded-xl shadow-2xs p-0.5">
+                <button
+                  type="button"
+                  onClick={handlePrevMonth}
+                  title="Bulan Sebelumnya"
+                  className="p-1 rounded-lg hover:bg-slate-100 text-slate-600 hover:text-slate-900 transition-colors cursor-pointer"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+
+                <div className="relative flex items-center px-1">
+                  <Calendar className="w-3.5 h-3.5 text-sky-700 mr-1.5 pointer-events-none" />
+                  <select
+                    value={currentMonthKey}
+                    onChange={e => handleMonthSelect(e.target.value)}
+                    className="bg-transparent text-xs font-bold text-slate-800 pr-5 py-1 focus:outline-none cursor-pointer appearance-none"
+                  >
+                    <option value="ALL">Semua Periode Transaksi</option>
+                    {monthOptions.map((opt: any) => (
+                      <option key={opt.monthKey} value={opt.monthKey}>
+                        {opt.displayLabel}
+                      </option>
+                    ))}
+                    {currentMonthKey === "CUSTOM" && (
+                      <option value="CUSTOM">
+                        Kustom: {formatActivePeriod(dateFrom, dateTo)}
+                      </option>
+                    )}
+                  </select>
+                  <div className="pointer-events-none absolute right-1 top-1/2 -translate-y-1/2 text-[9px] text-slate-400">
+                    ▼
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleNextMonth}
+                  title="Bulan Berikutnya"
+                  className="p-1 rounded-lg hover:bg-slate-100 text-slate-600 hover:text-slate-900 transition-colors cursor-pointer"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* QUICK PRESET BUTTONS (BULAN INI, BULAN LALU, SEMUA) */}
+              <div className="hidden sm:flex items-center gap-1 bg-white p-1 rounded-xl border border-slate-200 shadow-2xs">
+                <button
+                  type="button"
+                  onClick={() => applyPreset("THIS_MONTH")}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                    isCurrentMonthActive
+                      ? "bg-sky-800 text-white shadow-2xs"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                  }`}
+                >
+                  Bulan Ini
+                </button>
+                <button
+                  type="button"
+                  onClick={() => applyPreset("LAST_MONTH")}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                    isLastMonthActive
+                      ? "bg-sky-800 text-white shadow-2xs"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                  }`}
+                >
+                  Bulan Lalu
+                </button>
+                <button
+                  type="button"
+                  onClick={() => applyPreset("ALL")}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                    isAllPeriodActive
+                      ? "bg-sky-800 text-white shadow-2xs"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                  }`}
+                >
+                  Semua
+                </button>
+              </div>
+
+              {/* RANGE TANGGAL & FILTER LANJUTAN TOGGLE */}
+              <button
+                type="button"
+                onClick={() => setIsRangeFilterOpen(!isRangeFilterOpen)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer border ${
+                  isRangeFilterOpen || currentMonthKey === "CUSTOM"
+                    ? "bg-sky-700 text-white border-sky-700 shadow-2xs"
+                    : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50 shadow-2xs"
+                }`}
+              >
+                <SlidersHorizontal className="w-3.5 h-3.5" />
+                <span>Range & Filter {currentMonthKey === "CUSTOM" ? "(Kustom)" : ""}</span>
+              </button>
+            </div>
+
+            {/* RIGHT: RESET ACTION */}
+            {hasActiveFilters && (
+              <button
+                type="button"
+                onClick={handleResetFilter}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-xs font-bold text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer shadow-2xs"
+                title="Kembalikan ke Bulan Ini"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Reset (Bulan Ini)</span>
+              </button>
+            )}
+          </div>
+
+          {/* BARIS SUB-NAV: STATUS TABS & STATUS PERIODE AKTIF */}
+          <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-slate-200/60">
+            {/* Status Pills */}
+            <div className="flex items-center gap-1">
               {[
                 { id: "ALL", label: "Semua Tagihan" },
                 { id: "UNPAID", label: "Menunggu Pembayaran" },
@@ -329,11 +552,12 @@ export default function InvoicesPage() {
                 return (
                   <button
                     key={tab.id}
+                    type="button"
                     onClick={() => setStatusFilter(tab.id)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+                    className={`px-2.5 py-0.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
                       active
-                        ? "bg-white text-sky-900 shadow-2xs"
-                        : "text-slate-500 hover:text-slate-800"
+                        ? "bg-slate-800 text-white shadow-2xs"
+                        : "bg-white text-slate-600 hover:text-slate-900 border border-slate-200/80 hover:bg-slate-100"
                     }`}
                   >
                     {tab.label}
@@ -342,88 +566,91 @@ export default function InvoicesPage() {
               })}
             </div>
 
-            <div className="flex items-center gap-2">
+            {/* Status Periode Aktif & Urutan */}
+            <div className="flex items-center gap-2 text-[11px]">
+              <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-sky-100/70 text-sky-900 font-bold border border-sky-200">
+                <Calendar className="w-3 h-3 text-sky-700" />
+                <span>Periode: {formatActivePeriod(dateFrom, dateTo)}</span>
+              </span>
+
               <button
-                onClick={() => setSortDir(s => s === "ASC" ? "DESC" : "ASC")}
-                className="px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-600 hover:bg-slate-50 flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                type="button"
+                onClick={() => setSortDir(s => (s === "ASC" ? "DESC" : "ASC"))}
+                className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-white text-slate-600 border border-slate-200 font-bold hover:text-sky-800 cursor-pointer shadow-2xs"
+                title="Klik untuk ubah urutan"
               >
-                <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
-                <span>Urutan: {sortDir === "ASC" ? "Tgl Lama → Baru" : "Tgl Baru → Lama"}</span>
-              </button>
-              <button
-                onClick={handleResetFilter}
-                className="px-2.5 py-1.5 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition cursor-pointer shadow-2xs"
-                title="Reset Filter"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
+                <ArrowUpDown className="w-3 h-3 text-slate-400" />
+                <span>Urut: {sortDir === "ASC" ? "Tgl Lama → Baru (ASC)" : "Tgl Baru → Lama (DESC)"}</span>
               </button>
             </div>
           </div>
 
-          {/* Baris 2: Search Input & Month Period Preset Controls */}
-          <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 pt-1 border-t border-slate-200/60">
-            <div className="sm:col-span-6 relative">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                placeholder="Cari nama klien / no. invoice..."
-                className="w-full pl-9 pr-3 py-1.5 rounded-xl border border-slate-200 bg-white text-xs font-medium focus:outline-none focus:ring-2 focus:ring-sky-500 shadow-2xs"
-              />
-            </div>
+          {/* EXPANDABLE SECTION: RENTANG TANGGAL KUSTOM */}
+          {isRangeFilterOpen && (
+            <div className="pt-3 border-t border-slate-200/80 animate-fade-in space-y-3">
+              <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs">
+                <div className="text-xs font-bold text-slate-800 mb-2 flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <Calendar className="w-3.5 h-3.5 text-sky-700" />
+                    Pilih Rentang Tanggal Spesifik (Range Tanggal Tagihan)
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const end = new Date();
+                        const start = new Date();
+                        start.setDate(start.getDate() - 30);
+                        setDateFrom(formatYMD(start));
+                        setDateTo(formatYMD(end));
+                      }}
+                      className="px-2 py-0.5 text-[10px] font-bold rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 transition cursor-pointer"
+                    >
+                      30 Hari Terakhir
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const end = new Date();
+                        const start = new Date();
+                        start.setDate(start.getDate() - 7);
+                        setDateFrom(formatYMD(start));
+                        setDateTo(formatYMD(end));
+                      }}
+                      className="px-2 py-0.5 text-[10px] font-bold rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 transition cursor-pointer"
+                    >
+                      7 Hari Terakhir
+                    </button>
+                  </div>
+                </div>
 
-            {/* Quick Month Dropdown Picker */}
-            <div className="sm:col-span-6 flex items-center gap-2">
-              <div className="relative flex-1">
-                <select
-                  value={currentMonthKey}
-                  onChange={e => {
-                    const val = e.target.value;
-                    if (val === "ALL") {
-                      setDateFrom("");
-                      setDateTo("");
-                    } else if (val !== "CUSTOM") {
-                      const [yStr, mStr] = val.split("-");
-                      const y = parseInt(yStr, 10);
-                      const m = parseInt(mStr, 10) - 1;
-                      const mRange = getMonthRange(y, m);
-                      setDateFrom(mRange.date_from);
-                      setDateTo(mRange.date_to);
-                    }
-                  }}
-                  className="w-full px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-sky-500 cursor-pointer shadow-2xs"
-                >
-                  <option value="ALL">Semua Periode Transaksi</option>
-                  {monthOptions.map((opt: any) => (
-                    <option key={opt.monthKey} value={opt.monthKey}>
-                      📅 {opt.displayLabel}
-                    </option>
-                  ))}
-                  {currentMonthKey === "CUSTOM" && (
-                    <option value="CUSTOM">📅 Kustom Rentang Tanggal...</option>
-                  )}
-                </select>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                      Tanggal Awal (Dari)
+                    </label>
+                    <input
+                      type="date"
+                      value={dateFrom}
+                      onChange={e => setDateFrom(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-600 font-medium cursor-pointer"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                      Tanggal Akhir (Sampai)
+                    </label>
+                    <input
+                      type="date"
+                      value={dateTo}
+                      onChange={e => setDateTo(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-600 font-medium cursor-pointer"
+                    />
+                  </div>
+                </div>
               </div>
-
-              {/* Custom Date Inputs if needed */}
-              <input
-                type="date"
-                value={dateFrom}
-                onChange={e => setDateFrom(e.target.value)}
-                title="Tanggal Awal"
-                className="w-32 px-2 py-1.5 rounded-xl border border-slate-200 bg-white text-xs font-medium focus:outline-none focus:ring-2 focus:ring-sky-500 shadow-2xs"
-              />
-              <span className="text-slate-400 text-xs">-</span>
-              <input
-                type="date"
-                value={dateTo}
-                onChange={e => setDateTo(e.target.value)}
-                title="Tanggal Akhir"
-                className="w-32 px-2 py-1.5 rounded-xl border border-slate-200 bg-white text-xs font-medium focus:outline-none focus:ring-2 focus:ring-sky-500 shadow-2xs"
-              />
             </div>
-          </div>
+          )}
         </div>
 
         {/* 3. 8 Kolom Data Table */}
@@ -578,6 +805,7 @@ export default function InvoicesPage() {
           infoSuffix={`Urut ${sortDir}`}
         />
       </div>
+    </div>
 
       {/* MODAL BUAT INVOICE */}
       <CreateInvoiceModal
@@ -614,6 +842,15 @@ export default function InvoicesPage() {
         onClose={() => setInvoiceToDelete(null)}
         onConfirm={handleConfirmDelete}
       />
-    </div>
+
+      {/* MODAL CETAK REKAPITULASI INVOICE & PIUTANG (1:1 DOKUMEN ASLI KANTOR) */}
+      <InvoiceRecapReportModal
+        isOpen={isRecapReportOpen}
+        onClose={() => setIsRecapReportOpen(false)}
+        defaultDateFrom={dateFrom}
+        defaultDateTo={dateTo}
+        defaultStatusFilter={statusFilter}
+      />
+    </>
   );
 }
