@@ -679,7 +679,7 @@ export function CashflowReportModal({
                         {formatNumber(endingSaldo)}
                       </td>
                       <td colSpan={6} className="border border-slate-400 px-2 py-2 text-center font-sans text-xs uppercase tracking-wider font-bold">
-                        TOTAL AKUMULASI PERIODE
+                        TOTAL
                       </td>
                       <td className="border border-slate-400 px-1.5 py-2 text-right whitespace-nowrap">
                         {formatNumber(totalGrandCost)}

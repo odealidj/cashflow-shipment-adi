@@ -828,7 +828,7 @@ func (h *CashflowHandler) ExportExcel(w http.ResponseWriter, r *http.Request) {
 			f.SetCellStyle(sheetName, cName, cName, totalLabelStyle)
 		}
 		f.MergeCell(sheetName, fmt.Sprintf("D%d", sumRow), fmt.Sprintf("I%d", sumRow))
-		f.SetCellValue(sheetName, fmt.Sprintf("D%d", sumRow), "TOTAL AKUMULASI PERIODE")
+		f.SetCellValue(sheetName, fmt.Sprintf("D%d", sumRow), "TOTAL")
 		f.SetCellStyle(sheetName, fmt.Sprintf("D%d", sumRow), fmt.Sprintf("I%d", sumRow), totalLabelStyle)
 
 		f.SetCellValue(sheetName, fmt.Sprintf("J%d", sumRow), totalCost)
