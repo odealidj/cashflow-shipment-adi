@@ -47,3 +47,6 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
+
+# k6 Benchmark Reports
+tests/k6/reports/*.json
