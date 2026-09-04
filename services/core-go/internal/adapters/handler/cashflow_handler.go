@@ -3,7 +3,10 @@ package handler
 import (
 	"encoding/json"
 	"fmt"
+	_ "image/jpeg"
+	_ "image/png"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -283,6 +286,22 @@ func (h *CashflowHandler) GetSummary(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, http.StatusOK, "Summary retrieved", summary)
 }
 
+func findLogoPath() string {
+	candidates := []string{
+		"assets/logo.png",
+		"../../apps/web-next/public/logo.png",
+		"apps/web-next/public/logo.png",
+		"services/core-go/assets/logo.png",
+		"../apps/web-next/public/logo.png",
+	}
+	for _, p := range candidates {
+		if _, err := os.Stat(p); err == nil {
+			return p
+		}
+	}
+	return ""
+}
+
 // Export Excel godoc
 // @Summary      Export cashflow data to Excel
 // @Tags         cashflow
@@ -311,7 +330,81 @@ func (h *CashflowHandler) ExportExcel(w http.ResponseWriter, r *http.Request) {
 	}()
 	sheetName := "Sheet1"
 
-	// 1. Style Header (Navy Blue #223249, Bold Putih, Center, Border)
+	// 1. Style Kop Surat (Sesuai Dokumen Resmi & DOCX)
+	companyTitleStyle, _ := f.NewStyle(&excelize.Style{
+		Font: &excelize.Font{
+			Bold:   true,
+			Size:   14,
+			Color:  "1A365D",
+			Family: "Calibri",
+		},
+		Alignment: &excelize.Alignment{
+			Horizontal: "center",
+			Vertical:   "center",
+		},
+	})
+
+	taglineStyle, _ := f.NewStyle(&excelize.Style{
+		Font: &excelize.Font{
+			Bold:   true,
+			Size:   10,
+			Color:  "4A5568",
+			Family: "Calibri",
+		},
+		Alignment: &excelize.Alignment{
+			Horizontal: "center",
+			Vertical:   "center",
+		},
+	})
+
+	addressStyle, _ := f.NewStyle(&excelize.Style{
+		Font: &excelize.Font{
+			Size:   8.5,
+			Color:  "64748B",
+			Family: "Calibri",
+		},
+		Alignment: &excelize.Alignment{
+			Horizontal: "center",
+			Vertical:   "center",
+		},
+	})
+
+	docTitleStyle, _ := f.NewStyle(&excelize.Style{
+		Font: &excelize.Font{
+			Bold:   true,
+			Size:   11,
+			Color:  "1E293B",
+			Family: "Calibri",
+		},
+		Alignment: &excelize.Alignment{
+			Horizontal: "center",
+			Vertical:   "center",
+		},
+	})
+
+	periodRowStyle, _ := f.NewStyle(&excelize.Style{
+		Font: &excelize.Font{
+			Bold:   true,
+			Size:   9,
+			Color:  "475569",
+			Family: "Calibri",
+		},
+		Alignment: &excelize.Alignment{
+			Horizontal: "center",
+			Vertical:   "center",
+		},
+		Border: []excelize.Border{
+			{Type: "bottom", Color: "1A365D", Style: 2}, // Garis Pemisah Kop Surat Tebal
+		},
+	})
+
+	borderOnlyStyle, _ := f.NewStyle(&excelize.Style{
+		Border: []excelize.Border{
+			{Type: "bottom", Color: "1A365D", Style: 2},
+		},
+	})
+
+	// 2. Style Header Tabel di Baris 6 (Navy Blue #223249, Bold Putih, Center, Border)
 	headerStyle, _ := f.NewStyle(&excelize.Style{
 		Font: &excelize.Font{
 			Bold:   true,
@@ -337,7 +430,7 @@ func (h *CashflowHandler) ExportExcel(w http.ResponseWriter, r *http.Request) {
 		},
 	})
 
-	// 2. Style Nominal Finansial (Rata Kanan, Indikator Ribuan #,##0, Border)
+	// 3. Style Nominal Finansial (Rata Kanan, Indikator Ribuan #,##0, Border)
 	numStyle, _ := f.NewStyle(&excelize.Style{
 		CustomNumFmt: func() *string { s := "#,##0"; return &s }(),
 		Font: &excelize.Font{
@@ -356,7 +449,7 @@ func (h *CashflowHandler) ExportExcel(w http.ResponseWriter, r *http.Request) {
 		},
 	})
 
-	// 3. Style Tanggal & Status (Center Aligned, Border)
+	// 4. Style Tanggal & Status (Center Aligned, Border)
 	centerStyle, _ := f.NewStyle(&excelize.Style{
 		Font: &excelize.Font{
 			Family: "Calibri",
@@ -374,7 +467,7 @@ func (h *CashflowHandler) ExportExcel(w http.ResponseWriter, r *http.Request) {
 		},
 	})
 
-	// 4. Style Teks Biasa (Rata Kiri, Border)
+	// 5. Style Teks Biasa (Rata Kiri, Border)
 	textStyle, _ := f.NewStyle(&excelize.Style{
 		Font: &excelize.Font{
 			Family: "Calibri",
@@ -392,12 +485,128 @@ func (h *CashflowHandler) ExportExcel(w http.ResponseWriter, r *http.Request) {
 		},
 	})
 
-	// Set Headers
-	headers := []string{"KREDIT", "DEBIT", "SALDO", "DATE OF DEBIT", "ACT INFORMATION", "ACT EXPLAINATION", "VENDOR", "T O P", "DUE DATE", "GRAND COST", "GRAND SELLING", "PROFIT", "MARGIN IN %", "REMARKS"}
-	f.SetRowHeight(sheetName, 1, 26)
+	// 6. Style Total Akumulasi (Soft Gray #F1F5F9, Bold)
+	totalNumStyle, _ := f.NewStyle(&excelize.Style{
+		CustomNumFmt: func() *string { s := "#,##0"; return &s }(),
+		Font: &excelize.Font{
+			Bold:   true,
+			Family: "Calibri",
+			Size:   10,
+		},
+		Fill: excelize.Fill{
+			Type:    "pattern",
+			Color:   []string{"F1F5F9"},
+			Pattern: 1,
+		},
+		Alignment: &excelize.Alignment{
+			Horizontal: "right",
+			Vertical:   "center",
+		},
+		Border: []excelize.Border{
+			{Type: "left", Color: "CBD5E1", Style: 1},
+			{Type: "top", Color: "94A3B8", Style: 1},
+			{Type: "bottom", Color: "1E293B", Style: 2},
+			{Type: "right", Color: "CBD5E1", Style: 1},
+		},
+	})
+
+	totalLabelStyle, _ := f.NewStyle(&excelize.Style{
+		Font: &excelize.Font{
+			Bold:   true,
+			Family: "Calibri",
+			Size:   10,
+			Color:  "1E293B",
+		},
+		Fill: excelize.Fill{
+			Type:    "pattern",
+			Color:   []string{"F1F5F9"},
+			Pattern: 1,
+		},
+		Alignment: &excelize.Alignment{
+			Horizontal: "center",
+			Vertical:   "center",
+		},
+		Border: []excelize.Border{
+			{Type: "left", Color: "CBD5E1", Style: 1},
+			{Type: "top", Color: "94A3B8", Style: 1},
+			{Type: "bottom", Color: "1E293B", Style: 2},
+			{Type: "right", Color: "CBD5E1", Style: 1},
+		},
+	})
+
+	// Tinggi Baris Kop Surat (Baris 1 - 5) & Header Tabel (Baris 6)
+	f.SetRowHeight(sheetName, 1, 24)
+	f.SetRowHeight(sheetName, 2, 16)
+	f.SetRowHeight(sheetName, 3, 16)
+	f.SetRowHeight(sheetName, 4, 20)
+	f.SetRowHeight(sheetName, 5, 18)
+	f.SetRowHeight(sheetName, 6, 26) // Baris 6: Header Tabel
+
+	// Tulis Teks Kop Surat Resmi PT Adijayantara Logistic Indonesia
+	f.MergeCell(sheetName, "C1", "N1")
+	f.SetCellValue(sheetName, "C1", "PT ADIJAYANTARA LOGISTIC INDONESIA")
+	f.SetCellStyle(sheetName, "C1", "N1", companyTitleStyle)
+
+	f.MergeCell(sheetName, "C2", "N2")
+	f.SetCellValue(sheetName, "C2", "Freight Forwarding & Logistics Services")
+	f.SetCellStyle(sheetName, "C2", "N2", taglineStyle)
+
+	f.MergeCell(sheetName, "C3", "N3")
+	f.SetCellValue(sheetName, "C3", "WISMA SMR JL YOS SUDARSO, Kav. 89 Lantai 9, UNIT 904, Jakarta Utara 14350  •  Email: adijantara.logistic@gmail.com")
+	f.SetCellStyle(sheetName, "C3", "N3", addressStyle)
+
+	// Judul Dokumen di Baris 4
+	docTitle := "CASHFLOW SHIPMENT CONTROL"
+	if formatMode == "merged" || formatMode == "rolling" {
+		docTitle = "CASHFLOW SHIPMENT CONTROL (VERSI 2: TOP-UP + SALDO SEBELUMNYA)"
+	} else {
+		docTitle = "CASHFLOW SHIPMENT CONTROL (VERSI 1: TOP-UP TERPISAH)"
+	}
+	f.MergeCell(sheetName, "A4", "N4")
+	f.SetCellValue(sheetName, "A4", docTitle)
+	f.SetCellStyle(sheetName, "A4", "N4", docTitleStyle)
+
+	// Periode di Baris 5 dengan Garis Pembatas Kop Surat Tebal (Border Bottom)
+	periodText := "PERIODE: SEMUA TRANSAKSI"
+	if filter.DateFrom != nil && *filter.DateFrom != "" && filter.DateTo != nil && *filter.DateTo != "" {
+		periodText = fmt.Sprintf("PERIODE: %s s/d %s", *filter.DateFrom, *filter.DateTo)
+	} else if filter.DateFrom != nil && *filter.DateFrom != "" {
+		periodText = fmt.Sprintf("PERIODE MULAI: %s", *filter.DateFrom)
+	} else if filter.DateTo != nil && *filter.DateTo != "" {
+		periodText = fmt.Sprintf("PERIODE SAMPAI: %s", *filter.DateTo)
+	}
+
+	for col := 1; col <= 14; col++ {
+		cName, _ := excelize.CoordinatesToCellName(col, 5)
+		f.SetCellStyle(sheetName, cName, cName, borderOnlyStyle)
+	}
+	f.MergeCell(sheetName, "A5", "N5")
+	f.SetCellValue(sheetName, "A5", periodText)
+	f.SetCellStyle(sheetName, "A5", "N5", periodRowStyle)
+
+	// Sisipkan Logo Perusahaan di A1
+	if logoPath := findLogoPath(); logoPath != "" {
+		enable := true
+		_ = f.AddPicture(sheetName, "A1", logoPath, &excelize.GraphicOptions{
+			ScaleX:          0.13,
+			ScaleY:          0.13,
+			OffsetX:         10,
+			OffsetY:         4,
+			LockAspectRatio: true,
+			PrintObject:     &enable,
+			Positioning:     "oneCell",
+		})
+	}
+
+	// Baris 6: Header Tabel 14 Kolom
+	col1Header := "KREDIT"
+	if formatMode == "merged" || formatMode == "rolling" {
+		col1Header = "TOPUP+SALDO"
+	}
+	headers := []string{col1Header, "DEBIT", "SALDO", "DATE OF DEBIT", "ACT INFORMATION", "ACT EXPLAINATION", "VENDOR", "T O P", "DUE DATE", "GRAND COST", "GRAND SELLING", "PROFIT", "MARGIN IN %", "REMARKS"}
 
 	for i, header := range headers {
-		cell, _ := excelize.CoordinatesToCellName(i+1, 1)
+		cell, _ := excelize.CoordinatesToCellName(i+1, 6)
 		f.SetCellValue(sheetName, cell, header)
 		f.SetCellStyle(sheetName, cell, cell, headerStyle)
 	}
@@ -533,10 +742,21 @@ func (h *CashflowHandler) ExportExcel(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Tulis Baris Data ke File Excel
+	// Tulis Baris Data ke File Excel Mulai Baris 7
+	startRow := 7
+	var totalKredit, totalDebit, totalCost, totalSelling, totalProfit float64
+	var lastSaldo float64
+
 	for i, rItem := range rows {
-		row := i + 2
+		row := i + startRow
 		f.SetRowHeight(sheetName, row, 20)
+
+		totalKredit += rItem.Kredit
+		totalDebit += rItem.Debit
+		totalCost += rItem.GrandCost
+		totalSelling += rItem.GrandSelling
+		totalProfit += rItem.Profit
+		lastSaldo = rItem.Saldo
 
 		// Nominal Finansial (A, B, C) -> Right Aligned dengan Format #,##0
 		f.SetCellValue(sheetName, fmt.Sprintf("A%d", row), rItem.Kredit)
@@ -586,6 +806,49 @@ func (h *CashflowHandler) ExportExcel(w http.ResponseWriter, r *http.Request) {
 
 		f.SetCellValue(sheetName, fmt.Sprintf("N%d", row), rItem.Remarks)
 		f.SetCellStyle(sheetName, fmt.Sprintf("N%d", row), fmt.Sprintf("N%d", row), centerStyle)
+	}
+
+	// Baris Total Akumulasi (Jika Ada Data)
+	if len(rows) > 0 {
+		sumRow := len(rows) + startRow
+		f.SetRowHeight(sheetName, sumRow, 22)
+
+		f.SetCellValue(sheetName, fmt.Sprintf("A%d", sumRow), totalKredit)
+		f.SetCellStyle(sheetName, fmt.Sprintf("A%d", sumRow), fmt.Sprintf("A%d", sumRow), totalNumStyle)
+
+		f.SetCellValue(sheetName, fmt.Sprintf("B%d", sumRow), totalDebit)
+		f.SetCellStyle(sheetName, fmt.Sprintf("B%d", sumRow), fmt.Sprintf("B%d", sumRow), totalNumStyle)
+
+		f.SetCellValue(sheetName, fmt.Sprintf("C%d", sumRow), lastSaldo)
+		f.SetCellStyle(sheetName, fmt.Sprintf("C%d", sumRow), fmt.Sprintf("C%d", sumRow), totalNumStyle)
+
+		// Label Total
+		for c := 4; c <= 9; c++ {
+			cName, _ := excelize.CoordinatesToCellName(c, sumRow)
+			f.SetCellStyle(sheetName, cName, cName, totalLabelStyle)
+		}
+		f.MergeCell(sheetName, fmt.Sprintf("D%d", sumRow), fmt.Sprintf("I%d", sumRow))
+		f.SetCellValue(sheetName, fmt.Sprintf("D%d", sumRow), "TOTAL AKUMULASI PERIODE")
+		f.SetCellStyle(sheetName, fmt.Sprintf("D%d", sumRow), fmt.Sprintf("I%d", sumRow), totalLabelStyle)
+
+		f.SetCellValue(sheetName, fmt.Sprintf("J%d", sumRow), totalCost)
+		f.SetCellStyle(sheetName, fmt.Sprintf("J%d", sumRow), fmt.Sprintf("J%d", sumRow), totalNumStyle)
+
+		f.SetCellValue(sheetName, fmt.Sprintf("K%d", sumRow), totalSelling)
+		f.SetCellStyle(sheetName, fmt.Sprintf("K%d", sumRow), fmt.Sprintf("K%d", sumRow), totalNumStyle)
+
+		f.SetCellValue(sheetName, fmt.Sprintf("L%d", sumRow), totalProfit)
+		f.SetCellStyle(sheetName, fmt.Sprintf("L%d", sumRow), fmt.Sprintf("L%d", sumRow), totalNumStyle)
+
+		avgMargin := 0.0
+		if totalSelling > 0 {
+			avgMargin = (totalProfit / totalSelling) * 100
+		}
+		f.SetCellValue(sheetName, fmt.Sprintf("M%d", sumRow), fmt.Sprintf("%.2f%%", avgMargin))
+		f.SetCellStyle(sheetName, fmt.Sprintf("M%d", sumRow), fmt.Sprintf("M%d", sumRow), totalLabelStyle)
+
+		f.SetCellValue(sheetName, fmt.Sprintf("N%d", sumRow), "-")
+		f.SetCellStyle(sheetName, fmt.Sprintf("N%d", sumRow), fmt.Sprintf("N%d", sumRow), totalLabelStyle)
 	}
 
 	// Atur Lebar Kolom yang Proporsional dan Rapi

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
+import Image from "next/image";
 import { 
   X, 
   Printer, 
@@ -520,36 +521,64 @@ export function CashflowReportModal({
             /* TAMPILAN PRATINJAU CETAK DOKUMEN RESMI EXCEL         */
             /* ==================================================== */
             <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200 print:border-none print:shadow-none print:p-0 mx-auto max-w-[1300px]">
-              {/* Header Dokumen Excel */}
-              <div className="border-b-2 border-slate-800 pb-3 mb-4">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h1 className="text-base sm:text-lg font-black tracking-wider uppercase text-slate-900 font-mono">
+              {/* 1. KOP SURAT RESMI (Rata Tengah Sesuai Dokumen DOCX & Excel) */}
+              <div className="border-b-2 border-slate-900 pb-4 mb-4 relative">
+                <div className="flex items-center justify-between">
+                  {/* Logo Perusahaan */}
+                  <div className="w-20 h-20 relative shrink-0">
+                    <Image
+                      src="/logo.png"
+                      alt="Logo PT Adijayantara Logistic"
+                      width={80}
+                      height={80}
+                      className="w-full h-full object-contain"
+                      priority
+                    />
+                  </div>
+
+                  {/* Teks Kop Surat */}
+                  <div className="flex-1 text-center px-4">
+                    <h1 className="text-xl font-black text-[#1A365D] tracking-wider uppercase font-sans">
                       PT ADIJAYANTARA LOGISTIC INDONESIA
                     </h1>
-                    <div className="flex items-center gap-2 mt-1">
-                      <div className="inline-block bg-emerald-700 text-white text-xs font-black px-3 py-1 rounded font-mono tracking-wider uppercase">
-                        CASHFLOW SHIPMENT CONTROL
-                      </div>
-                      <span className={`text-[11px] font-bold px-2 py-0.5 rounded border ${
-                        reportVersion === "separated"
-                          ? "bg-sky-50 text-sky-700 border-sky-200"
-                          : "bg-emerald-50 text-emerald-800 border-emerald-200"
-                      }`}>
-                        {reportVersion === "separated"
-                          ? "Versi 1: Kolom Top-Up Terpisah"
-                          : "Versi 2: Top-Up + Saldo Sebelumnya"}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xs font-bold text-slate-600">
-                      PERIODE: <span className="font-black text-slate-900">{formatActivePeriod(dateFrom, dateTo)}</span>
+                    <p className="text-xs font-bold text-[#4A5568] tracking-wide mt-0.5 font-sans">
+                      Freight Forwarding & Logistics Services
                     </p>
-                    <p className="text-[10px] text-slate-400 font-mono mt-0.5">
-                      Tanggal Cetak: {new Date().toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" })}
+                    <p className="text-[11px] text-[#64748B] mt-1 leading-tight font-sans">
+                      WISMA SMR JL YOS SUDARSO, Kav. 89 Lantai 9, UNIT 904, Jakarta Utara 14350
+                      <span className="mx-2 font-bold text-slate-400">•</span>
+                      Email: adijantara.logistic@gmail.com
                     </p>
                   </div>
+
+                  {/* Spacer penyeimbang sisi kanan */}
+                  <div className="w-20 h-20 shrink-0 hidden sm:block"></div>
+                </div>
+              </div>
+
+              {/* 2. SUB-HEADER DOKUMEN & PERIODE */}
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4">
+                <div className="flex items-center gap-2">
+                  <div className="inline-block bg-emerald-700 text-white text-xs font-black px-3 py-1 rounded font-mono tracking-wider uppercase">
+                    CASHFLOW SHIPMENT CONTROL
+                  </div>
+                  <span className={`text-[11px] font-bold px-2 py-0.5 rounded border ${
+                    reportVersion === "separated"
+                      ? "bg-sky-50 text-sky-700 border-sky-200"
+                      : "bg-emerald-50 text-emerald-800 border-emerald-200"
+                  }`}>
+                    {reportVersion === "separated"
+                      ? "Versi 1: Kolom Top-Up Terpisah"
+                      : "Versi 2: Top-Up + Saldo Sebelumnya"}
+                  </span>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs font-bold text-slate-600">
+                    PERIODE: <span className="font-black text-slate-900">{formatActivePeriod(dateFrom, dateTo)}</span>
+                  </p>
+                  <p className="text-[10px] text-slate-400 font-mono mt-0.5">
+                    Tanggal Cetak: {new Date().toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" })}
+                  </p>
                 </div>
               </div>
 
