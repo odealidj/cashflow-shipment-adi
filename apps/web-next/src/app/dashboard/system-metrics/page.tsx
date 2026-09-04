@@ -1016,57 +1016,133 @@ export default function SystemMetricsPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-5">
-          <div className="p-4 rounded-xl bg-white/5 border border-white/10">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-sky-300">1. P95 Request Latency</span>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300">&lt; 100ms</span>
-            </div>
-            <p className="text-[11px] text-slate-300 mt-2">
-              <strong>Normal</strong>: &lt; 100ms. <strong>Waspada</strong>: 100-300ms. <strong>Kritis</strong>: &gt; 500ms.
-            </p>
-            <div className="mt-2.5 pt-2 border-t border-white/10 text-[10px] text-slate-400">
-              <strong className="text-amber-300">Tindakan Jika Kritis:</strong> Cek query lambat di tabel bawah, periksa koneksi internet upstream &amp; indexing database.
-            </div>
-          </div>
+          {/* SLO 1: P95 LATENCY */}
+          {(() => {
+            const p95 = metrics?.gateway.p95_latency_ms || 0;
+            let statusBadge = { color: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30", dot: "bg-emerald-400", label: `Saat ini: ${p95.toFixed(1)} ms (Normal)` };
+            let cardBorder = "border-white/10 bg-white/5";
+            if (p95 >= 300) {
+              statusBadge = { color: "bg-rose-500/30 text-rose-200 border-rose-500/40", dot: "bg-rose-400 animate-ping", label: `Saat ini: ${p95.toFixed(1)} ms (Kritis)` };
+              cardBorder = "border-rose-500/50 bg-rose-500/10";
+            } else if (p95 >= 100) {
+              statusBadge = { color: "bg-amber-500/30 text-amber-200 border-amber-500/40", dot: "bg-amber-400", label: `Saat ini: ${p95.toFixed(1)} ms (Waspada)` };
+              cardBorder = "border-amber-500/40 bg-amber-500/10";
+            }
 
-          <div className="p-4 rounded-xl bg-white/5 border border-white/10">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-sky-300">2. HTTP Error Rate</span>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300">&lt; 0.5%</span>
-            </div>
-            <p className="text-[11px] text-slate-300 mt-2">
-              <strong>Normal</strong>: 0%. <strong>Waspada</strong>: 0.5 - 2%. <strong>Kritis</strong>: &gt; 5% atau muncul 502 Bad Gateway.
-            </p>
-            <div className="mt-2.5 pt-2 border-t border-white/10 text-[10px] text-slate-400">
-              <strong className="text-amber-300">Tindakan Jika Kritis:</strong> Periksa log Core Go (:8081). Pastikan service tidak crash atau restart mendadak.
-            </div>
-          </div>
+            return (
+              <div className={`p-4 rounded-xl border transition-all duration-300 ${cardBorder}`}>
+                <div className="flex items-start justify-between gap-2">
+                  <span className="text-xs font-bold text-sky-300">1. P95 Request Latency</span>
+                  <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-md border flex items-center gap-1.5 shrink-0 ${statusBadge.color}`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${statusBadge.dot}`} />
+                    <span>{statusBadge.label}</span>
+                  </span>
+                </div>
+                <div className="mt-2.5 p-2 rounded-lg bg-black/30 border border-white/5 text-[11px] text-slate-300 space-y-0.5">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Nilai Ambang Batas Patokan (SLO):</span>
+                  <p><strong>Target</strong>: &lt; 100 ms • <strong>Waspada</strong>: 100-300 ms • <strong>Kritis</strong>: &gt; 500 ms</p>
+                </div>
+                <div className="mt-2.5 pt-2 border-t border-white/10 text-[10px] text-slate-400 leading-relaxed">
+                  <strong className="text-amber-300">Tindakan Jika Kritis:</strong> Cek query lambat di tabel bawah, periksa koneksi internet upstream &amp; indexing database.
+                </div>
+              </div>
+            );
+          })()}
 
-          <div className="p-4 rounded-xl bg-white/5 border border-white/10">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-sky-300">3. DB Connection Pool</span>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300">&lt; 70%</span>
-            </div>
-            <p className="text-[11px] text-slate-300 mt-2">
-              <strong>Normal</strong>: &lt; 70% kapasitas. <strong>Kritis</strong>: In-Use &gt; 85% atau Wait Count &gt; 0.
-            </p>
-            <div className="mt-2.5 pt-2 border-t border-white/10 text-[10px] text-slate-400">
-              <strong className="text-amber-300">Tindakan Jika Kritis:</strong> Cek unclosed connection di kode repo atau naikkan batas `max_open` di `NewDBPool`.
-            </div>
-          </div>
+          {/* SLO 2: ERROR RATE */}
+          {(() => {
+            const errRate = metrics?.gateway.error_rate_pct || 0;
+            let statusBadge = { color: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30", dot: "bg-emerald-400", label: `Saat ini: ${errRate.toFixed(2)}% (Sehat)` };
+            let cardBorder = "border-white/10 bg-white/5";
+            if (errRate >= 2.0) {
+              statusBadge = { color: "bg-rose-500/30 text-rose-200 border-rose-500/40", dot: "bg-rose-400 animate-ping", label: `Saat ini: ${errRate.toFixed(2)}% (Kritis)` };
+              cardBorder = "border-rose-500/50 bg-rose-500/10";
+            } else if (errRate > 0) {
+              statusBadge = { color: "bg-amber-500/30 text-amber-200 border-amber-500/40", dot: "bg-amber-400", label: `Saat ini: ${errRate.toFixed(2)}% (Waspada)` };
+              cardBorder = "border-amber-500/40 bg-amber-500/10";
+            }
 
-          <div className="p-4 rounded-xl bg-white/5 border border-white/10">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-sky-300">4. Idempotency Hits</span>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300">Shield On</span>
-            </div>
-            <p className="text-[11px] text-slate-300 mt-2">
-              <strong>Normal</strong>: Hits kecil (&lt; 50). <strong>Waspada</strong>: Lonjakan ratusan hits dalam 1 menit.
-            </p>
-            <div className="mt-2.5 pt-2 border-t border-white/10 text-[10px] text-slate-400">
-              <strong className="text-amber-300">Tindakan Jika Waspada:</strong> Cek form submit di web frontend apakah ada tombol yang tidak di-disable saat diklik.
-            </div>
-          </div>
+            return (
+              <div className={`p-4 rounded-xl border transition-all duration-300 ${cardBorder}`}>
+                <div className="flex items-start justify-between gap-2">
+                  <span className="text-xs font-bold text-sky-300">2. HTTP Error Rate</span>
+                  <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-md border flex items-center gap-1.5 shrink-0 ${statusBadge.color}`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${statusBadge.dot}`} />
+                    <span>{statusBadge.label}</span>
+                  </span>
+                </div>
+                <div className="mt-2.5 p-2 rounded-lg bg-black/30 border border-white/5 text-[11px] text-slate-300 space-y-0.5">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Nilai Ambang Batas Patokan (SLO):</span>
+                  <p><strong>Target</strong>: 0.00% • <strong>Waspada</strong>: 0.5 - 2.0% • <strong>Kritis</strong>: &gt; 5.0% / 502</p>
+                </div>
+                <div className="mt-2.5 pt-2 border-t border-white/10 text-[10px] text-slate-400 leading-relaxed">
+                  <strong className="text-amber-300">Tindakan Jika Kritis:</strong> Periksa log Core Go (:8081). Pastikan service tidak crash atau restart mendadak.
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* SLO 3: DB CONNECTION POOL */}
+          {(() => {
+            const wait = metrics?.database_pool.wait_count || 0;
+            const inUse = metrics?.database_pool.in_use || 0;
+            const maxOpen = metrics?.database_pool.max_open || 25;
+            const pct = Math.round((inUse / maxOpen) * 100);
+
+            let statusBadge = { color: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30", dot: "bg-emerald-400", label: `Saat ini: ${pct}% In-Use (Wait: ${wait})` };
+            let cardBorder = "border-white/10 bg-white/5";
+            if (wait > 0 || pct >= 85) {
+              statusBadge = { color: "bg-rose-500/30 text-rose-200 border-rose-500/40", dot: "bg-rose-400 animate-ping", label: `Saat ini: ${pct}% In-Use (Wait: ${wait})` };
+              cardBorder = "border-rose-500/50 bg-rose-500/10";
+            } else if (pct >= 70) {
+              statusBadge = { color: "bg-amber-500/30 text-amber-200 border-amber-500/40", dot: "bg-amber-400", label: `Saat ini: ${pct}% In-Use (Mendekati Batas)` };
+              cardBorder = "border-amber-500/40 bg-amber-500/10";
+            }
+
+            return (
+              <div className={`p-4 rounded-xl border transition-all duration-300 ${cardBorder}`}>
+                <div className="flex items-start justify-between gap-2">
+                  <span className="text-xs font-bold text-sky-300">3. DB Connection Pool</span>
+                  <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-md border flex items-center gap-1.5 shrink-0 ${statusBadge.color}`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${statusBadge.dot}`} />
+                    <span>{statusBadge.label}</span>
+                  </span>
+                </div>
+                <div className="mt-2.5 p-2 rounded-lg bg-black/30 border border-white/5 text-[11px] text-slate-300 space-y-0.5">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Nilai Ambang Batas Patokan (SLO):</span>
+                  <p><strong>Target</strong>: &lt; 70% &amp; Wait=0 • <strong>Waspada</strong>: 70-85% • <strong>Kritis</strong>: &gt; 85% / Wait &gt; 0</p>
+                </div>
+                <div className="mt-2.5 pt-2 border-t border-white/10 text-[10px] text-slate-400 leading-relaxed">
+                  <strong className="text-amber-300">Tindakan Jika Kritis:</strong> Cek unclosed connection di kode repo atau naikkan batas `max_open` di `NewDBPool`.
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* SLO 4: IDEMPOTENCY SHIELD */}
+          {(() => {
+            const hits = metrics?.gateway.idempotency_hits || 0;
+            const misses = metrics?.gateway.idempotency_misses || 0;
+
+            return (
+              <div className="p-4 rounded-xl border border-white/10 bg-white/5 transition-all duration-300">
+                <div className="flex items-start justify-between gap-2">
+                  <span className="text-xs font-bold text-sky-300">4. Idempotency Guard</span>
+                  <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md border bg-indigo-500/20 text-indigo-300 border-indigo-500/30 flex items-center gap-1.5 shrink-0">
+                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
+                    <span>Ditangkis: {hits} req</span>
+                  </span>
+                </div>
+                <div className="mt-2.5 p-2 rounded-lg bg-black/30 border border-white/5 text-[11px] text-slate-300 space-y-0.5">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Nilai Ambang Batas Patokan (SLO):</span>
+                  <p><strong>Target</strong>: Shield On • <strong>Normal</strong>: Fluktuasi Wajar (&lt; 50/m) • <strong>Waspada</strong>: Ratusan/menit</p>
+                </div>
+                <div className="mt-2.5 pt-2 border-t border-white/10 text-[10px] text-slate-400 leading-relaxed">
+                  <strong className="text-amber-300">Tindakan Jika Waspada:</strong> Cek form submit di web frontend apakah ada tombol yang tidak di-disable saat diklik.
+                </div>
+              </div>
+            );
+          })()}
         </div>
       </div>
 
