@@ -317,6 +317,155 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/system/benchmark/abort": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "System"
+                ],
+                "summary": "Hentikan Pengujian Beban yang Sedang Berjalan (Emergency Stop)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/system/benchmark/download": {
+            "get": {
+                "produces": [
+                    "application/octet-stream"
+                ],
+                "tags": [
+                    "System"
+                ],
+                "summary": "Unduh Laporan Lengkap Pengujian Beban k6",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Job ID pengujian (default: hasil terakhir)",
+                        "name": "id",
+                        "in": "query"
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/v1/system/benchmark/history": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "System"
+                ],
+                "summary": "Ambil Riwayat 10 Pengujian Terakhir",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.APIResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/handler.BenchmarkReport"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/system/benchmark/start": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "System"
+                ],
+                "summary": "Memulai Uji Beban k6 Latar Belakang (Async)",
+                "parameters": [
+                    {
+                        "description": "Pilihan Skenario Uji Beban",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handler.BenchmarkStartRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Accepted",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.APIResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/handler.BenchmarkJobStatus"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/system/benchmark/status": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "System"
+                ],
+                "summary": "Ambil Status Terkini Uji Beban k6",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.APIResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/handler.BenchmarkJobStatus"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/auth/login": {
             "post": {
                 "description": "Login using email or phone number and password",
@@ -2795,6 +2944,140 @@ const docTemplate = `{
                 }
             }
         },
+        "handler.BenchmarkCheck": {
+            "type": "object",
+            "properties": {
+                "fails": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "passes": {
+                    "type": "integer"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "handler.BenchmarkJobStatus": {
+            "type": "object",
+            "properties": {
+                "elapsed_sec": {
+                    "type": "integer"
+                },
+                "error_message": {
+                    "type": "string"
+                },
+                "estimated_duration_sec": {
+                    "type": "integer"
+                },
+                "job_id": {
+                    "type": "string"
+                },
+                "latest_result": {
+                    "$ref": "#/definitions/handler.BenchmarkReport"
+                },
+                "progress_pct": {
+                    "type": "integer"
+                },
+                "scenario": {
+                    "type": "string"
+                },
+                "scenario_label": {
+                    "type": "string"
+                },
+                "started_at": {
+                    "type": "string"
+                },
+                "status": {
+                    "description": "IDLE, RUNNING, COMPLETED, ABORTED, FAILED",
+                    "type": "string"
+                }
+            }
+        },
+        "handler.BenchmarkReport": {
+            "type": "object",
+            "properties": {
+                "checks": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handler.BenchmarkCheck"
+                    }
+                },
+                "data_received_kb": {
+                    "type": "number"
+                },
+                "data_sent_kb": {
+                    "type": "number"
+                },
+                "duration": {
+                    "type": "string"
+                },
+                "failed_requests": {
+                    "type": "integer"
+                },
+                "job_id": {
+                    "type": "string"
+                },
+                "latency_avg_ms": {
+                    "type": "number"
+                },
+                "latency_max_ms": {
+                    "type": "number"
+                },
+                "latency_med_ms": {
+                    "type": "number"
+                },
+                "latency_min_ms": {
+                    "type": "number"
+                },
+                "latency_p90_ms": {
+                    "type": "number"
+                },
+                "latency_p95_ms": {
+                    "type": "number"
+                },
+                "latency_p99_ms": {
+                    "type": "number"
+                },
+                "rps": {
+                    "type": "number"
+                },
+                "scenario": {
+                    "type": "string"
+                },
+                "scenario_label": {
+                    "type": "string"
+                },
+                "success_rate_pct": {
+                    "type": "number"
+                },
+                "summary": {
+                    "$ref": "#/definitions/handler.ExecutiveSummary"
+                },
+                "timestamp": {
+                    "type": "string"
+                },
+                "total_requests": {
+                    "type": "integer"
+                },
+                "vus": {
+                    "type": "integer"
+                }
+            }
+        },
+        "handler.BenchmarkStartRequest": {
+            "type": "object",
+            "properties": {
+                "scenario": {
+                    "description": "smoke, load, idempotency, stress, spike, soak",
+                    "type": "string",
+                    "example": "smoke"
+                }
+            }
+        },
         "handler.BusinessKPIMetrics": {
             "type": "object",
             "properties": {
@@ -2842,6 +3125,30 @@ const docTemplate = `{
                 "wait_duration_ms": {
                     "type": "number",
                     "example": 0
+                }
+            }
+        },
+        "handler.ExecutiveSummary": {
+            "type": "object",
+            "properties": {
+                "key_findings": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "recommendations": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "verdict_status": {
+                    "description": "EXCELLENT, GOOD, WARNING, CRITICAL",
+                    "type": "string"
+                },
+                "verdict_title": {
+                    "type": "string"
                 }
             }
         },

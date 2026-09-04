@@ -169,6 +169,95 @@ definitions:
       updated_at:
         type: string
     type: object
+  handler.BenchmarkCheck:
+    properties:
+      fails:
+        type: integer
+      name:
+        type: string
+      passes:
+        type: integer
+      success:
+        type: boolean
+    type: object
+  handler.BenchmarkJobStatus:
+    properties:
+      elapsed_sec:
+        type: integer
+      error_message:
+        type: string
+      estimated_duration_sec:
+        type: integer
+      job_id:
+        type: string
+      latest_result:
+        $ref: '#/definitions/handler.BenchmarkReport'
+      progress_pct:
+        type: integer
+      scenario:
+        type: string
+      scenario_label:
+        type: string
+      started_at:
+        type: string
+      status:
+        description: IDLE, RUNNING, COMPLETED, ABORTED, FAILED
+        type: string
+    type: object
+  handler.BenchmarkReport:
+    properties:
+      checks:
+        items:
+          $ref: '#/definitions/handler.BenchmarkCheck'
+        type: array
+      data_received_kb:
+        type: number
+      data_sent_kb:
+        type: number
+      duration:
+        type: string
+      failed_requests:
+        type: integer
+      job_id:
+        type: string
+      latency_avg_ms:
+        type: number
+      latency_max_ms:
+        type: number
+      latency_med_ms:
+        type: number
+      latency_min_ms:
+        type: number
+      latency_p90_ms:
+        type: number
+      latency_p95_ms:
+        type: number
+      latency_p99_ms:
+        type: number
+      rps:
+        type: number
+      scenario:
+        type: string
+      scenario_label:
+        type: string
+      success_rate_pct:
+        type: number
+      summary:
+        $ref: '#/definitions/handler.ExecutiveSummary'
+      timestamp:
+        type: string
+      total_requests:
+        type: integer
+      vus:
+        type: integer
+    type: object
+  handler.BenchmarkStartRequest:
+    properties:
+      scenario:
+        description: smoke, load, idempotency, stress, spike, soak
+        example: smoke
+        type: string
+    type: object
   handler.BusinessKPIMetrics:
     properties:
       invoices_created_today:
@@ -204,6 +293,22 @@ definitions:
       wait_duration_ms:
         example: 0
         type: number
+    type: object
+  handler.ExecutiveSummary:
+    properties:
+      key_findings:
+        items:
+          type: string
+        type: array
+      recommendations:
+        items:
+          type: string
+        type: array
+      verdict_status:
+        description: EXCELLENT, GOOD, WARNING, CRITICAL
+        type: string
+      verdict_title:
+        type: string
     type: object
   handler.GatewayMetrics:
     properties:
@@ -617,6 +722,93 @@ paths:
       summary: Update activity preset
       tags:
       - activity-presets
+  /api/v1/system/benchmark/abort:
+    post:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      summary: Hentikan Pengujian Beban yang Sedang Berjalan (Emergency Stop)
+      tags:
+      - System
+  /api/v1/system/benchmark/download:
+    get:
+      parameters:
+      - description: 'Job ID pengujian (default: hasil terakhir)'
+        in: query
+        name: id
+        type: string
+      produces:
+      - application/octet-stream
+      responses: {}
+      summary: Unduh Laporan Lengkap Pengujian Beban k6
+      tags:
+      - System
+  /api/v1/system/benchmark/history:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.APIResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/handler.BenchmarkReport'
+                  type: array
+              type: object
+      summary: Ambil Riwayat 10 Pengujian Terakhir
+      tags:
+      - System
+  /api/v1/system/benchmark/start:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Pilihan Skenario Uji Beban
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.BenchmarkStartRequest'
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/handler.BenchmarkJobStatus'
+              type: object
+      summary: Memulai Uji Beban k6 Latar Belakang (Async)
+      tags:
+      - System
+  /api/v1/system/benchmark/status:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/handler.BenchmarkJobStatus'
+              type: object
+      summary: Ambil Status Terkini Uji Beban k6
+      tags:
+      - System
   /auth/login:
     post:
       consumes:

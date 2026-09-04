@@ -178,6 +178,7 @@ func main() {
 	utilityHandler := handler.NewUtilityHandler()
 	startTime := time.Now()
 	systemMetricsHandler := handler.NewSystemMetricsHandler(dbPool, redisClient, startTime)
+	benchmarkHandler := handler.NewBenchmarkHandler(redisClient, "")
 
 	r := chi.NewRouter()
 
@@ -315,6 +316,15 @@ func main() {
 				r.Use(middleware.RequirePermission("system.view"))
 				r.Get("/metrics", systemMetricsHandler.GetMetrics)
 				r.Post("/simulate-slow-query", systemMetricsHandler.SimulateSlowQuery)
+
+				// k6 Asynchronous Benchmark Routes
+				r.Route("/benchmark", func(r chi.Router) {
+					r.Post("/start", benchmarkHandler.StartBenchmark)
+					r.Get("/status", benchmarkHandler.GetBenchmarkStatus)
+					r.Post("/abort", benchmarkHandler.AbortBenchmark)
+					r.Get("/history", benchmarkHandler.GetBenchmarkHistory)
+					r.Get("/download", benchmarkHandler.DownloadBenchmarkReport)
+				})
 			})
 		})
 	})
