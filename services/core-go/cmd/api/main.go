@@ -176,7 +176,8 @@ func main() {
 	cashflowHandler := handler.NewCashflowHandler(cashflowService)
 	invoiceHandler := handler.NewInvoiceHandler(invoiceService)
 	utilityHandler := handler.NewUtilityHandler()
-	systemMetricsHandler := handler.NewSystemMetricsHandler(dbPool)
+	startTime := time.Now()
+	systemMetricsHandler := handler.NewSystemMetricsHandler(dbPool, redisClient, startTime)
 
 	r := chi.NewRouter()
 

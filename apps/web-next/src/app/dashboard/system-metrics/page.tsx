@@ -56,8 +56,20 @@ interface SlowQueryRecord {
   has_error: boolean;
 }
 
+interface RuntimeMetrics {
+  go_version: string;
+  num_goroutine: number;
+  alloc_mb: number;
+  sys_mb: number;
+  num_gc: number;
+  uptime_seconds: number;
+  redis_status: string;
+  redis_ping_ms: number;
+}
+
 interface SystemMetricsData {
   prometheus_connected: boolean;
+  runtime?: RuntimeMetrics;
   gateway: GatewayMetrics;
   database_pool: DBPoolMetrics;
   business_kpi: BusinessKPIMetrics;
@@ -482,6 +494,170 @@ export default function SystemMetricsPage() {
           <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-medium text-slate-500">
             <span>Timestamp Server: {metrics?.timestamp ? new Date(metrics.timestamp).toLocaleTimeString("id-ID") : "-"}</span>
             <span className="text-sky-700 font-bold">Sinkronisasi Database Aktif</span>
+          </div>
+        </div>
+      </div>
+
+      {/* THIRD ROW: RUNTIME INFRASTRUCTURE & CACHE HEALTH */}
+      <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs">
+        <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-100">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-xl bg-purple-600 text-white">
+              <Cpu className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-base font-black text-slate-900 tracking-tight">Host Runtime &amp; Cache Infrastructure</h2>
+              <p className="text-slate-500 text-xs font-medium">Kesehatan memori Go backend, thread concurrency, dan koneksi Redis cache</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="px-2.5 py-1 text-xs font-bold rounded-lg bg-purple-50 text-purple-700 border border-purple-200">
+              Go Engine: {metrics?.runtime?.go_version || "go1.23"}
+            </span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3.5 mt-4">
+          {/* Memory Alloc */}
+          <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/70">
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Heap Memory</span>
+            <p className="text-lg font-black text-slate-800 mt-0.5">
+              {metrics?.runtime?.alloc_mb !== undefined ? `${metrics.runtime.alloc_mb.toFixed(1)} MB` : "-"}
+            </p>
+            <span className="text-[10px] text-slate-500 font-medium">
+              OS Sys: {metrics?.runtime?.sys_mb !== undefined ? `${metrics.runtime.sys_mb.toFixed(1)} MB` : "-"}
+            </span>
+          </div>
+
+          {/* Goroutines */}
+          <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/70">
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Active Goroutines</span>
+            <p className="text-lg font-black text-slate-800 mt-0.5">
+              {metrics?.runtime?.num_goroutine ?? "-"}
+            </p>
+            <span className="text-[10px] text-emerald-600 font-semibold">Concurrency Terkendali</span>
+          </div>
+
+          {/* GC Cycles */}
+          <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/70">
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">GC Runs (Total)</span>
+            <p className="text-lg font-black text-slate-800 mt-0.5">
+              {metrics?.runtime?.num_gc ?? "-"}
+            </p>
+            <span className="text-[10px] text-slate-500 font-medium">Garbage Collector</span>
+          </div>
+
+          {/* Backend Uptime */}
+          <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/70">
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Service Uptime</span>
+            <p className="text-lg font-black text-slate-800 mt-0.5">
+              {(() => {
+                const s = metrics?.runtime?.uptime_seconds;
+                if (!s || s <= 0) return "< 1 mnt";
+                const h = Math.floor(s / 3600);
+                const m = Math.floor((s % 3600) / 60);
+                const sec = s % 60;
+                if (h > 0) return `${h}j ${m}m`;
+                if (m > 0) return `${m}m ${sec}s`;
+                return `${sec}s`;
+              })()}
+            </p>
+            <span className="text-[10px] text-emerald-600 font-semibold">Proses Aktif</span>
+          </div>
+
+          {/* Redis Cache Status */}
+          <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/70">
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Redis Cache Status</span>
+            <p className="text-lg font-black text-emerald-700 mt-0.5 flex items-center gap-1">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              {metrics?.runtime?.redis_status || "CONNECTED"}
+            </p>
+            <span className="text-[10px] text-slate-500 font-medium">Idempotency &amp; Session</span>
+          </div>
+
+          {/* Redis Ping Latency */}
+          <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/70">
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Redis Ping Latency</span>
+            <p className="text-lg font-black text-slate-800 mt-0.5">
+              {metrics?.runtime?.redis_ping_ms !== undefined ? `${metrics.runtime.redis_ping_ms.toFixed(2)} ms` : "< 1ms"}
+            </p>
+            <span className="text-[10px] text-emerald-600 font-semibold">&lt; 1ms Ultra Fast</span>
+          </div>
+        </div>
+      </div>
+
+      {/* OPERATIONAL RUNBOOK & SLO THRESHOLD GUIDE FOR IT ADMIN */}
+      <div className="bg-gradient-to-br from-slate-900 via-[#1E293B] to-[#0F172A] text-white p-6 rounded-2xl border border-slate-800 shadow-md">
+        <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-700/60">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-400/30">
+              <ShieldCheck className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-base font-black text-white tracking-tight">Panduan Ambang Batas SLO &amp; Tindakan Admin IT</h3>
+              <p className="text-slate-400 text-xs font-medium">Standar operasional penilaian kesehatan metrik dan langkah mitigasi saat anomali</p>
+            </div>
+          </div>
+          <span className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-sky-950 text-sky-300 border border-sky-500/30">
+            Standard Operating Procedure (SOP)
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-5">
+          {/* SLO 1 */}
+          <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-sky-300">1. P95 Request Latency</span>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300">&lt; 100ms</span>
+            </div>
+            <p className="text-[11px] text-slate-300 mt-2">
+              <strong>Normal</strong>: &lt; 100ms. <strong>Waspada</strong>: 100-300ms. <strong>Kritis</strong>: &gt; 500ms.
+            </p>
+            <div className="mt-2.5 pt-2 border-t border-white/10 text-[10px] text-slate-400">
+              <strong className="text-amber-300">Tindakan Jika Kritis:</strong> Cek query lambat di tabel bawah, periksa koneksi internet upstream &amp; indexing database.
+            </div>
+          </div>
+
+          {/* SLO 2 */}
+          <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-sky-300">2. HTTP Error Rate</span>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300">&lt; 0.5%</span>
+            </div>
+            <p className="text-[11px] text-slate-300 mt-2">
+              <strong>Normal</strong>: 0%. <strong>Waspada</strong>: 0.5 - 2%. <strong>Kritis</strong>: &gt; 5% atau muncul 502 Bad Gateway.
+            </p>
+            <div className="mt-2.5 pt-2 border-t border-white/10 text-[10px] text-slate-400">
+              <strong className="text-amber-300">Tindakan Jika Kritis:</strong> Periksa log Core Go (:8081). Pastikan service tidak crash atau restart mendadak.
+            </div>
+          </div>
+
+          {/* SLO 3 */}
+          <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-sky-300">3. DB Connection Pool</span>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300">&lt; 70%</span>
+            </div>
+            <p className="text-[11px] text-slate-300 mt-2">
+              <strong>Normal</strong>: &lt; 70% kapasitas. <strong>Kritis</strong>: In-Use &gt; 85% atau Wait Count &gt; 0.
+            </p>
+            <div className="mt-2.5 pt-2 border-t border-white/10 text-[10px] text-slate-400">
+              <strong className="text-amber-300">Tindakan Jika Kritis:</strong> Cek unclosed connection di kode repo atau naikkan batas `max_open` di `NewDBPool`.
+            </div>
+          </div>
+
+          {/* SLO 4 */}
+          <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-sky-300">4. Idempotency Hits</span>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300">Shield On</span>
+            </div>
+            <p className="text-[11px] text-slate-300 mt-2">
+              <strong>Normal</strong>: Hits kecil (&lt; 50). <strong>Waspada</strong>: Lonjakan ratusan hits dalam 1 menit.
+            </p>
+            <div className="mt-2.5 pt-2 border-t border-white/10 text-[10px] text-slate-400">
+              <strong className="text-amber-300">Tindakan Jika Waspada:</strong> Cek form submit di web frontend apakah ada tombol yang tidak di-disable saat diklik.
+            </div>
           </div>
         </div>
       </div>

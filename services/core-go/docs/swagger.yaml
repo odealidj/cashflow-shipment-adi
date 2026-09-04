@@ -265,6 +265,33 @@ definitions:
       password:
         type: string
     type: object
+  handler.RuntimeMetrics:
+    properties:
+      alloc_mb:
+        example: 18.5
+        type: number
+      go_version:
+        example: go1.23
+        type: string
+      num_gc:
+        example: 12
+        type: integer
+      num_goroutine:
+        example: 42
+        type: integer
+      redis_ping_ms:
+        example: 0.4
+        type: number
+      redis_status:
+        example: CONNECTED
+        type: string
+      sys_mb:
+        example: 35.8
+        type: number
+      uptime_seconds:
+        example: 3600
+        type: integer
+    type: object
   handler.SystemMetricsResponse:
     properties:
       business_kpi:
@@ -275,6 +302,8 @@ definitions:
         $ref: '#/definitions/handler.GatewayMetrics'
       prometheus_connected:
         type: boolean
+      runtime:
+        $ref: '#/definitions/handler.RuntimeMetrics'
       slow_queries:
         items:
           $ref: '#/definitions/telemetry.SlowQueryRecord'

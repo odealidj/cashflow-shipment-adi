@@ -7,26 +7,43 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"runtime"
 	"strconv"
 	"time"
 
 	"github.com/cashflow-shipment-app/backend/internal/infrastructure/telemetry"
 	"github.com/cashflow-shipment-app/backend/pkg/response"
 	"github.com/jmoiron/sqlx"
+	"github.com/redis/go-redis/v9"
 )
 
 type SystemMetricsHandler struct {
-	db         *sqlx.DB
-	httpClient *http.Client
+	db          *sqlx.DB
+	redisClient *redis.Client
+	startTime   time.Time
+	httpClient  *http.Client
 }
 
-func NewSystemMetricsHandler(db *sqlx.DB) *SystemMetricsHandler {
+func NewSystemMetricsHandler(db *sqlx.DB, redisClient *redis.Client, startTime time.Time) *SystemMetricsHandler {
 	return &SystemMetricsHandler{
-		db: db,
+		db:          db,
+		redisClient: redisClient,
+		startTime:   startTime,
 		httpClient: &http.Client{
 			Timeout: 2 * time.Second,
 		},
 	}
+}
+
+type RuntimeMetrics struct {
+	GoVersion     string  `json:"go_version" example:"go1.23"`
+	NumGoroutine  int     `json:"num_goroutine" example:"42"`
+	AllocMB       float64 `json:"alloc_mb" example:"18.5"`
+	SysMB         float64 `json:"sys_mb" example:"35.8"`
+	NumGC         uint32  `json:"num_gc" example:"12"`
+	UptimeSeconds int64   `json:"uptime_seconds" example:"3600"`
+	RedisStatus   string  `json:"redis_status" example:"CONNECTED"`
+	RedisPingMs   float64 `json:"redis_ping_ms" example:"0.4"`
 }
 
 type GatewayMetrics struct {
@@ -56,6 +73,7 @@ type BusinessKPIMetrics struct {
 
 type SystemMetricsResponse struct {
 	PrometheusConnected bool                        `json:"prometheus_connected"`
+	Runtime             RuntimeMetrics              `json:"runtime"`
 	Gateway             GatewayMetrics              `json:"gateway"`
 	DatabasePool        DBPoolMetrics               `json:"database_pool"`
 	BusinessKPI         BusinessKPIMetrics          `json:"business_kpi"`
@@ -123,8 +141,39 @@ func (h *SystemMetricsHandler) GetMetrics(w http.ResponseWriter, r *http.Request
 	// 4. Gateway & Prometheus Metrics
 	gateway, promConnected := h.fetchPrometheusMetrics(ctx)
 
+	// 5. Go Runtime & Redis Cache Health
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+
+	redisStatus := "DISCONNECTED"
+	var redisPingMs float64
+	if h.redisClient != nil {
+		rStart := time.Now()
+		if err := h.redisClient.Ping(ctx).Err(); err == nil {
+			redisStatus = "CONNECTED"
+			redisPingMs = float64(time.Since(rStart).Microseconds()) / 1000.0
+		}
+	}
+
+	uptimeSeconds := int64(0)
+	if !h.startTime.IsZero() {
+		uptimeSeconds = int64(time.Since(h.startTime).Seconds())
+	}
+
+	runtimeMetrics := RuntimeMetrics{
+		GoVersion:     runtime.Version(),
+		NumGoroutine:  runtime.NumGoroutine(),
+		AllocMB:       float64(m.Alloc) / 1024.0 / 1024.0,
+		SysMB:         float64(m.Sys) / 1024.0 / 1024.0,
+		NumGC:         m.NumGC,
+		UptimeSeconds: uptimeSeconds,
+		RedisStatus:   redisStatus,
+		RedisPingMs:   redisPingMs,
+	}
+
 	result := SystemMetricsResponse{
 		PrometheusConnected: promConnected,
+		Runtime:             runtimeMetrics,
 		Gateway:             gateway,
 		DatabasePool:        dbPool,
 		BusinessKPI:         kpi,

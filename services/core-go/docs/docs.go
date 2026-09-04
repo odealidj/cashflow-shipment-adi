@@ -2931,6 +2931,43 @@ const docTemplate = `{
                 }
             }
         },
+        "handler.RuntimeMetrics": {
+            "type": "object",
+            "properties": {
+                "alloc_mb": {
+                    "type": "number",
+                    "example": 18.5
+                },
+                "go_version": {
+                    "type": "string",
+                    "example": "go1.23"
+                },
+                "num_gc": {
+                    "type": "integer",
+                    "example": 12
+                },
+                "num_goroutine": {
+                    "type": "integer",
+                    "example": 42
+                },
+                "redis_ping_ms": {
+                    "type": "number",
+                    "example": 0.4
+                },
+                "redis_status": {
+                    "type": "string",
+                    "example": "CONNECTED"
+                },
+                "sys_mb": {
+                    "type": "number",
+                    "example": 35.8
+                },
+                "uptime_seconds": {
+                    "type": "integer",
+                    "example": 3600
+                }
+            }
+        },
         "handler.SystemMetricsResponse": {
             "type": "object",
             "properties": {
@@ -2945,6 +2982,9 @@ const docTemplate = `{
                 },
                 "prometheus_connected": {
                     "type": "boolean"
+                },
+                "runtime": {
+                    "$ref": "#/definitions/handler.RuntimeMetrics"
                 },
                 "slow_queries": {
                     "type": "array",
