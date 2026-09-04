@@ -48,11 +48,23 @@ func NewGatewayRouter(cfg *config.Config) (*GatewayRouter, error) {
 		})
 	}
 
+	cleanCORS := func(resp *http.Response) error {
+		resp.Header.Del("Access-Control-Allow-Origin")
+		resp.Header.Del("Access-Control-Allow-Credentials")
+		resp.Header.Del("Access-Control-Allow-Methods")
+		resp.Header.Del("Access-Control-Allow-Headers")
+		resp.Header.Del("Access-Control-Expose-Headers")
+		resp.Header.Del("Access-Control-Max-Age")
+		return nil
+	}
+
 	coreProxy := httputil.NewSingleHostReverseProxy(coreURL)
 	coreProxy.ErrorHandler = errorHandler
+	coreProxy.ModifyResponse = cleanCORS
 
 	trackingProxy := httputil.NewSingleHostReverseProxy(trackingURL)
 	trackingProxy.ErrorHandler = errorHandler
+	trackingProxy.ModifyResponse = cleanCORS
 
 	return &GatewayRouter{
 		coreTarget:     coreURL,
