@@ -3,8 +3,8 @@
 # Default command
 help:
 	@echo "Available commands:"
-	@echo "  --- Infrastructure (Database & Cache) ---"
-	@echo "  make infra-up                - Start PostgreSQL 15 & Redis 7 containers"
+	@echo "  --- Infrastructure (Database, Cache & Observability) ---"
+	@echo "  make infra-up                - Start PostgreSQL 15, Redis 7 & Prometheus containers"
 	@echo "  make infra-down              - Stop infrastructure containers"
 	@echo "  make infra-logs              - View infrastructure container logs"
 	@echo ""
@@ -23,7 +23,7 @@ help:
 
 # Infrastructure
 infra-up:
-	docker-compose up -d postgres redis
+	docker-compose up -d postgres redis prometheus
 
 infra-down:
 	docker-compose down

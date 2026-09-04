@@ -80,7 +80,7 @@ make run-local-web-next  # Jalankan Desktop Web (/dashboard) & Mobile PWA (/m)
 | Perintah Makefile | Lingkungan | Deskripsi & Fungsi |
 | :--- | :---: | :--- |
 | **Infrastruktur Database & Cache** | | |
-| `make infra-up` | Container | Menjalankan container PostgreSQL 15 (`cashflow_db:5432`) dan Redis 7 (`cashflow_redis:6379`). |
+| `make infra-up` | Container | Menjalankan container PostgreSQL 15 (`cashflow_db:5432`), Redis 7 (`cashflow_redis:6379`), dan Prometheus (`cashflow_prometheus:9090`). |
 | `make infra-down` | Container | Menghentikan dan membersihkan container infrastruktur. |
 | `make infra-logs` | Container | Melihat stream log container database dan Redis secara real-time. |
 | **Backend Go Services (Host OS)** | | |
