@@ -117,7 +117,7 @@ export function VendorModal({ isOpen, vendor, onClose, onSuccess }: VendorModalP
               {isEdit ? `Edit Data Vendor #${vendor?.id}` : "Tambah Vendor Baru"}
             </h2>
             <p className="text-xs text-slate-500">
-              {isEdit ? "Perbarui informasi kontak, email, dan catatan rute armada mitra" : "Daftarkan mitra ekspedisi / transporter ke master data"}
+              {isEdit ? "Perbarui informasi kontak, email, dan catatan rute armada vendor" : "Daftarkan vendor baru ke master data"}
             </p>
           </div>
         </div>
@@ -129,10 +129,10 @@ export function VendorModal({ isOpen, vendor, onClose, onSuccess }: VendorModalP
         )}
 
         <form onSubmit={handleSubmit} className="space-y-3.5">
-          {/* Nama Vendor / Ekspedisi */}
+          {/* Nama Vendor */}
           <div>
             <label className="block text-xs font-bold text-slate-700 mb-1">
-              Nama Vendor / Ekspedisi <span className="text-rose-500">*</span>
+              Nama Vendor <span className="text-rose-500">*</span>
             </label>
             <div className="relative">
               <Truck className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />

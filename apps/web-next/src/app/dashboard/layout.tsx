@@ -329,7 +329,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   {can("customers.view") && (
                     <Link 
                       href="/dashboard/customers" 
-                      title="Klien / Perusahaan"
+                      title="Customer"
                       className={`flex items-center gap-3 rounded-xl transition-all text-xs font-bold ${
                         isCollapsed ? "justify-center p-3" : "px-3.5 py-2.5"
                       } ${
@@ -339,14 +339,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       }`}
                     >
                       <Building2 className="w-5 h-5 shrink-0" />
-                      {!isCollapsed && <span className="truncate">Klien / Perusahaan</span>}
+                      {!isCollapsed && <span className="truncate">Customer</span>}
                     </Link>
                   )}
 
                   {can("vendors.view") && (
                     <Link 
                       href="/dashboard/vendors" 
-                      title="Mitra Armada & Transporter"
+                      title="Vendor"
                       className={`flex items-center gap-3 rounded-xl transition-all text-xs font-bold ${
                         isCollapsed ? "justify-center p-3" : "px-3.5 py-2.5"
                       } ${
@@ -356,7 +356,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       }`}
                     >
                       <Truck className="w-5 h-5 shrink-0" />
-                      {!isCollapsed && <span className="truncate">Mitra Armada (Vendor)</span>}
+                      {!isCollapsed && <span className="truncate">Vendor</span>}
                     </Link>
                   )}
                 </div>

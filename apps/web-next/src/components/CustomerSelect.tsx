@@ -26,7 +26,7 @@ export function CustomerSelect({
   value = "",
   onChange,
   required = false,
-  placeholder = "Pilih atau ketik nama klien / perusahaan...",
+  placeholder = "Pilih atau ketik nama customer...",
   className = ""
 }: CustomerSelectProps) {
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -111,7 +111,7 @@ export function CustomerSelect({
   const handleSaveQuickCustomer = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!quickName.trim()) {
-      setQuickError("Nama klien / perusahaan wajib diisi.");
+      setQuickError("Nama customer wajib diisi.");
       return;
     }
 
@@ -204,7 +204,7 @@ export function CustomerSelect({
           <div className="px-3.5 py-2 bg-slate-50 border-b border-slate-100 flex items-center justify-between text-[11px] font-bold text-slate-500 shrink-0">
             <span className="flex items-center gap-1.5 text-sky-900">
               <Building2 className="w-3.5 h-3.5 text-sky-700" />
-              <span>Daftar Master Customer & Klien</span>
+              <span>Daftar Master Customer</span>
             </span>
             <span className="text-[10px] text-slate-400 font-normal">{customers.length} Terdaftar</span>
           </div>
@@ -248,7 +248,7 @@ export function CustomerSelect({
           <div className="overflow-y-auto soft-scrollbar p-1 divide-y divide-slate-50 flex-1">
             {filteredCustomers.length === 0 ? (
               <div className="p-4 text-center text-xs text-slate-500 space-y-2">
-                <p className="font-bold text-slate-700">Klien "{searchTerm}" belum terdaftar.</p>
+                <p className="font-bold text-slate-700">Customer "{searchTerm}" belum terdaftar.</p>
                 <p className="text-[11px] text-slate-400">
                   Anda dapat langsung menggunakannya atau mendaftarkannya ke Master Customer.
                 </p>
@@ -357,10 +357,10 @@ export function CustomerSelect({
                 </div>
               )}
 
-              {/* Nama Perusahaan */}
+              {/* Nama Customer */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Nama Klien / Perusahaan <span className="text-rose-500">*</span>
+                  Nama Customer <span className="text-rose-500">*</span>
                 </label>
                 <input
                   type="text"

@@ -150,9 +150,9 @@ export function VendorTable() {
         <div className="shrink-0">
           <KpiCardGrid cols={4}>
           <KpiCard
-            title="Total Vendor Mitra"
+            title="Total Vendor"
             value={`${total || safeVendors.length} Vendor`}
-            subtitle="Penyedia armada & transporter aktif"
+            subtitle="Vendor armada aktif terdaftar"
             icon={<Truck className="w-5 h-5" />}
             variant="sky"
           />
@@ -189,10 +189,10 @@ export function VendorTable() {
                 <div className="w-8 h-8 rounded-xl bg-sky-100/80 text-sky-800 flex items-center justify-center shadow-2xs">
                   <Truck className="w-4 h-4" />
                 </div>
-                <span>Daftar Master Vendor & Transporter</span>
+                <span>Daftar Master Vendor</span>
               </h1>
               <p className="text-xs text-slate-500 font-medium mt-0.5">
-                Kelola data mitra armada, kontak PIC/telepon, email, serta pencatatan rute operasional
+                Kelola data vendor, kontak telepon/WA, email, serta rute operasional armada
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -236,7 +236,7 @@ export function VendorTable() {
               <thead className={tableTheadClass}>
                 <tr>
                   <th className="px-6 py-3.5 w-12 text-center">No</th>
-                  <th className="px-6 py-3.5 min-w-[220px]">Nama Vendor / Ekspedisi</th>
+                  <th className="px-6 py-3.5 min-w-[220px]">Nama Vendor</th>
                   <th className="px-6 py-3.5 min-w-[180px]">No. Telepon / WhatsApp</th>
                   <th className="px-6 py-3.5 min-w-[200px]">Email Korespondensi</th>
                   <th className="px-6 py-3.5 min-w-[240px]">Catatan / Rute Armada</th>

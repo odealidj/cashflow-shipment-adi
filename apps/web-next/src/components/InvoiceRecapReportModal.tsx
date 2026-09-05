@@ -417,7 +417,7 @@ export function InvoiceRecapReportModal({
                 <tr className="bg-[#1A365D] text-white font-black uppercase text-[11px] tracking-wide">
                   <th className="py-2.5 px-2 text-center w-10 border border-[#2A4365]">No</th>
                   <th className="py-2.5 px-3 text-left w-36 border border-[#2A4365]">No. Invoice</th>
-                  <th className="py-2.5 px-3 text-left border border-[#2A4365]">Nama Klien / Perusahaan</th>
+                  <th className="py-2.5 px-3 text-left border border-[#2A4365]">Customer</th>
                   <th className="py-2.5 px-2 text-center w-32 border border-[#2A4365]">Tgl Pengiriman</th>
                   <th className="py-2.5 px-2 text-center w-36 border border-[#2A4365]">TOP (Terms)</th>
                   <th className="py-2.5 px-2 text-center w-32 border border-[#2A4365]">Tgl Jatuh Tempo</th>

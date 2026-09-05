@@ -135,7 +135,7 @@ export function CustomerModal({ isOpen, customer, onClose, onSuccess }: Customer
               {isEdit ? `Edit Data Customer #${customer?.id}` : "Tambah Customer Baru"}
             </h2>
             <p className="text-xs text-slate-500">
-              {isEdit ? "Perbarui informasi kontak, alamat, dan PIC perusahaan klien" : "Daftarkan perusahaan klien pemilik muatan ke master data"}
+              {isEdit ? "Perbarui informasi kontak, alamat, dan PIC customer" : "Daftarkan customer baru ke master data"}
             </p>
           </div>
         </div>
@@ -147,10 +147,10 @@ export function CustomerModal({ isOpen, customer, onClose, onSuccess }: Customer
         )}
 
         <form onSubmit={handleSubmit} className="space-y-3.5">
-          {/* Nama Customer / Perusahaan */}
+          {/* Nama Customer */}
           <div>
             <label className="block text-xs font-bold text-slate-700 mb-1">
-              Nama Perusahaan / Customer <span className="text-rose-500">*</span>
+              Nama Customer <span className="text-rose-500">*</span>
             </label>
             <div className="relative">
               <Building2 className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />

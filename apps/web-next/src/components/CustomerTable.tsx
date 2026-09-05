@@ -146,9 +146,9 @@ export function CustomerTable() {
         <div className="shrink-0">
           <KpiCardGrid cols={4}>
           <KpiCard
-            title="Total Customer Klien"
-            value={`${total || safeCustomers.length} Klien`}
-            subtitle="Perusahaan pemilik muatan aktif"
+            title="Total Customer"
+            value={`${total || safeCustomers.length} Customer`}
+            subtitle="Customer terdaftar aktif"
             icon={<Building2 className="w-5 h-5" />}
             variant="sky"
           />
@@ -183,10 +183,10 @@ export function CustomerTable() {
             <div>
               <h1 className="text-xl font-black text-slate-900 flex items-center gap-2.5 tracking-tight">
                 <Building2 className="w-5 h-5 text-sky-700" />
-                <span>Daftar Master Customer & Perusahaan Klien</span>
+                <span>Daftar Master Customer</span>
               </h1>
               <p className="text-xs text-slate-500 font-medium mt-0.5">
-                Kelola data perusahaan pelanggan, kontak PIC, alamat penagihan, dan catatan terms pengiriman muatan
+                Kelola data customer, kontak PIC, alamat penagihan, dan catatan terms pengiriman muatan
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -206,7 +206,7 @@ export function CustomerTable() {
                 <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
-                  placeholder="Cari nama perusahaan, nama PIC, nomor HP/WA, email, alamat..."
+                  placeholder="Cari nama customer, nama PIC, nomor HP/WA, email, alamat..."
                   value={searchTerm}
                   onChange={e => setSearchTerm(e.target.value)}
                   className="w-full bg-white border border-slate-200 rounded-xl py-2 pl-9 pr-3 text-xs text-slate-800 focus:ring-2 focus:ring-sky-500 focus:outline-none font-medium placeholder:text-slate-400"
@@ -230,7 +230,7 @@ export function CustomerTable() {
               <thead className={tableTheadClass}>
                 <tr>
                   <th className="px-6 py-3.5 w-12 text-center">No</th>
-                  <th className="px-6 py-3.5 min-w-[220px]">Nama Perusahaan / Customer</th>
+                  <th className="px-6 py-3.5 min-w-[220px]">Nama Customer</th>
                   <th className="px-6 py-3.5 min-w-[180px]">Kontak PIC & Jabatan</th>
                   <th className="px-6 py-3.5 min-w-[200px]">Telepon & Email</th>
                   <th className="px-6 py-3.5 min-w-[240px]">Alamat Penagihan / Kantor</th>
