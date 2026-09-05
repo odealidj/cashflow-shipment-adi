@@ -19,6 +19,15 @@ export function SettleInvoiceModal({ isOpen, invoice, onClose, onSuccess }: Sett
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Reset form whenever invoice changes
+  React.useEffect(() => {
+    setPaymentDate(new Date().toISOString().split("T")[0]);
+    setPaymentReference("");
+    setPaymentProofUrl("");
+    setPaymentNotes("");
+    setError(null);
+  }, [invoice]);
+
   if (!isOpen || !invoice) return null;
 
   const invoiceAmount = Number(invoice.amount ?? invoice.total_amount ?? 0);

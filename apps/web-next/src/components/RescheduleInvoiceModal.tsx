@@ -27,19 +27,7 @@ export function RescheduleInvoiceModal({ isOpen, invoice, onClose, onSuccess }: 
     setError(null);
   }, [invoice]);
 
-  if (!isOpen || !invoice) return null;
-
-  const formatDate = (dateStr: string) => {
-    if (!dateStr) return "-";
-    const d = new Date(dateStr);
-    return d.toLocaleDateString("id-ID", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric"
-    });
-  };
-
-  // Calculate day difference
+  // Calculate day difference unconditionally
   const diffDays = useMemo(() => {
     if (!currentDueDateStr || !newDueDate) return 0;
     const oldD = new Date(currentDueDateStr);
@@ -53,7 +41,19 @@ export function RescheduleInvoiceModal({ isOpen, invoice, onClose, onSuccess }: 
 
   // Check if rescheduling overdue invoice to future
   const todayStr = new Date().toISOString().split("T")[0];
-  const willResetOverdue = invoice.status === "OVERDUE" && newDueDate >= todayStr;
+  const willResetOverdue = invoice?.status === "OVERDUE" && newDueDate >= todayStr;
+
+  const formatDate = (dateStr: string) => {
+    if (!dateStr) return "-";
+    const d = new Date(dateStr);
+    return d.toLocaleDateString("id-ID", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric"
+    });
+  };
+
+  if (!isOpen || !invoice) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
