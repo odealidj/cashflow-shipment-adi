@@ -29,8 +29,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const { user, logout, canManageUsers, isSuperAdmin, can } = useAuth();
   const { unreadCount } = useNotifications(true);
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
+  const [isUtamaOpen, setIsUtamaOpen] = useState<boolean>(true);
   const [isMasterRekananOpen, setIsMasterRekananOpen] = useState<boolean>(true);
   const [isPresetAktivitasOpen, setIsPresetAktivitasOpen] = useState<boolean>(true);
+  const [isPengaturanSistemOpen, setIsPengaturanSistemOpen] = useState<boolean>(true);
+  const [isAplikasiMobileOpen, setIsAplikasiMobileOpen] = useState<boolean>(true);
   const pathname = usePathname();
 
   useEffect(() => {
@@ -62,13 +65,31 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   // Auto expand parent group when active child route is selected
   useEffect(() => {
+    if (isDashboardActive || isTransactionsActive || isInvoicesActive || isNotificationsActive) {
+      setIsUtamaOpen(true);
+    }
     if (isCustomersActive || isVendorsActive) {
       setIsMasterRekananOpen(true);
     }
     if (isActInfoActive || isActRoutesActive) {
       setIsPresetAktivitasOpen(true);
     }
-  }, [isCustomersActive, isVendorsActive, isActInfoActive, isActRoutesActive]);
+    if (isUsersActive || isRolesActive || isMetricsActive) {
+      setIsPengaturanSistemOpen(true);
+    }
+  }, [
+    isDashboardActive,
+    isTransactionsActive,
+    isInvoicesActive,
+    isNotificationsActive,
+    isCustomersActive,
+    isVendorsActive,
+    isActInfoActive,
+    isActRoutesActive,
+    isUsersActive,
+    isRolesActive,
+    isMetricsActive
+  ]);
 
   const getRoleLabel = (role?: string) => {
     switch (role) {
@@ -105,10 +126,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   };
 
   return (
-    <div className="min-h-screen flex bg-[#F4F6F9] text-slate-900 font-sans antialiased">
+    <div className="h-screen flex bg-[#F4F6F9] text-slate-900 font-sans antialiased overflow-hidden">
       {/* Soft Slate Navy Sidebar (Expandable / Collapsible) */}
       <aside 
-        className={`bg-[#223249] text-white m-3 rounded-2xl p-3.5 flex flex-col justify-between shadow-lg shrink-0 border border-slate-700/30 transition-all duration-300 relative ${
+        className={`bg-[#223249] text-white m-3 rounded-2xl flex flex-col shadow-lg shrink-0 border border-slate-700/30 transition-all duration-300 relative h-[calc(100vh-1.5rem)] ${
           isCollapsed ? "w-20" : "w-68"
         }`}
       >
@@ -116,7 +137,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <button
           onClick={toggleSidebar}
           aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-          className="absolute -right-3.5 top-8 w-7 h-7 rounded-full bg-[#223249] border-2 border-slate-600/80 text-slate-200 hover:text-white hover:bg-sky-800 flex items-center justify-center shadow-md cursor-pointer transition-all z-20"
+          className="absolute -right-3.5 top-8 w-7 h-7 rounded-full bg-[#223249] border-2 border-slate-600/80 text-slate-200 hover:text-white hover:bg-sky-800 flex items-center justify-center shadow-md cursor-pointer transition-all z-30"
           title={isCollapsed ? "Buka Menu (Expand)" : "Tutup Menu (Collapse)"}
         >
           {isCollapsed ? (
@@ -126,64 +147,76 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           )}
         </button>
 
-        <div>
-          {/* Logo Branding Section */}
-          <div className="mb-6">
+        {/* ZONA 1: Logo Branding Section (Fixed at Top) */}
+        <div className="p-3.5 pb-2 shrink-0">
+          {!isCollapsed ? (
+            /* Expanded View: Banner Modern */
+            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/20 flex items-center gap-3 shadow-md animate-fade-in">
+              <div className="w-16 h-16 rounded-2xl bg-white p-1 flex items-center justify-center shrink-0 shadow-md">
+                <Image
+                  src="/logo.png"
+                  alt="Logo PT. Adijayantara Logistics Indonesia"
+                  width={70}
+                  height={70}
+                  className="w-full h-full object-contain"
+                  priority
+                />
+              </div>
+              <div className="min-w-0">
+                <h1 className="text-sm font-black text-white leading-tight tracking-tight uppercase truncate">
+                  Adijayantara
+                </h1>
+                <p className="text-[11px] text-sky-200 font-bold leading-tight mt-0.5 truncate">
+                  Logistics Indonesia
+                </p>
+                <span className="inline-block mt-1.5 px-2 py-0.5 bg-sky-950/50 text-sky-300 text-[9px] font-extrabold tracking-wider rounded-md border border-sky-400/20 truncate">
+                  CASHFLOW
+                </span>
+              </div>
+            </div>
+          ) : (
+            /* Collapsed View: Icon Only */
+            <div className="flex justify-center animate-fade-in py-1">
+              <div 
+                className="w-13 h-13 rounded-2xl bg-white p-1.5 flex items-center justify-center shadow-md"
+                title="PT. Adijayantara Logistics Indonesia"
+              >
+                <Image
+                  src="/logo.png"
+                  alt="Logo PT. Adijayantara Logistics Indonesia"
+                  width={48}
+                  height={48}
+                  className="w-full h-full object-contain"
+                  priority
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* ZONA 2: Navigation Links (Scrolls Independently) */}
+        <nav className="flex-1 overflow-y-auto px-3.5 py-1 space-y-3 soft-scrollbar min-h-0">
+          {/* GRUP 1: UTAMA (Expandable / Collapsible) */}
+          <div>
             {!isCollapsed ? (
-              /* Expanded View: Banner Modern */
-              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/20 flex items-center gap-3 shadow-md animate-fade-in">
-                <div className="w-16 h-16 rounded-2xl bg-white p-1 flex items-center justify-center shrink-0 shadow-md">
-                  <Image
-                    src="/logo.png"
-                    alt="Logo PT. Adijayantara Logistics Indonesia"
-                    width={70}
-                    height={70}
-                    className="w-full h-full object-contain"
-                    priority
-                  />
-                </div>
-                <div className="min-w-0">
-                  <h1 className="text-sm font-black text-white leading-tight tracking-tight uppercase truncate">
-                    Adijayantara
-                  </h1>
-                  <p className="text-[11px] text-sky-200 font-bold leading-tight mt-0.5 truncate">
-                    Logistics Indonesia
-                  </p>
-                  <span className="inline-block mt-1.5 px-2 py-0.5 bg-sky-950/50 text-sky-300 text-[9px] font-extrabold tracking-wider rounded-md border border-sky-400/20 truncate">
-                    CASHFLOW
+              <button
+                type="button"
+                onClick={() => setIsUtamaOpen(prev => !prev)}
+                className="w-full px-3 pb-1.5 flex items-center justify-between text-[10px] font-black text-slate-400/90 uppercase tracking-widest hover:text-white transition-colors cursor-pointer select-none group"
+                title={isUtamaOpen ? "Tutup grup Utama" : "Buka grup Utama"}
+              >
+                <div className="flex items-center gap-1.5">
+                  <span>Utama</span>
+                  <span className="px-1.5 py-0.5 text-[9px] font-black rounded-md bg-sky-950/70 text-sky-300 border border-sky-400/30 group-hover:border-sky-400/60 leading-none">
+                    {1 + (can("cashflow.view") ? 1 : 0) + (can("invoices.view") ? 1 : 0) + (can("notifications.view") ? 1 : 0)}
                   </span>
                 </div>
-              </div>
-            ) : (
-              /* Collapsed View: Icon Only */
-              <div className="flex justify-center animate-fade-in py-1">
-                <div 
-                  className="w-13 h-13 rounded-2xl bg-white p-1.5 flex items-center justify-center shadow-md"
-                  title="PT. Adijayantara Logistics Indonesia"
-                >
-                  <Image
-                    src="/logo.png"
-                    alt="Logo PT. Adijayantara Logistics Indonesia"
-                    width={48}
-                    height={48}
-                    className="w-full h-full object-contain"
-                    priority
-                  />
-                </div>
-              </div>
-            )}
-          </div>
+                <ChevronDown className={`w-3.5 h-3.5 text-slate-400 group-hover:text-white transition-transform duration-200 ${isUtamaOpen ? "rotate-0" : "-rotate-90"}`} />
+              </button>
+            ) : null}
 
-          {/* Navigation Links */}
-          <nav className="space-y-4">
-            {/* GRUP 1: UTAMA */}
-            <div>
-              {!isCollapsed && (
-                <div className="px-3 pb-1 text-[10px] font-black text-slate-400/90 uppercase tracking-widest">
-                  Utama
-                </div>
-              )}
-              <div className="space-y-1">
+            {((!isCollapsed && isUtamaOpen) || isCollapsed) && (
+              <div className="space-y-1 animate-fade-in">
                 {/* 1. Monitoring Finansial (Dashboard Utama) */}
                 <Link 
                   href="/dashboard" 
@@ -268,133 +301,147 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   </Link>
                 )}
               </div>
+            )}
+          </div>
+
+          {/* GRUP 2: MASTER REKANAN (Expandable / Collapsible) */}
+          {(can("customers.view") || can("vendors.view")) && (
+            <div className="pt-2 border-t border-white/10">
+              {!isCollapsed ? (
+                <button
+                  type="button"
+                  onClick={() => setIsMasterRekananOpen(prev => !prev)}
+                  className="w-full px-3 pb-1.5 flex items-center justify-between text-[10px] font-black text-slate-400/90 uppercase tracking-widest hover:text-white transition-colors cursor-pointer select-none group"
+                  title={isMasterRekananOpen ? "Tutup grup Master Rekanan" : "Buka grup Master Rekanan"}
+                >
+                  <div className="flex items-center gap-1.5">
+                    <span>Master Rekanan</span>
+                    <span className="px-1.5 py-0.5 text-[9px] font-black rounded-md bg-sky-950/70 text-sky-300 border border-sky-400/30 group-hover:border-sky-400/60 leading-none">
+                      {(can("customers.view") ? 1 : 0) + (can("vendors.view") ? 1 : 0)}
+                    </span>
+                  </div>
+                  <ChevronDown className={`w-3.5 h-3.5 text-slate-400 group-hover:text-white transition-transform duration-200 ${isMasterRekananOpen ? "rotate-0" : "-rotate-90"}`} />
+                </button>
+              ) : null}
+              
+              {((!isCollapsed && isMasterRekananOpen) || isCollapsed) && (
+                <div className="space-y-1 animate-fade-in">
+                  {can("customers.view") && (
+                    <Link 
+                      href="/dashboard/customers" 
+                      title="Klien / Perusahaan"
+                      className={`flex items-center gap-3 rounded-xl transition-all text-xs font-bold ${
+                        isCollapsed ? "justify-center p-3" : "px-3.5 py-2.5"
+                      } ${
+                        isCustomersActive 
+                        ? "bg-sky-600 text-white shadow-xs" 
+                        : "text-slate-300 hover:text-white hover:bg-white/10"
+                      }`}
+                    >
+                      <Building2 className="w-5 h-5 shrink-0" />
+                      {!isCollapsed && <span className="truncate">Klien / Perusahaan</span>}
+                    </Link>
+                  )}
+
+                  {can("vendors.view") && (
+                    <Link 
+                      href="/dashboard/vendors" 
+                      title="Mitra Armada & Transporter"
+                      className={`flex items-center gap-3 rounded-xl transition-all text-xs font-bold ${
+                        isCollapsed ? "justify-center p-3" : "px-3.5 py-2.5"
+                      } ${
+                        isVendorsActive 
+                        ? "bg-sky-600 text-white shadow-xs" 
+                        : "text-slate-300 hover:text-white hover:bg-white/10"
+                      }`}
+                    >
+                      <Truck className="w-5 h-5 shrink-0" />
+                      {!isCollapsed && <span className="truncate">Mitra Armada (Vendor)</span>}
+                    </Link>
+                  )}
+                </div>
+              )}
             </div>
+          )}
 
-            {/* GRUP 2: MASTER REKANAN (Expandable / Collapsible) */}
-            {(can("customers.view") || can("vendors.view")) && (
-              <div className="pt-2 border-t border-white/10">
-                {!isCollapsed ? (
-                  <button
-                    type="button"
-                    onClick={() => setIsMasterRekananOpen(prev => !prev)}
-                    className="w-full px-3 pb-1.5 flex items-center justify-between text-[10px] font-black text-slate-400/90 uppercase tracking-widest hover:text-white transition-colors cursor-pointer select-none group"
-                    title={isMasterRekananOpen ? "Tutup grup Master Rekanan" : "Buka grup Master Rekanan"}
+          {/* GRUP 3: PRESET AKTIVITAS (Expandable / Collapsible) */}
+          {can("presets.view") && (
+            <div className="pt-2 border-t border-white/10">
+              {!isCollapsed ? (
+                <button
+                  type="button"
+                  onClick={() => setIsPresetAktivitasOpen(prev => !prev)}
+                  className="w-full px-3 pb-1.5 flex items-center justify-between text-[10px] font-black text-slate-400/90 uppercase tracking-widest hover:text-white transition-colors cursor-pointer select-none group"
+                  title={isPresetAktivitasOpen ? "Tutup grup Preset Aktivitas" : "Buka grup Preset Aktivitas"}
+                >
+                  <div className="flex items-center gap-1.5">
+                    <span>Preset Aktivitas</span>
+                    <span className="px-1.5 py-0.5 text-[9px] font-black rounded-md bg-sky-950/70 text-sky-300 border border-sky-400/30 group-hover:border-sky-400/60 leading-none">
+                      2
+                    </span>
+                  </div>
+                  <ChevronDown className={`w-3.5 h-3.5 text-slate-400 group-hover:text-white transition-transform duration-200 ${isPresetAktivitasOpen ? "rotate-0" : "-rotate-90"}`} />
+                </button>
+              ) : null}
+              
+              {((!isCollapsed && isPresetAktivitasOpen) || isCollapsed) && (
+                <div className="space-y-1 animate-fade-in">
+                  <Link 
+                    href="/dashboard/activity-info" 
+                    title="Master Keterangan Aktivitas (Armada)"
+                    className={`flex items-center gap-3 rounded-xl transition-all text-xs font-bold ${
+                      isCollapsed ? "justify-center p-3" : "px-3.5 py-2.5"
+                    } ${
+                      isActInfoActive 
+                      ? "bg-sky-700/80 text-white shadow-xs" 
+                      : "text-slate-300 hover:text-white hover:bg-white/10"
+                    }`}
                   >
-                    <div className="flex items-center gap-1.5">
-                      <span>Master Rekanan</span>
-                      <span className="px-1.5 py-0.5 text-[9px] font-black rounded-md bg-sky-950/70 text-sky-300 border border-sky-400/30 group-hover:border-sky-400/60 leading-none">
-                        {(can("customers.view") ? 1 : 0) + (can("vendors.view") ? 1 : 0)}
-                      </span>
-                    </div>
-                    <ChevronDown className={`w-3.5 h-3.5 text-slate-400 group-hover:text-white transition-transform duration-200 ${isMasterRekananOpen ? "rotate-0" : "-rotate-90"}`} />
-                  </button>
-                ) : null}
-                
-                {((!isCollapsed && isMasterRekananOpen) || isCollapsed) && (
-                  <div className="space-y-1 animate-fade-in">
-                    {can("customers.view") && (
-                      <Link 
-                        href="/dashboard/customers" 
-                        title="Klien / Perusahaan"
-                        className={`flex items-center gap-3 rounded-xl transition-all text-xs font-bold ${
-                          isCollapsed ? "justify-center p-3" : "px-3.5 py-2.5"
-                        } ${
-                          isCustomersActive 
-                          ? "bg-sky-600 text-white shadow-xs" 
-                          : "text-slate-300 hover:text-white hover:bg-white/10"
-                        }`}
-                      >
-                        <Building2 className="w-5 h-5 shrink-0" />
-                        {!isCollapsed && <span className="truncate">Klien / Perusahaan</span>}
-                      </Link>
-                    )}
+                    <Sparkles className="w-5 h-5 shrink-0" />
+                    {!isCollapsed && <span className="truncate">Keterangan Aktivitas</span>}
+                  </Link>
 
-                    {can("vendors.view") && (
-                      <Link 
-                        href="/dashboard/vendors" 
-                        title="Mitra Armada & Transporter"
-                        className={`flex items-center gap-3 rounded-xl transition-all text-xs font-bold ${
-                          isCollapsed ? "justify-center p-3" : "px-3.5 py-2.5"
-                        } ${
-                          isVendorsActive 
-                          ? "bg-sky-600 text-white shadow-xs" 
-                          : "text-slate-300 hover:text-white hover:bg-white/10"
-                        }`}
-                      >
-                        <Truck className="w-5 h-5 shrink-0" />
-                        {!isCollapsed && <span className="truncate">Mitra Armada (Vendor)</span>}
-                      </Link>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* GRUP 3: PRESET AKTIVITAS (Expandable / Collapsible) */}
-            {can("presets.view") && (
-              <div className="pt-2 border-t border-white/10">
-                {!isCollapsed ? (
-                  <button
-                    type="button"
-                    onClick={() => setIsPresetAktivitasOpen(prev => !prev)}
-                    className="w-full px-3 pb-1.5 flex items-center justify-between text-[10px] font-black text-slate-400/90 uppercase tracking-widest hover:text-white transition-colors cursor-pointer select-none group"
-                    title={isPresetAktivitasOpen ? "Tutup grup Preset Aktivitas" : "Buka grup Preset Aktivitas"}
+                  <Link 
+                    href="/dashboard/activity-routes" 
+                    title="Master Catatan & Rute Pengiriman"
+                    className={`flex items-center gap-3 rounded-xl transition-all text-xs font-bold ${
+                      isCollapsed ? "justify-center p-3" : "px-3.5 py-2.5"
+                    } ${
+                      isActRoutesActive 
+                      ? "bg-emerald-700/80 text-white shadow-xs" 
+                      : "text-slate-300 hover:text-white hover:bg-white/10"
+                    }`}
                   >
-                    <div className="flex items-center gap-1.5">
-                      <span>Preset Aktivitas</span>
-                      <span className="px-1.5 py-0.5 text-[9px] font-black rounded-md bg-sky-950/70 text-sky-300 border border-sky-400/30 group-hover:border-sky-400/60 leading-none">
-                        2
-                      </span>
-                    </div>
-                    <ChevronDown className={`w-3.5 h-3.5 text-slate-400 group-hover:text-white transition-transform duration-200 ${isPresetAktivitasOpen ? "rotate-0" : "-rotate-90"}`} />
-                  </button>
-                ) : null}
-                
-                {((!isCollapsed && isPresetAktivitasOpen) || isCollapsed) && (
-                  <div className="space-y-1 animate-fade-in">
-                    <Link 
-                      href="/dashboard/activity-info" 
-                      title="Master Keterangan Aktivitas (Armada)"
-                      className={`flex items-center gap-3 rounded-xl transition-all text-xs font-bold ${
-                        isCollapsed ? "justify-center p-3" : "px-3.5 py-2.5"
-                      } ${
-                        isActInfoActive 
-                        ? "bg-sky-700/80 text-white shadow-xs" 
-                        : "text-slate-300 hover:text-white hover:bg-white/10"
-                      }`}
-                    >
-                      <Sparkles className="w-5 h-5 shrink-0" />
-                      {!isCollapsed && <span className="truncate">Keterangan Aktivitas</span>}
-                    </Link>
+                    <Route className="w-5 h-5 shrink-0" />
+                    {!isCollapsed && <span className="truncate">Catatan & Rute</span>}
+                  </Link>
+                </div>
+              )}
+            </div>
+          )}
 
-                    <Link 
-                      href="/dashboard/activity-routes" 
-                      title="Master Catatan & Rute Pengiriman"
-                      className={`flex items-center gap-3 rounded-xl transition-all text-xs font-bold ${
-                        isCollapsed ? "justify-center p-3" : "px-3.5 py-2.5"
-                      } ${
-                        isActRoutesActive 
-                        ? "bg-emerald-700/80 text-white shadow-xs" 
-                        : "text-slate-300 hover:text-white hover:bg-white/10"
-                      }`}
-                    >
-                      <Route className="w-5 h-5 shrink-0" />
-                      {!isCollapsed && <span className="truncate">Catatan & Rute</span>}
-                    </Link>
+          {/* GRUP 4: PENGATURAN SISTEM (Expandable / Collapsible) */}
+          {(can("users.view") || can("roles.view") || can("system.view") || isSuperAdmin) && (
+            <div className="pt-2 border-t border-white/10">
+              {!isCollapsed ? (
+                <button
+                  type="button"
+                  onClick={() => setIsPengaturanSistemOpen(prev => !prev)}
+                  className="w-full px-3 pb-1.5 flex items-center justify-between text-[10px] font-black text-slate-400/90 uppercase tracking-widest hover:text-white transition-colors cursor-pointer select-none group"
+                  title={isPengaturanSistemOpen ? "Tutup grup Pengaturan Sistem" : "Buka grup Pengaturan Sistem"}
+                >
+                  <div className="flex items-center gap-1.5">
+                    <span>Pengaturan Sistem</span>
+                    <span className="px-1.5 py-0.5 text-[9px] font-black rounded-md bg-sky-950/70 text-sky-300 border border-sky-400/30 group-hover:border-sky-400/60 leading-none">
+                      {(can("users.view") ? 1 : 0) + (can("roles.view") ? 1 : 0) + ((can("system.view") || isSuperAdmin) ? 1 : 0)}
+                    </span>
                   </div>
-                )}
-              </div>
-            )}
+                  <ChevronDown className={`w-3.5 h-3.5 text-slate-400 group-hover:text-white transition-transform duration-200 ${isPengaturanSistemOpen ? "rotate-0" : "-rotate-90"}`} />
+                </button>
+              ) : null}
 
-            {/* GRUP 4: PENGATURAN SISTEM */}
-            {(can("users.view") || can("roles.view") || can("system.view") || isSuperAdmin) && (
-              <div className="pt-2 border-t border-white/10">
-                {!isCollapsed && (
-                  <div className="px-3 pb-1 text-[10px] font-black text-slate-400/90 uppercase tracking-widest">
-                    Pengaturan Sistem
-                  </div>
-                )}
-                <div className="space-y-1">
+              {((!isCollapsed && isPengaturanSistemOpen) || isCollapsed) && (
+                <div className="space-y-1 animate-fade-in">
                   {can("users.view") && (
                     <Link 
                       href="/dashboard/users" 
@@ -446,32 +493,48 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     </Link>
                   )}
                 </div>
+              )}
+            </div>
+          )}
+
+          {/* GRUP 5: AKSES MOBILE PWA (Expandable / Collapsible) */}
+          <div className="pt-2 border-t border-white/10">
+            {!isCollapsed ? (
+              <button
+                type="button"
+                onClick={() => setIsAplikasiMobileOpen(prev => !prev)}
+                className="w-full px-3 pb-1.5 flex items-center justify-between text-[10px] font-black text-slate-400/90 uppercase tracking-widest hover:text-white transition-colors cursor-pointer select-none group"
+                title={isAplikasiMobileOpen ? "Tutup grup Aplikasi Mobile" : "Buka grup Aplikasi Mobile"}
+              >
+                <div className="flex items-center gap-1.5">
+                  <span>Aplikasi Mobile</span>
+                  <span className="px-1.5 py-0.5 text-[9px] font-black rounded-md bg-sky-950/70 text-sky-300 border border-sky-400/30 group-hover:border-sky-400/60 leading-none">
+                    1
+                  </span>
+                </div>
+                <ChevronDown className={`w-3.5 h-3.5 text-slate-400 group-hover:text-white transition-transform duration-200 ${isAplikasiMobileOpen ? "rotate-0" : "-rotate-90"}`} />
+              </button>
+            ) : null}
+
+            {((!isCollapsed && isAplikasiMobileOpen) || isCollapsed) && (
+              <div className="space-y-1 animate-fade-in">
+                <Link 
+                  href="/m" 
+                  title="Buka Mobile PWA"
+                  className={`flex items-center gap-3 rounded-xl text-xs font-bold text-sky-200 hover:bg-white/10 hover:text-white transition-all ${
+                    isCollapsed ? "justify-center p-3" : "px-3.5 py-2.5"
+                  }`}
+                >
+                  <Smartphone className="w-5 h-5 text-sky-300 shrink-0" />
+                  {!isCollapsed && <span className="truncate">Buka Mobile PWA</span>}
+                </Link>
               </div>
             )}
+          </div>
+        </nav>
 
-            {/* GRUP 5: AKSES MOBILE PWA */}
-            <div className={`pt-2 border-t border-white/10 ${isCollapsed ? "flex justify-center pt-2.5" : ""}`}>
-              {!isCollapsed && (
-                <div className="px-3 pb-1 text-[10px] font-black text-slate-400/90 uppercase tracking-widest">
-                  Aplikasi Mobile
-                </div>
-              )}
-              <Link 
-                href="/m" 
-                title="Buka Mobile PWA"
-                className={`flex items-center gap-3 rounded-xl text-xs font-bold text-sky-200 hover:bg-white/10 hover:text-white transition-all ${
-                  isCollapsed ? "justify-center p-3" : "px-3.5 py-2"
-                }`}
-              >
-                <Smartphone className="w-5 h-5 text-sky-300 shrink-0" />
-                {!isCollapsed && <span className="truncate">Buka Mobile PWA</span>}
-              </Link>
-            </div>
-          </nav>
-        </div>
-
-        {/* User Info & Logout */}
-        <div className="pt-4 pb-1 border-t border-white/10">
+        {/* ZONA 3: User Info & Logout (Fixed at Bottom) */}
+        <div className="p-3.5 pt-3 border-t border-white/10 shrink-0 bg-[#223249]">
           <div className={`flex items-center gap-2.5 mb-3 ${isCollapsed ? "justify-center px-0" : "px-1"}`}>
             <div 
               className={`w-9 h-9 rounded-full bg-gradient-to-br ${getRoleBadgeStyle(user?.role)} flex items-center justify-center text-white font-bold text-xs shadow-xs shrink-0 border`}
@@ -502,7 +565,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </aside>
 
       {/* Main Content Area with Persistent Top Header */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
         {/* Top Header Navigation Bar */}
         <header className="h-14 bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-6 lg:px-8 flex items-center justify-between shrink-0 shadow-2xs z-30">
           <div className="flex items-center gap-3">
