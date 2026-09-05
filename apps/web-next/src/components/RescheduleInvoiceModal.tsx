@@ -138,7 +138,15 @@ export function RescheduleInvoiceModal({ isOpen, invoice, onClose, onSuccess }: 
 
             <div className="pt-2 border-t border-slate-200/70 flex items-center justify-between text-xs">
               <span className="text-slate-600 font-semibold">Jatuh Tempo Saat Ini:</span>
-              <span className="font-mono font-extrabold text-rose-600 bg-rose-50 border border-rose-200 px-2.5 py-1 rounded-lg shadow-xs">
+              <span
+                className={`font-mono font-extrabold px-2.5 py-1 rounded-lg shadow-xs border ${
+                  invoice?.status === "PAID"
+                    ? "text-slate-700 bg-slate-100 border-slate-200"
+                    : invoice?.status === "OVERDUE"
+                    ? "text-rose-600 bg-rose-50 border-rose-200"
+                    : "text-amber-800 bg-amber-50 border-amber-200"
+                }`}
+              >
                 {formatDate(currentDueDateStr)}
               </span>
             </div>
@@ -180,7 +188,17 @@ export function RescheduleInvoiceModal({ isOpen, invoice, onClose, onSuccess }: 
             {isChanged && (
               <div className="mt-2 p-2.5 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between text-xs">
                 <div className="flex items-center gap-2 font-mono text-[11px]">
-                  <span className="text-rose-600 font-bold">{formatDate(currentDueDateStr)}</span>
+                  <span
+                    className={`font-bold ${
+                      invoice?.status === "OVERDUE"
+                        ? "text-rose-600"
+                        : invoice?.status === "PAID"
+                        ? "text-slate-600"
+                        : "text-amber-800"
+                    }`}
+                  >
+                    {formatDate(currentDueDateStr)}
+                  </span>
                   <ArrowRight className="w-3 h-3 text-slate-400" />
                   <span className="font-bold text-slate-900">{formatDate(newDueDate)}</span>
                 </div>

@@ -131,6 +131,20 @@ export function DeleteInvoiceModal({
             </span>
           </div>
           <div className="flex justify-between items-center text-xs">
+            <span className="text-slate-500 font-medium">Jatuh Tempo:</span>
+            <span
+              className={`font-mono px-1.5 py-0.5 rounded text-[11px] font-bold border ${
+                isPaid
+                  ? "text-slate-600 bg-slate-100 border-slate-200"
+                  : isOverdue
+                  ? "text-rose-600 bg-rose-50 border-rose-200"
+                  : "text-amber-800 bg-amber-50 border-amber-200"
+              }`}
+            >
+              {formatDate(invoice.due_date)}
+            </span>
+          </div>
+          <div className="flex justify-between items-center text-xs">
             <span className="text-slate-500 font-medium">Nominal Tagihan:</span>
             <span className="font-mono font-black text-rose-600 text-xs">
               {formatCurrency(invoiceAmount)}
@@ -147,7 +161,7 @@ export function DeleteInvoiceModal({
                   : "bg-amber-50 text-amber-700 border-amber-200"
               }`}
             >
-              {isPaid ? "Lunas" : isOverdue ? "Jatuh Tempo" : "Menunggu Pembayaran"}
+              {isPaid ? "Lunas" : isOverdue ? "Jatuh Tempo (Overdue)" : "Menunggu Pembayaran"}
             </span>
           </div>
         </div>

@@ -724,7 +724,15 @@ export default function InvoicesPage() {
                       </td>
                       <td className="py-3 px-3 text-center font-mono">
                         <div className="flex flex-col items-center justify-center">
-                          <span className={`font-bold ${isOverdue ? "text-rose-600" : "text-slate-700"}`}>
+                          <span
+                            className={`inline-block px-2 py-0.5 rounded-md font-bold text-xs border ${
+                              isPaid
+                                ? "text-slate-600 bg-slate-100/80 border-slate-200"
+                                : isOverdue
+                                ? "text-rose-600 bg-rose-50 border-rose-200"
+                                : "text-amber-800 bg-amber-50 border-amber-200"
+                            }`}
+                          >
                             {formatDate(inv.due_date)}
                           </span>
                           {inv.reschedule_count > 0 && (

@@ -489,7 +489,15 @@ export function InvoiceRecapReportModal({
 
                         {/* 6. Tgl Jatuh Tempo */}
                         <td className="py-2 px-2 text-center font-bold border-r border-slate-200">
-                          <span className={isOverdue ? "text-rose-700 font-black" : "text-slate-700"}>
+                          <span
+                            className={`px-1.5 py-0.5 rounded font-mono text-[11px] ${
+                              isPaid
+                                ? "text-slate-600 bg-slate-100"
+                                : isOverdue
+                                ? "text-rose-700 bg-rose-50 border border-rose-200 font-black"
+                                : "text-amber-800 bg-amber-50 border border-amber-200 font-bold"
+                            }`}
+                          >
                             {formatDateIndo(inv.due_date)}
                           </span>
                         </td>

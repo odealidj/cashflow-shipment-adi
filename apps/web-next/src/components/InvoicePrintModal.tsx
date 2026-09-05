@@ -107,7 +107,17 @@ export function InvoicePrintModal({ isOpen, onClose, invoice }: InvoicePrintModa
               </div>
               <div>
                 <span className="text-slate-400 font-medium">Tgl Jatuh Tempo: </span>
-                <span className="font-bold text-rose-700 font-mono">{formatDateIndo(invoice.due_date)}</span>
+                <span
+                  className={`font-mono font-bold ${
+                    invoice.status === "PAID"
+                      ? "text-slate-800"
+                      : invoice.status === "OVERDUE"
+                      ? "text-rose-700 font-black"
+                      : "text-amber-800 font-black"
+                  }`}
+                >
+                  {formatDateIndo(invoice.due_date)}
+                </span>
               </div>
             </div>
           </div>

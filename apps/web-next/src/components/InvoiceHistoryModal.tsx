@@ -134,8 +134,18 @@ export function InvoiceHistoryModal({ isOpen, invoice, onClose }: InvoiceHistory
           </div>
           <div>
             <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Jatuh Tempo Saat Ini</div>
-            <div className="font-bold font-mono text-slate-800 mt-0.5">
-              {formatDate(currentInvoice.due_date)}
+            <div className="mt-0.5">
+              <span
+                className={`inline-block font-mono font-bold text-xs px-2.5 py-0.5 rounded-md border ${
+                  isPaid
+                    ? "bg-slate-100 text-slate-600 border-slate-200"
+                    : isOverdue
+                    ? "bg-rose-50 text-rose-600 border-rose-200"
+                    : "bg-amber-50 text-amber-800 border-amber-200"
+                }`}
+              >
+                {formatDate(currentInvoice.due_date)}
+              </span>
             </div>
           </div>
           <div>

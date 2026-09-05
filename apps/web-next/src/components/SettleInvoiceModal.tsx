@@ -119,8 +119,19 @@ export function SettleInvoiceModal({ isOpen, invoice, onClose, onSuccess }: Sett
               <span className="font-mono text-xs font-black text-sky-900 bg-sky-100/70 px-2 py-0.5 rounded-md">
                 {invoice.invoice_no}
               </span>
-              <span className="text-[11px] font-bold text-slate-500">
-                Jatuh Tempo: <span className="text-slate-800 font-mono">{formatDate(invoice.due_date)}</span>
+              <span className="text-[11px] font-bold text-slate-500 flex items-center gap-1.5">
+                Jatuh Tempo:{" "}
+                <span
+                  className={`font-mono px-2 py-0.5 rounded text-[11px] font-bold border ${
+                    invoice?.status === "PAID"
+                      ? "text-slate-600 bg-slate-100 border-slate-200"
+                      : invoice?.status === "OVERDUE"
+                      ? "text-rose-600 bg-rose-50 border-rose-200"
+                      : "text-amber-800 bg-amber-50 border-amber-200"
+                  }`}
+                >
+                  {formatDate(invoice.due_date)}
+                </span>
               </span>
             </div>
 
