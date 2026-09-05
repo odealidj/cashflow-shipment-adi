@@ -132,7 +132,7 @@ export function RescheduleInvoiceModal({ isOpen, invoice, onClose, onSuccess }: 
                 {invoice.invoice_no}
               </span>
               <span className="text-[11px] font-bold text-slate-500">
-                Klien: <strong className="text-slate-800">{invoice.client_name}</strong>
+                Customer: <strong className="text-slate-800">{invoice.client_name}</strong>
               </span>
             </div>
 

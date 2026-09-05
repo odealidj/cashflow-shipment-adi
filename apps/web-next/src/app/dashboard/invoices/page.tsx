@@ -669,7 +669,7 @@ export default function InvoicesPage() {
               <tr>
                 <th className="py-3.5 px-3 text-center w-12">No</th>
                 <th className="py-3.5 px-3">No. Invoice</th>
-                <th className="py-3.5 px-3">Nama Klien / Perusahaan</th>
+                <th className="py-3.5 px-3">Customer</th>
                 <th className="py-3.5 px-3 text-center">Tgl Pengiriman</th>
                 <th className="py-3.5 px-3 text-center">TOP (Terms)</th>
                 <th className="py-3.5 px-3 text-center">Tgl Jatuh Tempo</th>

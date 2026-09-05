@@ -125,7 +125,7 @@ export function SettleInvoiceModal({ isOpen, invoice, onClose, onSuccess }: Sett
             </div>
 
             <div>
-              <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Nama Klien / Perusahaan</div>
+              <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Customer</div>
               <div className="text-sm font-extrabold text-slate-900">{invoice.client_name}</div>
             </div>
 

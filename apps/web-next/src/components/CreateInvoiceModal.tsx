@@ -81,7 +81,7 @@ export function CreateInvoiceModal({ isOpen, onClose, onSuccess }: CreateInvoice
       return;
     }
     if (!clientName.trim()) {
-      setError("Nama klien / perusahaan wajib diisi.");
+      setError("Customer wajib diisi.");
       return;
     }
     if (cleanAmount <= 0) {
@@ -173,13 +173,13 @@ export function CreateInvoiceModal({ isOpen, onClose, onSuccess }: CreateInvoice
 
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1">
-                Nama Klien / Perusahaan <span className="text-rose-500">*</span>
+                Customer <span className="text-rose-500">*</span>
               </label>
               <CustomerSelect
                 value={clientName}
                 onChange={(val) => setClientName(val)}
                 required
-                placeholder="Pilih dari Master atau ketik nama klien..."
+                placeholder="Pilih dari Master atau ketik nama customer..."
               />
             </div>
           </div>

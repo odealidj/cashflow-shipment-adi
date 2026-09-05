@@ -123,7 +123,7 @@ export function InvoiceHistoryModal({ isOpen, invoice, onClose }: InvoiceHistory
         {/* Invoice Summary Banner */}
         <div className="shrink-0 p-5 bg-slate-50/50 border-b border-slate-200/70 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
           <div>
-            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Klien</div>
+            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Customer</div>
             <div className="font-extrabold text-slate-900 truncate mt-0.5">{currentInvoice.client_name}</div>
           </div>
           <div>

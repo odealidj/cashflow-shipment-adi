@@ -119,7 +119,7 @@ export function DeleteInvoiceModal({
             </span>
           </div>
           <div className="flex justify-between items-center text-xs">
-            <span className="text-slate-500 font-medium">Nama Klien / Perusahaan:</span>
+            <span className="text-slate-500 font-medium">Customer:</span>
             <span className="font-bold text-slate-900 text-right max-w-[200px] truncate">
               {invoice.client_name}
             </span>
