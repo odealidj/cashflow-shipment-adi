@@ -5,16 +5,17 @@ import React, { ReactNode } from "react";
 interface TableCardProps {
   children: ReactNode;
   footer?: ReactNode;
+  className?: string;
 }
 
-export function TableCard({ children, footer }: TableCardProps) {
+export function TableCard({ children, footer, className = "" }: TableCardProps) {
   return (
-    <div className="bg-white rounded-2xl overflow-hidden border border-slate-200/80 shadow-2xs">
-      <div className="overflow-x-auto soft-scrollbar scroll-smooth">
+    <div className={`bg-white rounded-2xl overflow-hidden border border-slate-200/80 shadow-xs flex-1 flex flex-col min-h-[480px] ${className}`}>
+      <div className="flex-1 overflow-auto soft-scrollbar scroll-smooth relative min-h-[220px]">
         {children}
       </div>
       {footer && (
-        <div className="border-t border-slate-200 bg-slate-50/50 p-3">
+        <div className="shrink-0 border-t border-slate-100 bg-white">
           {footer}
         </div>
       )}
@@ -22,7 +23,7 @@ export function TableCard({ children, footer }: TableCardProps) {
   );
 }
 
-export const tableTheadClass = "bg-[#EBF3FA] text-[#223249] border-b border-sky-200/70 font-black tracking-wider uppercase text-[11px]";
+export const tableTheadClass = "sticky top-0 z-10 bg-[#EBF3FA]/95 backdrop-blur-xs text-[#223249] border-b border-sky-200/70 font-black tracking-wider uppercase text-[11px] shadow-2xs select-none";
 
 export interface ActionButtonProps {
   onClick: () => void;

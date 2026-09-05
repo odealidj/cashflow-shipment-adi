@@ -318,7 +318,7 @@ export default function InvoicesPage() {
 
   return (
     <>
-      <div className={`space-y-4 ${isRecapReportOpen ? "print:hidden" : ""}`}>
+      <div className={`min-h-[calc(100vh-7.5rem)] flex flex-col space-y-4 ${isRecapReportOpen ? "print:hidden" : ""}`}>
       {/* 4 SUMMARY CARDS (SHARED DESIGN SYSTEM) */}
       {summary && (() => {
         const curMonth = getCurrentMonthRange();
@@ -326,12 +326,13 @@ export default function InvoicesPage() {
         const activePeriodLabel = formatActivePeriod(dateFrom, dateTo);
 
         return (
-          <KpiCardGrid
-            periodPrefix="Monitoring Piutang & Invoice"
-            periodLabel={activePeriodLabel}
-            isCurrentPeriod={isCurrentMonth}
-            cols={4}
-          >
+          <div className="shrink-0">
+            <KpiCardGrid
+              periodPrefix="Monitoring Piutang & Invoice"
+              periodLabel={activePeriodLabel}
+              isCurrentPeriod={isCurrentMonth}
+              cols={4}
+            >
             {/* Card 1: Total Tagihan */}
             <KpiCard
               title="Total Tagihan"
@@ -367,14 +368,15 @@ export default function InvoicesPage() {
               subtitle={`${summary.overdue_count} Invoice melewati tempo`}
               variant="danger"
             />
-          </KpiCardGrid>
+            </KpiCardGrid>
+          </div>
         );
       })()}
 
       {/* UNIFIED 1 CARD CONTAINER: HEADER + FILTERS & TABS + 8-COL TABLE + FOOTER */}
-      <div className="bg-white rounded-2xl overflow-hidden border border-slate-200/80 shadow-xs">
+      <div className="bg-white rounded-2xl overflow-hidden border border-slate-200/80 shadow-xs flex-1 flex flex-col min-h-[480px]">
         {/* 1. Header & Primary Action Bar */}
-        <div className="px-6 py-4 border-b border-slate-100 flex flex-wrap justify-between items-center gap-4 bg-slate-50/50">
+        <div className="shrink-0 px-6 py-4 border-b border-slate-100 flex flex-wrap justify-between items-center gap-4 bg-slate-50/50">
           <div>
             <h1 className="text-xl font-black text-slate-900 flex items-center gap-2.5 tracking-tight">
               <div className="w-8 h-8 rounded-xl bg-sky-100/80 text-sky-800 flex items-center justify-center shadow-2xs">
@@ -411,7 +413,7 @@ export default function InvoicesPage() {
         </div>
 
         {/* 2. Integrated Filter Toolbar (Sub-Header) - Persis Transaksi Cashflow & Shipment */}
-        <div className="p-4 pb-3.5 bg-slate-50/40 border-b border-slate-100 space-y-3 transition-all">
+        <div className="shrink-0 p-4 pb-3.5 bg-slate-50/40 border-b border-slate-100 space-y-3 transition-all">
           {/* BARIS UTAMA: SEARCH, MONTH CONTROLLER, QUICK PRESETS, RANGE & FILTER, RESET */}
           <div className="flex flex-wrap items-center justify-between gap-2.5">
             <div className="flex flex-wrap items-center gap-2">
@@ -654,10 +656,10 @@ export default function InvoicesPage() {
         </div>
 
         {/* 3. 8 Kolom Data Table */}
-        <div className="overflow-x-auto soft-scrollbar scroll-smooth">
+        <div className="flex-1 overflow-auto soft-scrollbar scroll-smooth relative min-h-[220px]">
           <table className="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr className={tableTheadClass}>
+            <thead className={tableTheadClass}>
+              <tr>
                 <th className="py-3.5 px-3 text-center w-12">No</th>
                 <th className="py-3.5 px-3">No. Invoice</th>
                 <th className="py-3.5 px-3">Nama Klien / Perusahaan</th>

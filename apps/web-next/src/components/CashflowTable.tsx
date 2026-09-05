@@ -270,7 +270,7 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
 
   return (
     <>
-      <div className={`space-y-4 ${isReportOpen ? "print:hidden" : ""}`}>
+      <div className={`flex-1 flex flex-col space-y-4 ${isReportOpen ? "print:hidden" : ""}`}>
         {/* MINI SUMMARY STRIP (KPI SNAPSHOT REAL-TIME: 5 KARTU SEJAJAR) */}
         {summary && (() => {
           const currentMonth = getCurrentMonthRange();
@@ -278,7 +278,7 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
           const activePeriodLabel = formatActivePeriod(filters.date_from, filters.date_to);
 
           return (
-            <div className="space-y-2">
+            <div className="shrink-0 space-y-2">
               {/* PENANDA WAKTU & PERIODE AKTIF (STRATEGI 1) */}
               <div className="flex items-center justify-between px-1">
                 <div className="flex items-center gap-2 text-xs font-black text-slate-700">
@@ -374,9 +374,9 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
         })()}
 
         {/* UNIFIED 1 CARD CONTAINER: HEADER + FILTER BAR + 14-COL TABLE + FOOTER */}
-        <div className="bg-white rounded-2xl overflow-hidden border border-slate-200/80 shadow-xs">
+        <div className="bg-white rounded-2xl overflow-hidden border border-slate-200/80 shadow-xs flex-1 flex flex-col min-h-[480px]">
           {/* Top Header & Actions Bar */}
-          <div className="px-6 py-4 border-b border-slate-100 flex flex-wrap justify-between items-center gap-4 bg-slate-50/50">
+          <div className="shrink-0 px-6 py-4 border-b border-slate-100 flex flex-wrap justify-between items-center gap-4 bg-slate-50/50">
             <div>
               <h1 className="text-xl font-black text-slate-900 flex items-center gap-2.5 tracking-tight">
                 <div className="w-8 h-8 rounded-xl bg-sky-100/80 text-sky-800 flex items-center justify-center shadow-2xs">
@@ -466,7 +466,7 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
           />
 
           {/* 14 Kolom Data Table */}
-          <div className="overflow-x-auto soft-scrollbar scroll-smooth">
+          <div className="flex-1 overflow-auto soft-scrollbar scroll-smooth relative min-h-[220px]">
             <table className="w-full text-left text-xs text-slate-700 border-collapse">
             <thead className={tableTheadClass}>
               <tr>

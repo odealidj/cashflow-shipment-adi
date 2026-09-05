@@ -55,7 +55,7 @@ export function TablePagination({
 
   return (
     <div
-      className={`border-t border-slate-100 bg-slate-50/60 px-5 py-3.5 flex flex-wrap justify-between items-center gap-3 select-none ${className}`}
+      className={`shrink-0 border-t border-slate-100 bg-slate-50/60 px-5 py-3.5 flex flex-wrap justify-between items-center gap-3 select-none ${className}`}
     >
       {/* 1. Kiri: Info Jumlah Data & Pilihan Limit Baris */}
       <div className="flex items-center flex-wrap gap-3">

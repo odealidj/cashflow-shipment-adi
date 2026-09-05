@@ -22,6 +22,7 @@ import {
 import { API_BASE_URL, fetchWithAuth } from "@/lib/apiClient";
 import { useAuth } from "@/hooks/useAuth";
 import { TablePagination } from "@/components/shared/TablePagination";
+import { tableTheadClass } from "@/components/shared/TableCard";
 import { UserModal, UserItem } from "@/components/users/UserModal";
 import { ResetPasswordModal } from "@/components/users/ResetPasswordModal";
 import { DeleteUserModal } from "@/components/users/DeleteUserModal";
@@ -207,9 +208,9 @@ export default function UsersManagementPage() {
   };
 
   return (
-    <div className="space-y-6 pb-10">
+    <div className="min-h-[calc(100vh-7.5rem)] flex flex-col space-y-4 pb-4">
       {/* Header Section */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs">
+      <div className="shrink-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
         <div>
           <div className="flex items-center gap-2.5">
             <div className="w-10 h-10 rounded-2xl bg-purple-50 flex items-center justify-center text-purple-600 border border-purple-100 shadow-xs">
@@ -238,7 +239,7 @@ export default function UsersManagementPage() {
       </div>
 
       {/* KPI Cards Section */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="shrink-0 grid grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Card 1: Total Pengguna */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
           <div className="flex items-center justify-between">
@@ -311,7 +312,7 @@ export default function UsersManagementPage() {
       </div>
 
       {/* Filter & Search Bar */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+      <div className="shrink-0 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
         {/* Search */}
         <div className="relative flex-1">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
@@ -380,12 +381,11 @@ export default function UsersManagementPage() {
       </div>
 
       {/* Main Table Card */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
-        <div className="overflow-x-auto">
+      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden flex-1 flex flex-col min-h-[480px]">
+        <div className="flex-1 overflow-auto soft-scrollbar scroll-smooth relative min-h-[220px]">
           <table className="w-full text-left border-collapse">
-            <thead>
-              {/* Header Standardized: bg-[#EBF3FA] text-[#223249] border-sky-200/70 */}
-              <tr className="bg-[#EBF3FA] text-[#223249] text-xs font-bold border-b border-sky-200/70 select-none">
+            <thead className={tableTheadClass}>
+              <tr>
                 <th className="py-3 px-4 text-center w-12">No</th>
                 <th className="py-3 px-4 min-w-[200px]">Pengguna</th>
                 <th className="py-3 px-4 min-w-[180px]">Email & Kontak</th>

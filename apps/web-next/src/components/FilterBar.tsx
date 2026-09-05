@@ -255,7 +255,7 @@ export function FilterBar({
 
   return (
     <div className={embedded 
-      ? "p-4 pb-3.5 bg-slate-50/40 border-b border-slate-100 space-y-3 transition-all" 
+      ? "shrink-0 p-4 pb-3.5 bg-slate-50/40 border-b border-slate-100 space-y-3 transition-all" 
       : "bg-white border border-slate-200/80 rounded-2xl p-3.5 space-y-3 transition-all shadow-2xs"
     }>
       {/* BARIS UTAMA: SEARCH, MONTH SELECTOR, QUICK ACTION */}

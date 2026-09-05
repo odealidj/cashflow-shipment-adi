@@ -126,9 +126,10 @@ export function ActivityPresetTable({ category }: ActivityPresetTableProps) {
 
   return (
     <>
-      <div className="space-y-4">
+      <div className="flex-1 flex flex-col space-y-4">
         {/* KPI Strip Ringkasan Master */}
-        <KpiCardGrid cols={4}>
+        <div className="shrink-0">
+          <KpiCardGrid cols={4}>
           <KpiCard
             title={isDedicated ? (isArmada ? "Total Jenis Armada" : "Total Rute Delivery") : "Total Master Pilihan"}
             value={`${currentTotal} ${isDedicated ? (isArmada ? "Armada" : "Rute") : "Pilihan"}`}
@@ -157,12 +158,13 @@ export function ActivityPresetTable({ category }: ActivityPresetTableProps) {
             icon={<Sparkles className="w-5 h-5" />}
             variant="default"
           />
-        </KpiCardGrid>
+          </KpiCardGrid>
+        </div>
 
         {/* Unified 1 Card Container */}
-        <div className="bg-white rounded-2xl overflow-hidden border border-slate-200/80 shadow-xs">
+        <div className="bg-white rounded-2xl overflow-hidden border border-slate-200/80 shadow-xs flex-1 flex flex-col min-h-[480px]">
           {/* Top Actions Bar */}
-          <div className="px-6 py-4 border-b border-slate-100 flex flex-wrap justify-between items-center gap-4 bg-slate-50/50">
+          <div className="shrink-0 px-6 py-4 border-b border-slate-100 flex flex-wrap justify-between items-center gap-4 bg-slate-50/50">
             <div>
               <h1 className="text-xl font-black text-slate-900 flex items-center gap-2.5 tracking-tight">
                 <div className={`w-8 h-8 rounded-xl flex items-center justify-center shadow-2xs ${
@@ -202,7 +204,7 @@ export function ActivityPresetTable({ category }: ActivityPresetTableProps) {
           </div>
 
           {/* Integrated Filter Sub-Header Toolbar */}
-          <div className="p-4 pb-3.5 bg-slate-50/40 border-b border-slate-100 space-y-3 transition-all">
+          <div className="shrink-0 p-4 pb-3.5 bg-slate-50/40 border-b border-slate-100 space-y-3 transition-all">
             <div className="flex flex-wrap items-center justify-between gap-3">
               {/* Category Tabs (Only show if not dedicated single category) */}
               {!isDedicated ? (
@@ -272,7 +274,7 @@ export function ActivityPresetTable({ category }: ActivityPresetTableProps) {
           </div>
           
           {/* Table Data */}
-          <div className="overflow-x-auto soft-scrollbar scroll-smooth">
+          <div className="flex-1 overflow-auto soft-scrollbar scroll-smooth relative min-h-[220px]">
             <table className="w-full text-left text-xs text-slate-700 border-collapse">
               <thead className={tableTheadClass}>
                 <tr>

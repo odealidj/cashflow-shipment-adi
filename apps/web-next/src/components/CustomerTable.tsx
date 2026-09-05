@@ -141,9 +141,10 @@ export function CustomerTable() {
 
   return (
     <>
-      <div className="space-y-4">
+      <div className="flex-1 flex flex-col space-y-4">
         {/* KPI Strip Ringkasan Customer */}
-        <KpiCardGrid cols={4}>
+        <div className="shrink-0">
+          <KpiCardGrid cols={4}>
           <KpiCard
             title="Total Customer Klien"
             value={`${total || safeCustomers.length} Klien`}
@@ -172,12 +173,13 @@ export function CustomerTable() {
             icon={<MapPin className="w-5 h-5" />}
             variant="default"
           />
-        </KpiCardGrid>
+          </KpiCardGrid>
+        </div>
 
         {/* Container Tabel Utama */}
-        <div className="bg-white rounded-2xl overflow-hidden border border-slate-200/80 shadow-xs">
+        <div className="bg-white rounded-2xl overflow-hidden border border-slate-200/80 shadow-xs flex-1 flex flex-col min-h-[480px]">
           {/* Top Actions Bar */}
-          <div className="px-6 py-4 border-b border-slate-100 flex flex-wrap justify-between items-center gap-4 bg-slate-50/50">
+          <div className="shrink-0 px-6 py-4 border-b border-slate-100 flex flex-wrap justify-between items-center gap-4 bg-slate-50/50">
             <div>
               <h1 className="text-xl font-black text-slate-900 flex items-center gap-2.5 tracking-tight">
                 <Building2 className="w-5 h-5 text-sky-700" />
@@ -198,7 +200,7 @@ export function CustomerTable() {
           </div>
 
           {/* Search & Filter Bar */}
-          <div className="p-4 pb-0">
+          <div className="shrink-0 p-4 pb-0">
             <div className="mb-3 bg-slate-50 border border-slate-200/80 rounded-2xl p-3 flex flex-wrap items-center justify-between gap-3">
               <div className="relative flex-1 min-w-[260px]">
                 <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -223,7 +225,7 @@ export function CustomerTable() {
           </div>
           
           {/* Customer Table Data */}
-          <div className="overflow-x-auto">
+          <div className="flex-1 overflow-auto soft-scrollbar scroll-smooth relative min-h-[220px]">
             <table className="w-full text-left text-xs text-slate-700">
               <thead className={tableTheadClass}>
                 <tr>

@@ -400,9 +400,9 @@ export default function RolesManagementPage() {
   };
 
   return (
-    <div className="flex flex-col lg:h-[calc(100vh-4.5rem)] lg:min-h-[600px] gap-4 pb-8 lg:pb-0">
+    <div className="min-h-[calc(100vh-7.5rem)] flex flex-col gap-4 pb-4">
       {/* 1. Header Section */}
-      <div className="shrink-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-xs">
+      <div className="shrink-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs">
         <div>
           <div className="flex items-center gap-2.5">
             <div className="w-10 h-10 rounded-2xl bg-sky-50 flex items-center justify-center text-sky-700 border border-sky-100 shadow-xs">
@@ -448,11 +448,11 @@ export default function RolesManagementPage() {
       )}
 
       {/* 2. Main Two-Column Layout (Fills remaining height proportionally) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:flex-1 lg:min-h-0">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 flex-1 min-h-[480px]">
         
         {/* LEFT COLUMN: Daftar Peran (4 Cols on lg, 3.5 Cols on xl) */}
-        <div className="lg:col-span-4 xl:col-span-3.5 lg:h-full lg:min-h-0">
-          <div className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-xs flex flex-col max-lg:max-h-[360px] lg:h-full overflow-hidden">
+        <div className="lg:col-span-4 xl:col-span-3.5 flex flex-col h-full">
+          <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs flex-1 flex flex-col min-h-[480px] overflow-hidden">
             <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100 shrink-0">
               <div className="flex items-center gap-2">
                 <Layers className="w-4 h-4 text-slate-500" />
@@ -465,7 +465,7 @@ export default function RolesManagementPage() {
               </span>
             </div>
 
-            <div className="space-y-2.5 flex-1 overflow-y-auto pr-1 soft-scrollbar">
+            <div className="space-y-2.5 flex-1 overflow-y-auto pr-1 soft-scrollbar relative min-h-[220px]">
               {loading ? (
                 <div className="py-8 text-center text-xs text-slate-400">Memuat peran...</div>
               ) : roles.map((role) => {
@@ -541,9 +541,9 @@ export default function RolesManagementPage() {
         </div>
 
         {/* RIGHT COLUMN: Matriks Hak Akses (8 Cols on lg, 8.5 Cols on xl) */}
-        <div className="lg:col-span-8 xl:col-span-8.5 lg:h-full lg:min-h-0">
+        <div className="lg:col-span-8 xl:col-span-8.5 flex flex-col h-full">
           {selectedRole ? (
-            <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden flex flex-col max-lg:min-h-[520px] lg:h-full">
+            <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden flex-1 flex flex-col min-h-[480px]">
               
               {/* Header Kartu Matriks (Fixed Top inside Card) */}
               <div className="p-5 px-6 border-b border-slate-100 bg-slate-50/70 shrink-0 flex flex-wrap items-center justify-between gap-4">
@@ -698,7 +698,7 @@ export default function RolesManagementPage() {
               )}
 
               {/* Permissions Checklist Grouped by Modules (Scrollable Internal Area) */}
-              <div className="p-6 space-y-5 flex-1 overflow-y-auto soft-scrollbar">
+              <div className="p-6 space-y-5 flex-1 overflow-y-auto soft-scrollbar relative min-h-[220px]">
                 {matrixLoading ? (
                   <div className="py-16 text-center text-xs text-slate-400">
                     Memuat matriks wewenang...
@@ -863,7 +863,7 @@ export default function RolesManagementPage() {
 
             </div>
           ) : (
-            <div className="bg-white rounded-3xl p-12 border border-slate-200/80 text-center text-slate-400 max-lg:min-h-[500px] lg:h-full flex flex-col items-center justify-center">
+            <div className="bg-white rounded-2xl p-12 border border-slate-200/80 shadow-xs text-center text-slate-400 min-h-[480px] flex-1 flex flex-col items-center justify-center">
               <Shield className="w-12 h-12 text-slate-300 mb-3" />
               <p className="text-sm font-bold">Pilih salah satu peran di sebelah kiri untuk melihat matriks hak aksesnya.</p>
             </div>
