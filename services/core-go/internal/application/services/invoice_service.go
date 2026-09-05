@@ -185,15 +185,68 @@ func (s *InvoiceService) UpdateInvoice(ctx context.Context, id int, input Create
 	return inv, nil
 }
 
-func (s *InvoiceService) MarkAsPaid(ctx context.Context, id int) error {
-	inv, _ := s.repo.GetByID(ctx, id)
+type SettleInvoiceInput struct {
+	PaymentDate   string     `json:"payment_date"` // YYYY-MM-DD or RFC3339, default time.Now()
+	ReferenceNo   string     `json:"reference_no"`
+	ProofURL      string     `json:"proof_url"`
+	Notes         string     `json:"notes"`
+	CreatedBy     *uuid.UUID `json:"created_by"`
+	CreatedByName string     `json:"created_by_name"`
+}
 
-	if err := s.repo.MarkPaid(ctx, id); err != nil {
-		return err
+type RescheduleDueDateInput struct {
+	NewDueDate    string     `json:"new_due_date"` // YYYY-MM-DD
+	Reason        string     `json:"reason"`
+	ChangedBy     *uuid.UUID `json:"changed_by"`
+	ChangedByName string     `json:"changed_by_name"`
+}
+
+func (s *InvoiceService) MarkAsPaid(ctx context.Context, id int) error {
+	_, err := s.SettleInvoice(ctx, id, SettleInvoiceInput{})
+	return err
+}
+
+func (s *InvoiceService) SettleInvoice(ctx context.Context, id int, input SettleInvoiceInput) (*domain.Invoice, error) {
+	inv, err := s.repo.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if inv.Status == domain.InvoiceStatusPaid {
+		return nil, errors.New("invoice ini sudah berstatus lunas")
+	}
+
+	payDate := time.Now()
+	if input.PaymentDate != "" {
+		if d, err := time.Parse("2006-01-02", input.PaymentDate); err == nil {
+			payDate = d
+		} else if d, err := time.Parse(time.RFC3339, input.PaymentDate); err == nil {
+			payDate = d
+		}
+	}
+
+	creatorName := input.CreatedByName
+	if creatorName == "" {
+		creatorName = "Staf Finance"
+	}
+
+	payment := domain.InvoicePaymentHistory{
+		InvoiceID:     id,
+		Action:        "SETTLED",
+		Amount:        inv.Amount,
+		PaymentDate:   payDate,
+		ReferenceNo:   input.ReferenceNo,
+		ProofURL:      input.ProofURL,
+		Notes:         input.Notes,
+		CreatedBy:     input.CreatedBy,
+		CreatedByName: creatorName,
+	}
+
+	if err := s.repo.SettleInvoice(ctx, id, payment); err != nil {
+		return nil, err
 	}
 	telemetry.RecordInvoicePaid()
 
-	if s.notifSvc != nil && inv != nil {
+	if s.notifSvc != nil {
 		go func() {
 			bgCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()
@@ -218,7 +271,82 @@ func (s *InvoiceService) MarkAsPaid(ctx context.Context, id int) error {
 		}()
 	}
 
-	return nil
+	return s.repo.GetByID(ctx, id)
+}
+
+func (s *InvoiceService) RescheduleDueDate(ctx context.Context, id int, input RescheduleDueDateInput) (*domain.Invoice, error) {
+	inv, err := s.repo.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if inv.Status == domain.InvoiceStatusPaid {
+		return nil, errors.New("tidak dapat mengubah tanggal jatuh tempo invoice yang sudah lunas")
+	}
+
+	if input.NewDueDate == "" {
+		return nil, errors.New("tanggal jatuh tempo baru wajib diisi")
+	}
+	newDueDate, err := time.Parse("2006-01-02", input.NewDueDate)
+	if err != nil {
+		return nil, fmt.Errorf("format tanggal jatuh tempo baru tidak valid: %v", err)
+	}
+
+	input.Reason = strings.TrimSpace(input.Reason)
+	if input.Reason == "" {
+		return nil, errors.New("alasan perubahan tanggal jatuh tempo wajib diisi demi akuntabilitas audit")
+	}
+
+	daysAdded := int(newDueDate.Sub(inv.DueDate).Hours() / 24)
+
+	changedByName := input.ChangedByName
+	if changedByName == "" {
+		changedByName = "Sistem"
+	}
+
+	history := domain.InvoiceDueDateHistory{
+		InvoiceID:       id,
+		PreviousDueDate: inv.DueDate,
+		NewDueDate:      newDueDate,
+		DaysAdded:       daysAdded,
+		Reason:          input.Reason,
+		ChangedBy:       input.ChangedBy,
+		ChangedByName:   changedByName,
+	}
+
+	if err := s.repo.RescheduleDueDate(ctx, id, history); err != nil {
+		return nil, err
+	}
+
+	if s.notifSvc != nil {
+		go func() {
+			bgCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			target := "finance"
+			title := fmt.Sprintf("📅 Jatuh Tempo Invoice Diundur: %s", inv.InvoiceNo)
+			msg := fmt.Sprintf("Jatuh tempo invoice %s (%s) diperpanjang ke %s (%+d hari). Alasan: %s",
+				inv.InvoiceNo, inv.ClientName, newDueDate.Format("02 Jan 2006"), daysAdded, input.Reason)
+			actionURL := fmt.Sprintf("/dashboard/invoices?search=%s", inv.InvoiceNo)
+			_, _ = s.notifSvc.Create(bgCtx, CreateNotificationInput{
+				TargetRole: &target,
+				Title:      title,
+				Message:    msg,
+				Category:   domain.NotificationCategoryInvoice,
+				Severity:   domain.NotificationSeverityInfo,
+				ActionURL:  &actionURL,
+				Metadata: map[string]interface{}{
+					"invoice_id":   inv.ID,
+					"invoice_no":   inv.InvoiceNo,
+					"new_due_date": newDueDate.Format("2006-01-02"),
+				},
+			})
+		}()
+	}
+
+	return s.repo.GetByID(ctx, id)
+}
+
+func (s *InvoiceService) GetInvoiceHistory(ctx context.Context, id int) (*domain.InvoiceHistorySummary, error) {
+	return s.repo.GetInvoiceHistory(ctx, id)
 }
 
 func (s *InvoiceService) DeleteInvoice(ctx context.Context, id int) error {

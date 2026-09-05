@@ -9,6 +9,7 @@ import (
 	"github.com/cashflow-shipment-app/backend/internal/application/services"
 	"github.com/cashflow-shipment-app/backend/internal/core/domain"
 	"github.com/cashflow-shipment-app/backend/internal/core/ports"
+	"github.com/cashflow-shipment-app/backend/internal/middleware"
 	"github.com/cashflow-shipment-app/backend/pkg/response"
 	"github.com/go-chi/chi/v5"
 )
@@ -180,8 +181,9 @@ func (h *InvoiceHandler) Update(w http.ResponseWriter, r *http.Request) {
 }
 
 // Mark Paid godoc
-// @Summary      Mark invoice as paid
+// @Summary      Mark invoice as paid / Settle invoice
 // @Tags         invoices
+// @Accept       json
 // @Produce      json
 // @Security     BearerAuth
 // @Param        X-Idempotency-Key header string false "Idempotency Key (UUID unik pencegah duplikasi transaksi)" default(a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11)
@@ -195,12 +197,89 @@ func (h *InvoiceHandler) MarkPaid(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.invoiceService.MarkAsPaid(r.Context(), id); err != nil {
-		response.HandleError(w, err, http.StatusInternalServerError)
+	var input services.SettleInvoiceInput
+	if r.Body != nil && r.ContentLength > 0 {
+		_ = json.NewDecoder(r.Body).Decode(&input)
+	}
+
+	session := middleware.GetUserSessionFromContext(r.Context())
+	if session != nil {
+		input.CreatedBy = &session.UserID
+		if session.FullName != "" {
+			input.CreatedByName = session.FullName
+		}
+	}
+
+	inv, err := h.invoiceService.SettleInvoice(r.Context(), id, input)
+	if err != nil {
+		response.HandleError(w, err, http.StatusBadRequest)
 		return
 	}
 
-	response.JSON(w, http.StatusOK, "Invoice berhasil ditandai lunas", map[string]interface{}{"id": id, "status": "PAID"})
+	response.JSON(w, http.StatusOK, "Invoice berhasil dilunasi", inv)
+}
+
+// Reschedule Due Date godoc
+// @Summary      Reschedule invoice due date with audit reason
+// @Tags         invoices
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        X-Idempotency-Key header string false "Idempotency Key (UUID unik pencegah duplikasi transaksi)" default(a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11)
+// @Param        X-API-Version     header string false "API Version (default: v1)"
+// @Router       /invoices/{id}/reschedule [post]
+func (h *InvoiceHandler) RescheduleDueDate(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		response.Error(w, http.StatusBadRequest, "ID tidak valid")
+		return
+	}
+
+	var input services.RescheduleDueDateInput
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		response.Error(w, http.StatusBadRequest, "Payload request tidak valid")
+		return
+	}
+
+	session := middleware.GetUserSessionFromContext(r.Context())
+	if session != nil {
+		input.ChangedBy = &session.UserID
+		if session.FullName != "" {
+			input.ChangedByName = session.FullName
+		}
+	}
+
+	inv, err := h.invoiceService.RescheduleDueDate(r.Context(), id, input)
+	if err != nil {
+		response.HandleError(w, err, http.StatusBadRequest)
+		return
+	}
+
+	response.JSON(w, http.StatusOK, "Tanggal jatuh tempo invoice berhasil diperpanjang", inv)
+}
+
+// Get Invoice History godoc
+// @Summary      Get full audit trail history of an invoice
+// @Tags         invoices
+// @Produce      json
+// @Security     BearerAuth
+// @Router       /invoices/{id}/history [get]
+func (h *InvoiceHandler) GetHistory(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		response.Error(w, http.StatusBadRequest, "ID tidak valid")
+		return
+	}
+
+	history, err := h.invoiceService.GetInvoiceHistory(r.Context(), id)
+	if err != nil {
+		response.HandleError(w, err, http.StatusNotFound)
+		return
+	}
+
+	response.JSON(w, http.StatusOK, "Riwayat invoice berhasil dimuat", history)
 }
 
 // Delete Invoice (Soft Delete) godoc

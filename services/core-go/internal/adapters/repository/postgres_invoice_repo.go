@@ -2,6 +2,8 @@ package repository
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 	"time"
 
@@ -28,15 +30,15 @@ func (r *PostgresInvoiceRepo) Create(ctx context.Context, inv *domain.Invoice) (
 	query := `
 		INSERT INTO invoices (
 			invoice_no, client_name, shipment_date, top_terms, top_days,
-			due_date, amount, status, paid_at, notes, cashflow_entry_id, created_by
+			due_date, original_due_date, amount, status, paid_at, notes, cashflow_entry_id, created_by
 		) VALUES (
-			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12
+			$1, $2, $3, $4, $5, $6, COALESCE($7, $6), $8, $9, $10, $11, $12, $13
 		) RETURNING id, created_at, updated_at;
 	`
 	return r.db.QueryRowContext(
 		ctx, query,
 		inv.InvoiceNo, inv.ClientName, inv.ShipmentDate, inv.TopTerms, inv.TopDays,
-		inv.DueDate, inv.Amount, inv.Status, inv.PaidAt, inv.Notes, inv.CashflowEntryID, inv.CreatedBy,
+		inv.DueDate, inv.OriginalDueDate, inv.Amount, inv.Status, inv.PaidAt, inv.Notes, inv.CashflowEntryID, inv.CreatedBy,
 	).Scan(&inv.ID, &inv.CreatedAt, &inv.UpdatedAt)
 }
 
@@ -78,14 +80,29 @@ func (r *PostgresInvoiceRepo) Delete(ctx context.Context, id int) error {
 }
 
 const invoiceSelectColumns = `
-	id, invoice_no, client_name, shipment_date, top_terms, top_days,
-	due_date, amount, status, paid_at, COALESCE(notes, '') AS notes,
-	cashflow_entry_id, created_by, created_at, updated_at, deleted_at
+	i.id, i.invoice_no, i.client_name, i.shipment_date, i.top_terms, i.top_days,
+	i.due_date, COALESCE(i.original_due_date, i.due_date) AS original_due_date,
+	i.amount, i.status, i.paid_at, i.paid_by,
+	COALESCE(u_paid.full_name, '') AS paid_by_name,
+	COALESCE(i.payment_reference, '') AS payment_reference,
+	COALESCE(i.payment_proof_url, '') AS payment_proof_url,
+	COALESCE(i.payment_notes, '') AS payment_notes,
+	COALESCE(i.notes, '') AS notes,
+	i.cashflow_entry_id, i.created_by,
+	COALESCE(u_create.full_name, '') AS created_by_name,
+	COALESCE((SELECT COUNT(*) FROM invoice_due_date_history WHERE invoice_id = i.id), 0) AS reschedule_count,
+	i.created_at, i.updated_at, i.deleted_at
+`
+
+const invoiceFromWithJoins = `
+	FROM invoices i
+	LEFT JOIN users u_paid ON i.paid_by = u_paid.id
+	LEFT JOIN users u_create ON i.created_by = u_create.id
 `
 
 func (r *PostgresInvoiceRepo) GetByID(ctx context.Context, id int) (*domain.Invoice, error) {
 	var inv domain.Invoice
-	query := fmt.Sprintf(`SELECT %s FROM invoices WHERE id = $1 AND deleted_at IS NULL`, invoiceSelectColumns)
+	query := fmt.Sprintf(`SELECT %s %s WHERE i.id = $1 AND i.deleted_at IS NULL`, invoiceSelectColumns, invoiceFromWithJoins)
 	err := r.db.GetContext(ctx, &inv, query, id)
 	if err != nil {
 		return nil, err
@@ -95,7 +112,7 @@ func (r *PostgresInvoiceRepo) GetByID(ctx context.Context, id int) (*domain.Invo
 
 func (r *PostgresInvoiceRepo) GetByInvoiceNo(ctx context.Context, invoiceNo string) (*domain.Invoice, error) {
 	var inv domain.Invoice
-	query := fmt.Sprintf(`SELECT %s FROM invoices WHERE invoice_no = $1 AND deleted_at IS NULL`, invoiceSelectColumns)
+	query := fmt.Sprintf(`SELECT %s %s WHERE i.invoice_no = $1 AND i.deleted_at IS NULL`, invoiceSelectColumns, invoiceFromWithJoins)
 	err := r.db.GetContext(ctx, &inv, query, invoiceNo)
 	if err != nil {
 		return nil, err
@@ -109,49 +126,49 @@ func (r *PostgresInvoiceRepo) ListAll(ctx context.Context, offset, limit int, fi
 		telemetry.TrackQuery("invoice_repo", "ListAll", "SELECT ... FROM invoices ...", start, err)
 	}()
 
-	where := "WHERE deleted_at IS NULL"
+	where := "WHERE i.deleted_at IS NULL"
 	args := []interface{}{}
 	argIdx := 1
 
 	if filter.DateFrom != nil && *filter.DateFrom != "" {
-		where += fmt.Sprintf(" AND shipment_date >= $%d", argIdx)
+		where += fmt.Sprintf(" AND i.shipment_date >= $%d", argIdx)
 		args = append(args, *filter.DateFrom)
 		argIdx++
 	}
 	if filter.DateTo != nil && *filter.DateTo != "" {
-		where += fmt.Sprintf(" AND shipment_date <= $%d", argIdx)
+		where += fmt.Sprintf(" AND i.shipment_date <= $%d", argIdx)
 		args = append(args, *filter.DateTo)
 		argIdx++
 	}
 	if filter.Status != nil && *filter.Status != "" {
-		where += fmt.Sprintf(" AND status = $%d", argIdx)
+		where += fmt.Sprintf(" AND i.status = $%d", argIdx)
 		args = append(args, *filter.Status)
 		argIdx++
 	}
 	if filter.ClientName != nil && *filter.ClientName != "" {
-		where += fmt.Sprintf(" AND client_name ILIKE $%d", argIdx)
+		where += fmt.Sprintf(" AND i.client_name ILIKE $%d", argIdx)
 		args = append(args, "%"+*filter.ClientName+"%")
 		argIdx++
 	}
 	if filter.InvoiceNo != nil && *filter.InvoiceNo != "" {
-		where += fmt.Sprintf(" AND invoice_no ILIKE $%d", argIdx)
+		where += fmt.Sprintf(" AND i.invoice_no ILIKE $%d", argIdx)
 		args = append(args, "%"+*filter.InvoiceNo+"%")
 		argIdx++
 	}
 
 	// Count query
-	countQuery := fmt.Sprintf("SELECT COUNT(*) FROM invoices %s", where)
+	countQuery := fmt.Sprintf("SELECT COUNT(*) FROM invoices i %s", where)
 	err = r.db.GetContext(ctx, &total, countQuery, args...)
 	if err != nil {
 		return nil, 0, err
 	}
 
 	// Sorting
-	sortBy := "shipment_date"
+	sortBy := "i.shipment_date"
 	if filter.SortBy == "due_date" {
-		sortBy = "due_date"
+		sortBy = "i.due_date"
 	} else if filter.SortBy == "invoice_no" {
-		sortBy = "invoice_no"
+		sortBy = "i.invoice_no"
 	}
 	sortDir := "ASC"
 	if filter.SortDir == "DESC" {
@@ -160,8 +177,8 @@ func (r *PostgresInvoiceRepo) ListAll(ctx context.Context, offset, limit int, fi
 
 	dataArgs := append(args, limit, offset)
 	dataQuery := fmt.Sprintf(
-		`SELECT %s FROM invoices %s ORDER BY %s %s, id %s LIMIT $%d OFFSET $%d`,
-		invoiceSelectColumns, where, sortBy, sortDir, sortDir, argIdx, argIdx+1,
+		`SELECT %s %s %s ORDER BY %s %s, i.id %s LIMIT $%d OFFSET $%d`,
+		invoiceSelectColumns, invoiceFromWithJoins, where, sortBy, sortDir, sortDir, argIdx, argIdx+1,
 	)
 	err = r.db.SelectContext(ctx, &invoices, dataQuery, dataArgs...)
 	return invoices, total, err
@@ -245,4 +262,160 @@ func (r *PostgresInvoiceRepo) MarkPaid(ctx context.Context, id int) (err error) 
 	`
 	_, err = r.db.ExecContext(ctx, query, now, id)
 	return err
+}
+
+func (r *PostgresInvoiceRepo) SettleInvoice(ctx context.Context, id int, payment domain.InvoicePaymentHistory) (err error) {
+	start := time.Now()
+	defer func() {
+		telemetry.TrackQuery("invoice_repo", "SettleInvoice", "UPDATE invoices ... INSERT INTO invoice_payment_history ...", start, err)
+	}()
+
+	tx, err := r.db.BeginTxx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	// 1. Update invoice status to PAID
+	queryUpdate := `
+		UPDATE invoices 
+		SET status = 'PAID'::invoice_status,
+		    paid_at = $1,
+		    paid_by = $2,
+		    payment_reference = $3,
+		    payment_proof_url = $4,
+		    payment_notes = $5,
+		    updated_at = CURRENT_TIMESTAMP
+		WHERE id = $6 AND deleted_at IS NULL;
+	`
+	res, err := tx.ExecContext(ctx, queryUpdate,
+		payment.PaymentDate, payment.CreatedBy, payment.ReferenceNo,
+		payment.ProofURL, payment.Notes, id,
+	)
+	if err != nil {
+		return err
+	}
+	rows, _ := res.RowsAffected()
+	if rows == 0 {
+		return errors.New("invoice tidak ditemukan atau sudah dihapus")
+	}
+
+	// 2. Insert into invoice_payment_history
+	queryInsert := `
+		INSERT INTO invoice_payment_history (
+			invoice_id, action, amount, payment_date, reference_no, proof_url, notes, created_by, created_by_name
+		) VALUES (
+			$1, $2, $3, $4, $5, $6, $7, $8, $9
+		);
+	`
+	_, err = tx.ExecContext(ctx, queryInsert,
+		id, payment.Action, payment.Amount, payment.PaymentDate,
+		payment.ReferenceNo, payment.ProofURL, payment.Notes,
+		payment.CreatedBy, payment.CreatedByName,
+	)
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit()
+}
+
+func (r *PostgresInvoiceRepo) RescheduleDueDate(ctx context.Context, id int, history domain.InvoiceDueDateHistory) (err error) {
+	start := time.Now()
+	defer func() {
+		telemetry.TrackQuery("invoice_repo", "RescheduleDueDate", "UPDATE invoices ... INSERT INTO invoice_due_date_history ...", start, err)
+	}()
+
+	tx, err := r.db.BeginTxx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	// 1. Update invoice due_date, set original_due_date if null, and normalize OVERDUE to UNPAID if new due date is in the future
+	now := time.Now()
+	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.Local)
+
+	queryUpdate := `
+		UPDATE invoices 
+		SET due_date = $1,
+		    original_due_date = COALESCE(original_due_date, $2),
+		    status = CASE 
+		        WHEN status = 'PAID'::invoice_status THEN 'PAID'::invoice_status
+		        WHEN $1 >= $3::date THEN 'UNPAID'::invoice_status
+		        ELSE 'OVERDUE'::invoice_status
+		    END,
+		    updated_at = CURRENT_TIMESTAMP
+		WHERE id = $4 AND deleted_at IS NULL;
+	`
+	res, err := tx.ExecContext(ctx, queryUpdate, history.NewDueDate, history.PreviousDueDate, today, id)
+	if err != nil {
+		return err
+	}
+	rows, _ := res.RowsAffected()
+	if rows == 0 {
+		return errors.New("invoice tidak ditemukan atau sudah dihapus")
+	}
+
+	// 2. Insert into invoice_due_date_history
+	queryInsert := `
+		INSERT INTO invoice_due_date_history (
+			invoice_id, previous_due_date, new_due_date, days_added, reason, changed_by, changed_by_name
+		) VALUES (
+			$1, $2, $3, $4, $5, $6, $7
+		);
+	`
+	_, err = tx.ExecContext(ctx, queryInsert,
+		id, history.PreviousDueDate, history.NewDueDate, history.DaysAdded,
+		history.Reason, history.ChangedBy, history.ChangedByName,
+	)
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit()
+}
+
+func (r *PostgresInvoiceRepo) GetInvoiceHistory(ctx context.Context, invoiceID int) (*domain.InvoiceHistorySummary, error) {
+	inv, err := r.GetByID(ctx, invoiceID)
+	if err != nil {
+		return nil, err
+	}
+
+	summary := &domain.InvoiceHistorySummary{
+		Invoice:        *inv,
+		RescheduleLogs: []domain.InvoiceDueDateHistory{},
+		PaymentLogs:    []domain.InvoicePaymentHistory{},
+	}
+
+	// Query reschedule logs
+	qReschedule := `
+		SELECT id, invoice_id, previous_due_date, new_due_date, days_added, reason,
+		       changed_by, changed_by_name, created_at
+		FROM invoice_due_date_history
+		WHERE invoice_id = $1
+		ORDER BY created_at DESC, id DESC;
+	`
+	err = r.db.SelectContext(ctx, &summary.RescheduleLogs, qReschedule, invoiceID)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return nil, err
+	}
+
+	// Query payment logs
+	qPayments := `
+		SELECT id, invoice_id, action, amount, payment_date,
+		       COALESCE(reference_no, '') AS reference_no,
+		       COALESCE(proof_url, '') AS proof_url,
+		       COALESCE(notes, '') AS notes,
+		       created_by, created_by_name, created_at
+		FROM invoice_payment_history
+		WHERE invoice_id = $1
+		ORDER BY created_at DESC, id DESC;
+	`
+	err = r.db.SelectContext(ctx, &summary.PaymentLogs, qPayments, invoiceID)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return nil, err
+	}
+
+	return summary, nil
 }

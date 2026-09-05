@@ -23,6 +23,9 @@ type InvoiceRepository interface {
 	GetByID(ctx context.Context, id int) (*domain.Invoice, error)
 	GetByInvoiceNo(ctx context.Context, invoiceNo string) (*domain.Invoice, error)
 	ListAll(ctx context.Context, offset, limit int, filter InvoiceFilter) ([]domain.Invoice, int, error)
-	GetSummary(ctx context.Context, filter InvoiceFilter) (map[string]interface{}, error)
 	MarkPaid(ctx context.Context, id int) error
+	SettleInvoice(ctx context.Context, id int, payment domain.InvoicePaymentHistory) error
+	RescheduleDueDate(ctx context.Context, id int, history domain.InvoiceDueDateHistory) error
+	GetInvoiceHistory(ctx context.Context, invoiceID int) (*domain.InvoiceHistorySummary, error)
+	GetSummary(ctx context.Context, filter InvoiceFilter) (map[string]interface{}, error)
 }

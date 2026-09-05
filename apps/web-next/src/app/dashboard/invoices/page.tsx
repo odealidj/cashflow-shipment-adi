@@ -21,13 +21,17 @@ import {
   Edit3,
   SlidersHorizontal,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  History
 } from "lucide-react";
 import { CreateInvoiceModal } from "@/components/CreateInvoiceModal";
 import { EditInvoiceModal } from "@/components/EditInvoiceModal";
 import { InvoicePrintModal } from "@/components/InvoicePrintModal";
 import { InvoiceRecapReportModal } from "@/components/InvoiceRecapReportModal";
 import { DeleteInvoiceModal, InvoiceItem } from "@/components/DeleteInvoiceModal";
+import { SettleInvoiceModal } from "@/components/SettleInvoiceModal";
+import { RescheduleInvoiceModal } from "@/components/RescheduleInvoiceModal";
+import { InvoiceHistoryModal } from "@/components/InvoiceHistoryModal";
 import { fetchWithAuth } from "@/lib/apiClient";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { KpiCardGrid } from "@/components/shared/KpiCardGrid";
@@ -56,6 +60,9 @@ export default function InvoicesPage() {
   const [selectedInvoiceForPrint, setSelectedInvoiceForPrint] = useState<any>(null);
   const [invoiceToDelete, setInvoiceToDelete] = useState<InvoiceItem | null>(null);
   const [isRecapReportOpen, setIsRecapReportOpen] = useState(false);
+  const [selectedInvoiceForSettle, setSelectedInvoiceForSettle] = useState<any>(null);
+  const [selectedInvoiceForReschedule, setSelectedInvoiceForReschedule] = useState<any>(null);
+  const [selectedInvoiceForHistory, setSelectedInvoiceForHistory] = useState<any>(null);
 
   // Filters State (Default: Bulan Ini saat pertama kali dibuka)
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
@@ -668,7 +675,7 @@ export default function InvoicesPage() {
                 <th className="py-3.5 px-3 text-center">Tgl Jatuh Tempo</th>
                 <th className="py-3.5 px-4 text-right">Nominal Tagihan</th>
                 <th className="py-3.5 px-3 text-center">Status</th>
-                <th className="py-3.5 px-3 text-center w-28">Aksi</th>
+                <th className="py-3.5 px-3 text-center w-44">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
@@ -715,10 +722,23 @@ export default function InvoicesPage() {
                           {inv.top_days} Hari
                         </span>
                       </td>
-                      <td className="py-3 px-3 text-center font-mono font-bold">
-                        <span className={isOverdue ? "text-rose-600" : "text-slate-700"}>
-                          {formatDate(inv.due_date)}
-                        </span>
+                      <td className="py-3 px-3 text-center font-mono">
+                        <div className="flex flex-col items-center justify-center">
+                          <span className={`font-bold ${isOverdue ? "text-rose-600" : "text-slate-700"}`}>
+                            {formatDate(inv.due_date)}
+                          </span>
+                          {inv.reschedule_count > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => setSelectedInvoiceForHistory(inv)}
+                              title="Lihat riwayat perpanjangan jatuh tempo"
+                              className="mt-1 inline-flex items-center gap-1 text-[10px] font-bold text-amber-800 bg-amber-100/80 hover:bg-amber-200 border border-amber-300 px-1.5 py-0.5 rounded-md cursor-pointer transition"
+                            >
+                              <History className="w-2.5 h-2.5" />
+                              Diundur {inv.reschedule_count}x
+                            </button>
+                          )}
+                        </div>
                       </td>
                       <td className="py-3 px-4 text-right font-mono font-black text-slate-900 text-xs">
                         {formatCurrency(inv.amount ?? inv.total_amount)}
@@ -753,7 +773,35 @@ export default function InvoicesPage() {
                       </td>
                       <td className="py-3 px-3 text-center">
                         <div className="flex items-center justify-center gap-1.5">
-                          {/* 1. Cetak Kwitansi */}
+                          {/* 1. Pelunasan Invoice (Full Settlement) */}
+                          {!isPaid && can("invoices.mark_paid") && (
+                            <ActionButton
+                              onClick={() => setSelectedInvoiceForSettle(inv)}
+                              icon={<Check className="w-3.5 h-3.5 stroke-[2.5]" />}
+                              title="Pelunasan Invoice (Bayar Lunas)"
+                              variant="emerald"
+                            />
+                          )}
+
+                          {/* 2. Ubah Jatuh Tempo (Reschedule) */}
+                          {!isPaid && can("invoices.edit") && (
+                            <ActionButton
+                              onClick={() => setSelectedInvoiceForReschedule(inv)}
+                              icon={<Calendar className="w-3.5 h-3.5" />}
+                              title="Ubah Jatuh Tempo (Reschedule)"
+                              variant="amber"
+                            />
+                          )}
+
+                          {/* 3. Riwayat & Audit Log */}
+                          <ActionButton
+                            onClick={() => setSelectedInvoiceForHistory(inv)}
+                            icon={<History className="w-3.5 h-3.5" />}
+                            title="Riwayat & Audit Log Tagihan"
+                            variant="slate"
+                          />
+
+                          {/* 4. Cetak Kwitansi */}
                           {can("invoices.print") && (
                             <ActionButton
                               onClick={() => setSelectedInvoiceForPrint(inv)}
@@ -763,7 +811,7 @@ export default function InvoicesPage() {
                             />
                           )}
 
-                          {/* 2. Edit Invoice */}
+                          {/* 5. Edit Invoice */}
                           {can("invoices.edit") && (
                             <ActionButton
                               onClick={() => setSelectedInvoiceForEdit(inv)}
@@ -773,7 +821,7 @@ export default function InvoicesPage() {
                             />
                           )}
 
-                          {/* 3. Hapus Invoice */}
+                          {/* 6. Hapus Invoice */}
                           {can("invoices.delete") && (
                             <ActionButton
                               onClick={() => setInvoiceToDelete(inv)}
@@ -852,6 +900,35 @@ export default function InvoicesPage() {
         defaultDateFrom={dateFrom}
         defaultDateTo={dateTo}
         defaultStatusFilter={statusFilter}
+      />
+
+      {/* MODAL PELUNASAN INVOICE */}
+      <SettleInvoiceModal
+        isOpen={!!selectedInvoiceForSettle}
+        invoice={selectedInvoiceForSettle}
+        onClose={() => setSelectedInvoiceForSettle(null)}
+        onSuccess={() => {
+          fetchInvoices();
+          fetchSummary();
+        }}
+      />
+
+      {/* MODAL PERPANJANGAN JATUH TEMPO (RESCHEDULE) */}
+      <RescheduleInvoiceModal
+        isOpen={!!selectedInvoiceForReschedule}
+        invoice={selectedInvoiceForReschedule}
+        onClose={() => setSelectedInvoiceForReschedule(null)}
+        onSuccess={() => {
+          fetchInvoices();
+          fetchSummary();
+        }}
+      />
+
+      {/* MODAL RIWAYAT & AUDIT LOG INVOICE */}
+      <InvoiceHistoryModal
+        isOpen={!!selectedInvoiceForHistory}
+        invoice={selectedInvoiceForHistory}
+        onClose={() => setSelectedInvoiceForHistory(null)}
       />
     </>
   );
