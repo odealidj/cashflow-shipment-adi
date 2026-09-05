@@ -11,6 +11,7 @@ import {
   Search, 
   Filter, 
   RefreshCw, 
+  RotateCcw,
   CheckCircle2, 
   XCircle,
   Clock,
@@ -209,35 +210,6 @@ export default function UsersManagementPage() {
 
   return (
     <div className="flex-1 flex flex-col space-y-4 min-h-0">
-      {/* Header Section */}
-      <div className="shrink-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-2xl bg-purple-50 flex items-center justify-center text-purple-600 border border-purple-100 shadow-xs">
-              <Users className="w-5 h-5" />
-            </div>
-            <div>
-              <h1 className="text-xl font-black text-[#223249] tracking-tight">
-                Manajemen Pengguna & Hak Akses
-              </h1>
-              <p className="text-xs text-slate-500 font-medium">
-                Kelola akun pengguna, persetujuan pendaftaran, peran otorisasi, dan status sistem
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {can("users.create") && (
-          <button
-            onClick={handleOpenAdd}
-            className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#223249] to-sky-900 hover:from-slate-900 hover:to-sky-950 text-white text-xs font-bold shadow-md shadow-slate-900/20 flex items-center justify-center gap-2 transition-all cursor-pointer shrink-0"
-          >
-            <UserPlus className="w-4 h-4" />
-            <span>Tambah Pengguna</span>
-          </button>
-        )}
-      </div>
-
       {/* KPI Cards Section */}
       <div className="shrink-0 grid grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Card 1: Total Pengguna */}
@@ -311,77 +283,118 @@ export default function UsersManagementPage() {
         </div>
       </div>
 
-      {/* Filter & Search Bar */}
-      <div className="shrink-0 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-        {/* Search */}
-        <div className="relative flex-1">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-            <Search className="h-4 w-4" />
+      {/* Unified 1 Card Container: Header + Filter Toolbar + Table + Footer */}
+      <div className="bg-white rounded-2xl overflow-hidden border border-slate-200/80 shadow-xs flex-1 flex flex-col min-h-0">
+        {/* Top Actions Bar */}
+        <div className="shrink-0 px-6 py-4 border-b border-slate-100 flex flex-wrap justify-between items-center gap-4 bg-slate-50/50">
+          <div>
+            <h1 className="text-xl font-black text-slate-900 flex items-center gap-2.5 tracking-tight">
+              <div className="w-8 h-8 rounded-xl bg-purple-100/80 text-purple-800 flex items-center justify-center shadow-2xs">
+                <Users className="w-4 h-4" />
+              </div>
+              <span>Daftar Pengguna & Hak Akses</span>
+            </h1>
+            <p className="text-xs text-slate-500 font-medium mt-0.5">
+              Kelola akun pengguna, persetujuan pendaftaran, peran otorisasi, dan status sistem
+            </p>
           </div>
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value);
-              setPage(1);
-            }}
-            placeholder="Cari nama pengguna, email, atau nomor HP..."
-            className="w-full pl-9 pr-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 font-medium focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-sky-500/20 focus:border-sky-600 transition-all"
-          />
+          <div className="flex items-center gap-2">
+            {can("users.create") && (
+              <button
+                onClick={handleOpenAdd}
+                className="text-xs bg-sky-700 hover:bg-sky-800 active:scale-95 text-white px-4 py-2 rounded-xl transition-all font-bold shadow-xs flex items-center gap-1.5 cursor-pointer"
+              >
+                <UserPlus className="w-4 h-4 stroke-[2.5]" />
+                <span>Tambah Pengguna</span>
+              </button>
+            )}
+          </div>
         </div>
 
-        {/* Filters */}
-        <div className="flex items-center gap-2.5 flex-wrap">
-          {/* Role Filter */}
-          <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5">
-            <Filter className="w-3.5 h-3.5 text-slate-400" />
-            <select
-              value={selectedRole}
-              onChange={(e) => {
-                setSelectedRole(e.target.value);
-                setPage(1);
-              }}
-              className="bg-transparent text-xs font-bold text-slate-700 focus:outline-hidden cursor-pointer"
-            >
-              <option value="ALL">Semua Peran</option>
-              <option value="admin">Admin Bisnis</option>
-              <option value="finance">Finance & Akuntansi</option>
-              <option value="direktur">Direktur</option>
-              <option value="owner">Pemilik Modal</option>
-              {isSuperAdmin && <option value="super_admin">IT Super Admin</option>}
-            </select>
-          </div>
+        {/* Integrated Filter Sub-Header Toolbar */}
+        <div className="shrink-0 p-4 pb-3.5 bg-slate-50/40 border-b border-slate-100 space-y-3 transition-all">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            {/* Search Input */}
+            <div className="flex items-center gap-2 flex-1 min-w-[260px] max-w-md">
+              <div className="relative flex-1">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setPage(1);
+                  }}
+                  placeholder="Cari nama pengguna, email, atau nomor HP..."
+                  className="w-full bg-white border border-slate-200 rounded-xl py-1.5 pl-9 pr-3 text-xs text-slate-800 focus:ring-2 focus:ring-sky-500 focus:outline-none font-medium placeholder:text-slate-400 shadow-2xs"
+                />
+              </div>
+              {searchTerm && (
+                <button
+                  onClick={() => {
+                    setSearchTerm("");
+                    setPage(1);
+                  }}
+                  className="text-xs text-slate-500 hover:text-slate-800 font-bold flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 transition-colors cursor-pointer shadow-2xs"
+                  title="Reset Pencarian"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
 
-          {/* Status Filter */}
-          <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5">
-            <select
-              value={selectedStatus}
-              onChange={(e) => {
-                setSelectedStatus(e.target.value);
-                setPage(1);
-              }}
-              className="bg-transparent text-xs font-bold text-slate-700 focus:outline-hidden cursor-pointer"
-            >
-              <option value="ALL">Semua Status</option>
-              <option value="ACTIVE">🟢 Aktif</option>
-              <option value="INACTIVE">🟡 Menunggu Approval</option>
-              <option value="SUSPENDED">🔴 Ditangguhkan</option>
-            </select>
-          </div>
+            {/* Filters */}
+            <div className="flex items-center gap-2.5 flex-wrap">
+              {/* Role Filter */}
+              <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 shadow-2xs">
+                <Filter className="w-3.5 h-3.5 text-slate-400" />
+                <select
+                  value={selectedRole}
+                  onChange={(e) => {
+                    setSelectedRole(e.target.value);
+                    setPage(1);
+                  }}
+                  className="bg-transparent text-xs font-bold text-slate-700 focus:outline-hidden cursor-pointer"
+                >
+                  <option value="ALL">Semua Peran</option>
+                  <option value="admin">Admin Bisnis</option>
+                  <option value="finance">Finance & Akuntansi</option>
+                  <option value="direktur">Direktur</option>
+                  <option value="owner">Pemilik Modal</option>
+                  {isSuperAdmin && <option value="super_admin">IT Super Admin</option>}
+                </select>
+              </div>
 
-          {/* Refresh Button */}
-          <button
-            onClick={fetchUsers}
-            title="Refresh Data"
-            className="p-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-500 hover:text-slate-700 transition-all cursor-pointer"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
-          </button>
+              {/* Status Filter */}
+              <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 shadow-2xs">
+                <select
+                  value={selectedStatus}
+                  onChange={(e) => {
+                    setSelectedStatus(e.target.value);
+                    setPage(1);
+                  }}
+                  className="bg-transparent text-xs font-bold text-slate-700 focus:outline-hidden cursor-pointer"
+                >
+                  <option value="ALL">Semua Status</option>
+                  <option value="ACTIVE">🟢 Aktif</option>
+                  <option value="INACTIVE">🟡 Menunggu Approval</option>
+                  <option value="SUSPENDED">🔴 Ditangguhkan</option>
+                </select>
+              </div>
+
+              {/* Refresh Button */}
+              <button
+                onClick={fetchUsers}
+                title="Refresh Data"
+                className="p-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-500 hover:text-slate-700 transition-all cursor-pointer shadow-2xs"
+              >
+                <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
 
-      {/* Main Table Card */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden flex-1 flex flex-col min-h-0">
+        {/* Main Table Container */}
         <div className="flex-1 overflow-auto soft-scrollbar scroll-smooth relative min-h-0">
           <table className="w-full text-left border-collapse">
             <thead className={tableTheadClass}>
@@ -556,18 +569,20 @@ export default function UsersManagementPage() {
         </div>
 
         {/* Unified TablePagination Component */}
-        <TablePagination
-          currentPage={page}
-          pageSize={limit}
-          totalItems={total}
-          currentCount={users.length}
-          onPageChange={setPage}
-          onPageSizeChange={(newLimit) => {
-            setLimit(newLimit);
-            setPage(1);
-          }}
-          pageSizeOptions={[10, 15, 25, 50]}
-        />
+        <div className="shrink-0 border-t border-slate-100 bg-white">
+          <TablePagination
+            currentPage={page}
+            pageSize={limit}
+            totalItems={total}
+            currentCount={users.length}
+            onPageChange={setPage}
+            onPageSizeChange={(newLimit) => {
+              setLimit(newLimit);
+              setPage(1);
+            }}
+            pageSizeOptions={[10, 15, 25, 50]}
+          />
+        </div>
       </div>
 
       {/* MODALS */}
