@@ -35,8 +35,8 @@ func (r *PostgresUserRepo) Create(ctx context.Context, user *domain.User) error 
 	query := `
 		INSERT INTO users (id, email, phone, password_hash, full_name, role, role_id, status) 
 		VALUES (
-			$1, $2, $3, $4, $5, $6, 
-			COALESCE($7, (SELECT id FROM roles WHERE code = $6 LIMIT 1)), 
+			$1, $2, $3, $4, $5, $6::text::user_role, 
+			COALESCE($7, (SELECT id FROM roles WHERE code = $6::text LIMIT 1)), 
 			$8
 		) 
 		RETURNING created_at, updated_at
@@ -154,8 +154,8 @@ func (r *PostgresUserRepo) Update(ctx context.Context, user *domain.User) error 
 		SET email = $1, 
 		    phone = $2, 
 		    full_name = $3, 
-		    role = $4, 
-		    role_id = COALESCE($5, (SELECT id FROM roles WHERE code = $4 LIMIT 1)),
+		    role = $4::text::user_role, 
+		    role_id = COALESCE($5, (SELECT id FROM roles WHERE code = $4::text LIMIT 1)),
 		    status = $6, 
 		    updated_at = NOW() 
 		WHERE id = $7 AND deleted_at IS NULL
