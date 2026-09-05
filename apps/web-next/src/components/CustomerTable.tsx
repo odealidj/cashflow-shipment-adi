@@ -141,7 +141,7 @@ export function CustomerTable() {
 
   return (
     <>
-      <div className="flex-1 flex flex-col space-y-4">
+      <div className="flex-1 flex flex-col space-y-4 min-h-0">
         {/* KPI Strip Ringkasan Customer */}
         <div className="shrink-0">
           <KpiCardGrid cols={4}>
@@ -177,7 +177,7 @@ export function CustomerTable() {
         </div>
 
         {/* Container Tabel Utama */}
-        <div className="bg-white rounded-2xl overflow-hidden border border-slate-200/80 shadow-xs flex-1 flex flex-col min-h-[480px]">
+        <div className="bg-white rounded-2xl overflow-hidden border border-slate-200/80 shadow-xs flex-1 flex flex-col min-h-0">
           {/* Top Actions Bar */}
           <div className="shrink-0 px-6 py-4 border-b border-slate-100 flex flex-wrap justify-between items-center gap-4 bg-slate-50/50">
             <div>
@@ -225,7 +225,7 @@ export function CustomerTable() {
           </div>
           
           {/* Customer Table Data */}
-          <div className="flex-1 overflow-auto soft-scrollbar scroll-smooth relative min-h-[220px]">
+          <div className="flex-1 overflow-auto soft-scrollbar scroll-smooth relative min-h-0">
             <table className="w-full text-left text-xs text-slate-700">
               <thead className={tableTheadClass}>
                 <tr>

@@ -270,7 +270,7 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
 
   return (
     <>
-      <div className={`flex-1 flex flex-col space-y-4 ${isReportOpen ? "print:hidden" : ""}`}>
+      <div className={`flex-1 flex flex-col space-y-4 min-h-0 ${isReportOpen ? "print:hidden" : ""}`}>
         {/* MINI SUMMARY STRIP (KPI SNAPSHOT REAL-TIME: 5 KARTU SEJAJAR) */}
         {summary && (() => {
           const currentMonth = getCurrentMonthRange();
@@ -374,7 +374,7 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
         })()}
 
         {/* UNIFIED 1 CARD CONTAINER: HEADER + FILTER BAR + 14-COL TABLE + FOOTER */}
-        <div className="bg-white rounded-2xl overflow-hidden border border-slate-200/80 shadow-xs flex-1 flex flex-col min-h-[480px]">
+        <div className="bg-white rounded-2xl overflow-hidden border border-slate-200/80 shadow-xs flex-1 flex flex-col min-h-0">
           {/* Top Header & Actions Bar */}
           <div className="shrink-0 px-6 py-4 border-b border-slate-100 flex flex-wrap justify-between items-center gap-4 bg-slate-50/50">
             <div>
@@ -466,7 +466,7 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
           />
 
           {/* 14 Kolom Data Table */}
-          <div className="flex-1 overflow-auto soft-scrollbar scroll-smooth relative min-h-[220px]">
+          <div className="flex-1 overflow-auto soft-scrollbar scroll-smooth relative min-h-0">
             <table className="w-full text-left text-xs text-slate-700 border-collapse">
             <thead className={tableTheadClass}>
               <tr>

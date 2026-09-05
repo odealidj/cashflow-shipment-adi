@@ -10,8 +10,8 @@ interface TableCardProps {
 
 export function TableCard({ children, footer, className = "" }: TableCardProps) {
   return (
-    <div className={`bg-white rounded-2xl overflow-hidden border border-slate-200/80 shadow-xs flex-1 flex flex-col min-h-[480px] ${className}`}>
-      <div className="flex-1 overflow-auto soft-scrollbar scroll-smooth relative min-h-[220px]">
+    <div className={`bg-white rounded-2xl overflow-hidden border border-slate-200/80 shadow-xs flex-1 flex flex-col min-h-0 ${className}`}>
+      <div className="flex-1 overflow-auto soft-scrollbar scroll-smooth relative min-h-0">
         {children}
       </div>
       {footer && (

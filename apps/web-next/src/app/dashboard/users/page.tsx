@@ -208,7 +208,7 @@ export default function UsersManagementPage() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-7.5rem)] flex flex-col space-y-4 pb-4">
+    <div className="flex-1 flex flex-col space-y-4 min-h-0">
       {/* Header Section */}
       <div className="shrink-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
         <div>
@@ -381,8 +381,8 @@ export default function UsersManagementPage() {
       </div>
 
       {/* Main Table Card */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden flex-1 flex flex-col min-h-[480px]">
-        <div className="flex-1 overflow-auto soft-scrollbar scroll-smooth relative min-h-[220px]">
+      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden flex-1 flex flex-col min-h-0">
+        <div className="flex-1 overflow-auto soft-scrollbar scroll-smooth relative min-h-0">
           <table className="w-full text-left border-collapse">
             <thead className={tableTheadClass}>
               <tr>

@@ -318,7 +318,7 @@ export default function InvoicesPage() {
 
   return (
     <>
-      <div className={`min-h-[calc(100vh-7.5rem)] flex flex-col space-y-4 ${isRecapReportOpen ? "print:hidden" : ""}`}>
+      <div className={`flex-1 flex flex-col space-y-4 min-h-0 ${isRecapReportOpen ? "print:hidden" : ""}`}>
       {/* 4 SUMMARY CARDS (SHARED DESIGN SYSTEM) */}
       {summary && (() => {
         const curMonth = getCurrentMonthRange();
@@ -374,7 +374,7 @@ export default function InvoicesPage() {
       })()}
 
       {/* UNIFIED 1 CARD CONTAINER: HEADER + FILTERS & TABS + 8-COL TABLE + FOOTER */}
-      <div className="bg-white rounded-2xl overflow-hidden border border-slate-200/80 shadow-xs flex-1 flex flex-col min-h-[480px]">
+      <div className="bg-white rounded-2xl overflow-hidden border border-slate-200/80 shadow-xs flex-1 flex flex-col min-h-0">
         {/* 1. Header & Primary Action Bar */}
         <div className="shrink-0 px-6 py-4 border-b border-slate-100 flex flex-wrap justify-between items-center gap-4 bg-slate-50/50">
           <div>
@@ -656,7 +656,7 @@ export default function InvoicesPage() {
         </div>
 
         {/* 3. 8 Kolom Data Table */}
-        <div className="flex-1 overflow-auto soft-scrollbar scroll-smooth relative min-h-[220px]">
+        <div className="flex-1 overflow-auto soft-scrollbar scroll-smooth relative min-h-0">
           <table className="w-full text-left border-collapse text-xs">
             <thead className={tableTheadClass}>
               <tr>
