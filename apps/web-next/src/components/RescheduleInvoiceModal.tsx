@@ -137,8 +137,8 @@ export function RescheduleInvoiceModal({ isOpen, invoice, onClose, onSuccess }: 
             </div>
 
             <div className="pt-2 border-t border-slate-200/70 flex items-center justify-between text-xs">
-              <span className="text-slate-500 font-medium">Jatuh Tempo Saat Ini:</span>
-              <span className="font-mono font-bold text-slate-800 bg-white border border-slate-200 px-2.5 py-1 rounded-lg">
+              <span className="text-slate-600 font-semibold">Jatuh Tempo Saat Ini:</span>
+              <span className="font-mono font-extrabold text-rose-600 bg-rose-50 border border-rose-200 px-2.5 py-1 rounded-lg shadow-xs">
                 {formatDate(currentDueDateStr)}
               </span>
             </div>
@@ -179,8 +179,8 @@ export function RescheduleInvoiceModal({ isOpen, invoice, onClose, onSuccess }: 
             {/* Visual Perubahan Hari */}
             {isChanged && (
               <div className="mt-2 p-2.5 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between text-xs">
-                <div className="flex items-center gap-2 text-slate-600 font-mono text-[11px]">
-                  <span>{formatDate(currentDueDateStr)}</span>
+                <div className="flex items-center gap-2 font-mono text-[11px]">
+                  <span className="text-rose-600 font-bold">{formatDate(currentDueDateStr)}</span>
                   <ArrowRight className="w-3 h-3 text-slate-400" />
                   <span className="font-bold text-slate-900">{formatDate(newDueDate)}</span>
                 </div>
