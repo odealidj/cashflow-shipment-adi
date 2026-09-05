@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { 
   Shield, 
   ShieldCheck, 
@@ -22,7 +22,8 @@ import {
   ArrowRight,
   Layers,
   ChevronRight,
-  RotateCcw
+  RotateCcw,
+  Search
 } from "lucide-react";
 import { fetchWithAuth, API_BASE_URL } from "@/lib/apiClient";
 import { useAuth } from "@/hooks/useAuth";
@@ -64,6 +65,7 @@ export default function RolesManagementPage() {
   const [savingPermissions, setSavingPermissions] = useState<boolean>(false);
   
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
+  const [permSearch, setPermSearch] = useState<string>("");
 
   // Modal States
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -399,37 +401,29 @@ export default function RolesManagementPage() {
     }
   };
 
+  const filteredPermissionGroups = useMemo(() => {
+    if (!permSearch.trim()) return permissionGroups;
+    const q = permSearch.toLowerCase().trim();
+    return permissionGroups
+      .map((group) => {
+        const moduleMatch = group.module.toLowerCase().includes(q) || getModuleLabel(group.module).toLowerCase().includes(q);
+        const matchingPerms = group.permissions.filter(
+          (p) =>
+            moduleMatch ||
+            p.name.toLowerCase().includes(q) ||
+            p.code.toLowerCase().includes(q) ||
+            (p.description && p.description.toLowerCase().includes(q))
+        );
+        return {
+          ...group,
+          permissions: matchingPerms,
+        };
+      })
+      .filter((group) => group.permissions.length > 0);
+  }, [permissionGroups, permSearch]);
+
   return (
-    <div className="min-h-[calc(100vh-7.5rem)] flex flex-col gap-4 pb-4">
-      {/* 1. Header Section */}
-      <div className="shrink-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-2xl bg-sky-50 flex items-center justify-center text-sky-700 border border-sky-100 shadow-xs">
-              <ShieldCheck className="w-5 h-5" />
-            </div>
-            <div>
-              <h1 className="text-xl font-black text-[#223249] tracking-tight">
-                Manajemen Peran & Hak Akses (PBAC)
-              </h1>
-              <p className="text-xs text-slate-500 font-medium">
-                Atur jabatan pengguna dan sesuaikan matriks hak akses tombol/fitur secara dinamis
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {can("roles.manage") && (
-          <button
-            onClick={() => setIsAddModalOpen(true)}
-            className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#223249] to-sky-900 hover:from-slate-900 hover:to-sky-950 text-white text-xs font-bold shadow-md shadow-slate-900/20 flex items-center justify-center gap-2 transition-all cursor-pointer shrink-0 active:scale-95"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Tambah Peran Baru</span>
-          </button>
-        )}
-      </div>
-
+    <div className="flex-1 flex flex-col space-y-4 min-h-0">
       {/* Global Alert Notification */}
       {message && (
         <div className={`shrink-0 p-4 rounded-2xl text-xs font-bold flex items-center justify-between gap-3 shadow-xs animate-fade-in ${
@@ -447,25 +441,42 @@ export default function RolesManagementPage() {
         </div>
       )}
 
-      {/* 2. Main Two-Column Layout (Fills remaining height proportionally) */}
+      {/* Main Two-Column Layout (Fills remaining height proportionally) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 flex-1 min-h-0">
         
         {/* LEFT COLUMN: Daftar Peran (4 Cols on lg, 3.5 Cols on xl) */}
-        <div className="lg:col-span-4 xl:col-span-3.5 flex flex-col h-full">
-          <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs flex-1 flex flex-col min-h-0 overflow-hidden">
-            <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100 shrink-0">
-              <div className="flex items-center gap-2">
-                <Layers className="w-4 h-4 text-slate-500" />
-                <h2 className="text-sm font-black text-slate-800 uppercase tracking-wider">
-                  Daftar Jabatan ({roles.length})
+        <div className="lg:col-span-4 xl:col-span-3.5 flex flex-col min-h-0">
+          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs flex-1 flex flex-col min-h-0 overflow-hidden">
+            {/* Top Actions Bar for Roles */}
+            <div className="p-4 sm:px-5 sm:py-4 border-b border-slate-100 bg-slate-50/50 shrink-0 flex items-center justify-between gap-3">
+              <div>
+                <h2 className="text-sm font-black text-slate-900 flex items-center gap-2 tracking-tight">
+                  <div className="w-7 h-7 rounded-lg bg-sky-100/80 text-sky-800 flex items-center justify-center shadow-2xs">
+                    <ShieldCheck className="w-4 h-4" />
+                  </div>
+                  <span>Daftar Jabatan</span>
+                  <span className="text-[11px] font-bold text-slate-500 bg-slate-200/60 px-2 py-0.5 rounded-full">
+                    {roles.length}
+                  </span>
                 </h2>
+                <p className="text-[11px] text-slate-500 font-medium mt-0.5">
+                  Pilih jabatan untuk kelola hak akses
+                </p>
               </div>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
-                Pilih untuk kelola
-              </span>
+
+              {can("roles.manage") && (
+                <button
+                  onClick={() => setIsAddModalOpen(true)}
+                  className="px-3 py-1.5 rounded-xl bg-sky-700 hover:bg-sky-800 text-white text-xs font-bold shadow-xs flex items-center gap-1.5 transition-all cursor-pointer shrink-0 active:scale-95"
+                  title="Tambah Peran Baru"
+                >
+                  <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+                  <span>Tambah</span>
+                </button>
+              )}
             </div>
 
-            <div className="space-y-2.5 flex-1 overflow-y-auto pr-1 soft-scrollbar relative min-h-0">
+            <div className="p-4 space-y-2.5 flex-1 overflow-y-auto pr-2 soft-scrollbar relative min-h-0">
               {loading ? (
                 <div className="py-8 text-center text-xs text-slate-400">Memuat peran...</div>
               ) : roles.map((role) => {
@@ -541,7 +552,7 @@ export default function RolesManagementPage() {
         </div>
 
         {/* RIGHT COLUMN: Matriks Hak Akses (8 Cols on lg, 8.5 Cols on xl) */}
-        <div className="lg:col-span-8 xl:col-span-8.5 flex flex-col h-full">
+        <div className="lg:col-span-8 xl:col-span-8.5 flex flex-col min-h-0">
           {selectedRole ? (
             <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden flex-1 flex flex-col min-h-0">
               
@@ -643,7 +654,7 @@ export default function RolesManagementPage() {
               {/* Quick Select All & Reset to Default Toolbar */}
               {selectedRole.code !== "super_admin" && can("roles.manage") && (
                 <div className="px-6 py-2.5 bg-slate-50/80 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3 text-xs shrink-0">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <button
                       onClick={handleSelectAll}
                       className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-700 font-bold hover:bg-slate-100 transition shadow-2xs flex items-center gap-1 cursor-pointer"
@@ -670,6 +681,29 @@ export default function RolesManagementPage() {
                       >
                         <RotateCcw className="w-3.5 h-3.5 text-sky-700" />
                         <span>Standar Sistem</span>
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Quick Search Permission */}
+                  <div className="flex items-center gap-2 flex-1 min-w-[200px] max-w-xs">
+                    <div className="relative flex-1">
+                      <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="text"
+                        value={permSearch}
+                        onChange={(e) => setPermSearch(e.target.value)}
+                        placeholder="Cari wewenang / modul..."
+                        className="w-full bg-white border border-slate-200 rounded-lg py-1 pl-8 pr-2.5 text-xs text-slate-800 focus:ring-2 focus:ring-sky-500 focus:outline-none placeholder:text-slate-400 shadow-2xs font-medium"
+                      />
+                    </div>
+                    {permSearch && (
+                      <button
+                        onClick={() => setPermSearch("")}
+                        className="p-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-slate-500 cursor-pointer shadow-2xs"
+                        title="Reset Pencarian Izin"
+                      >
+                        <X className="w-3 h-3" />
                       </button>
                     )}
                   </div>
@@ -703,8 +737,12 @@ export default function RolesManagementPage() {
                   <div className="py-16 text-center text-xs text-slate-400">
                     Memuat matriks wewenang...
                   </div>
+                ) : filteredPermissionGroups.length === 0 ? (
+                  <div className="py-16 text-center text-xs text-slate-400">
+                    Tidak ada hak akses yang cocok dengan pencarian &quot;{permSearch}&quot;
+                  </div>
                 ) : (
-                  permissionGroups.map((group) => {
+                  filteredPermissionGroups.map((group) => {
                     const groupCodes = group.permissions.map((p) => p.code);
                     const allInGroupSelected = groupCodes.every((c) => selectedPermissions.includes(c));
                     const someInGroupSelected = groupCodes.some((c) => selectedPermissions.includes(c));
@@ -863,7 +901,7 @@ export default function RolesManagementPage() {
 
             </div>
           ) : (
-            <div className="bg-white rounded-2xl p-12 border border-slate-200/80 shadow-xs text-center text-slate-400 min-h-[480px] flex-1 flex flex-col items-center justify-center">
+            <div className="bg-white rounded-2xl p-12 border border-slate-200/80 shadow-xs text-center text-slate-400 min-h-0 flex-1 flex flex-col items-center justify-center">
               <Shield className="w-12 h-12 text-slate-300 mb-3" />
               <p className="text-sm font-bold">Pilih salah satu peran di sebelah kiri untuk melihat matriks hak aksesnya.</p>
             </div>
