@@ -18,6 +18,7 @@ import (
 type CashflowService struct {
 	cashflowRepo ports.CashflowRepository
 	vendorSvc    *VendorService
+	notifSvc     *NotificationService
 }
 
 func NewCashflowService(cashflowRepo ports.CashflowRepository, vendorSvc *VendorService) *CashflowService {
@@ -25,6 +26,10 @@ func NewCashflowService(cashflowRepo ports.CashflowRepository, vendorSvc *Vendor
 		cashflowRepo: cashflowRepo,
 		vendorSvc:    vendorSvc,
 	}
+}
+
+func (s *CashflowService) SetNotificationService(notifSvc *NotificationService) {
+	s.notifSvc = notifSvc
 }
 
 func (s *CashflowService) RecordTopUp(ctx context.Context, entry *domain.CashflowEntry) error {
@@ -43,6 +48,9 @@ func (s *CashflowService) RecordTopUp(ctx context.Context, entry *domain.Cashflo
 		return err
 	}
 	telemetry.RecordCashflowEntryCreated("TOP_UP")
+	if s.notifSvc != nil {
+		s.notifSvc.NotifyLowCashBalance(ctx, entry.Saldo, 15000000.0)
+	}
 	return nil
 }
 
@@ -82,6 +90,12 @@ func (s *CashflowService) RecordShipment(ctx context.Context, entry *domain.Cash
 		return err
 	}
 	telemetry.RecordCashflowEntryCreated("SHIPMENT")
+	if s.notifSvc != nil {
+		s.notifSvc.NotifyLowCashBalance(ctx, entry.Saldo, 15000000.0)
+		if entry.Profit < 0 || entry.MarginPct < 0 {
+			s.notifSvc.NotifyNegativeMargin(ctx, entry.ActInformation, entry.ActExplaination, entry.GrandCost, entry.GrandSelling, entry.Profit, entry.MarginPct)
+		}
+	}
 	return nil
 }
 
@@ -131,6 +145,13 @@ func (s *CashflowService) UpdateEntry(ctx context.Context, entry *domain.Cashflo
 	if diff != 0 {
 		if err := s.cashflowRepo.UpdateBalancesAfter(ctx, oldEntry.SequenceNo, diff); err != nil {
 			return err
+		}
+	}
+
+	if s.notifSvc != nil {
+		s.notifSvc.NotifyLowCashBalance(ctx, entry.Saldo, 15000000.0)
+		if entry.Profit < 0 || entry.MarginPct < 0 {
+			s.notifSvc.NotifyNegativeMargin(ctx, entry.ActInformation, entry.ActExplaination, entry.GrandCost, entry.GrandSelling, entry.Profit, entry.MarginPct)
 		}
 	}
 

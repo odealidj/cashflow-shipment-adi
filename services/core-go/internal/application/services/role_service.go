@@ -208,6 +208,9 @@ func (s *RoleService) BootstrapSystemRolesAndPermissions(ctx context.Context) er
 
 		// Module SYSTEM
 		{Module: "SYSTEM", Code: "system.view", Name: "Menu & Metrik Sistem Telemetri", Description: descPtr("Menampilkan menu Metrik Sistem dan performa infrastruktur real-time")},
+
+		// Module NOTIFICATIONS
+		{Module: "NOTIFICATIONS", Code: "notifications.view", Name: "Pusat Notifikasi & Peringatan", Description: descPtr("Melihat daftar notifikasi dan pengingat jatuh tempo / kas")},
 	}
 
 	allCodes := make([]string, len(defaultPermissions))
@@ -221,6 +224,7 @@ func (s *RoleService) BootstrapSystemRolesAndPermissions(ctx context.Context) er
 			"cashflow.view", "cashflow.create", "cashflow.edit", "cashflow.export", "cashflow.import",
 			"invoices.view", "invoices.create", "invoices.edit", "invoices.mark_paid", "invoices.print",
 			"customers.view", "vendors.view", "presets.view",
+			"notifications.view",
 		},
 		"direktur": {
 			"cashflow.view", "cashflow.export",
@@ -228,6 +232,7 @@ func (s *RoleService) BootstrapSystemRolesAndPermissions(ctx context.Context) er
 			"customers.view", "vendors.view", "presets.view",
 			"users.view", "users.edit", "users.delete", "users.reset_password",
 			"roles.view",
+			"notifications.view",
 		},
 		"owner": {
 			"cashflow.view", "cashflow.export",
@@ -235,6 +240,7 @@ func (s *RoleService) BootstrapSystemRolesAndPermissions(ctx context.Context) er
 			"customers.view", "vendors.view", "presets.view",
 			"users.view", "users.edit", "users.delete", "users.reset_password",
 			"roles.view",
+			"notifications.view",
 		},
 	}
 

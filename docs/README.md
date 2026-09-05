@@ -25,6 +25,11 @@ Selamat datang di direktori dokumentasi resmi sistem aplikasi **PT. Adijayantara
 | 🧮 **[Logika Teknis & Kalkulasi Finansial](./proses-bisnis/02-logika-teknis-kalkulasi.md)** | Formula matematika rolling saldo, *cascade recalculation*, algoritma deteksi modal baru, dan riwayat audit trail. |
 | 📑 **[Contoh Data & Skenario Nyata](./proses-bisnis/03-contoh-data-skenario.md)** | Simulasi data operasional 2 bulan pengiriman, skenario penyesuaian HPP vendor, pelunasan klien, dan pengujian sistem. |
 
+### 3. Spesifikasi Fitur Terarah & Roadmap
+| Dokumen | Deskripsi |
+| :--- | :--- |
+| 🔔 **[Analisis & Spesifikasi Fitur Notifikasi](./analisis_dan_spesifikasi_fitur_notifikasi.md)** | **Blueprint Sistem Notifikasi Proaktif (In-App, FCM Push, & Email)**: Pemetaan aktor penerima notifikasi, analisis pemicu per modul (Invoice jatuh tempo, saldo kas kritis, margin loss), arsitektur Firebase Cloud Messaging (Web & Mobile PWA `/m`), skema database `user_fcm_tokens`, dan 3 fase roadmap implementasi. |
+
 ---
 
 ## 🏗️ Ringkasan Stack Teknologi

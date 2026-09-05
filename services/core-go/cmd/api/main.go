@@ -125,6 +125,7 @@ func main() {
 	cashflowRepo := repository.NewPostgresCashflowRepo(dbPool)
 	invoiceRepo := repository.NewPostgresInvoiceRepo(dbPool)
 	sessionRepo := repository.NewRedisSessionRepo(redisClient)
+	notificationRepo := repository.NewPostgresNotificationRepo(dbPool)
 	
 	// Initialize Services (Two-Tier Session)
 	sessionService := services.NewSessionService(sessionRepo)
@@ -134,8 +135,11 @@ func main() {
 	vendorService := services.NewVendorService(vendorRepo)
 	customerService := services.NewCustomerService(customerRepo)
 	activityPresetService := services.NewActivityPresetService(activityPresetRepo)
+	notificationService := services.NewNotificationService(notificationRepo)
 	cashflowService := services.NewCashflowService(cashflowRepo, vendorService)
+	cashflowService.SetNotificationService(notificationService)
 	invoiceService := services.NewInvoiceService(invoiceRepo)
+	invoiceService.SetNotificationService(notificationService)
 
 	// 1. Auto-bootstrap System Roles and Permissions (Idempotent Zero-Config Seeding)
 	if err := roleService.BootstrapSystemRolesAndPermissions(ctx); err != nil {
@@ -175,6 +179,7 @@ func main() {
 	activityPresetHandler := handler.NewActivityPresetHandler(activityPresetService)
 	cashflowHandler := handler.NewCashflowHandler(cashflowService)
 	invoiceHandler := handler.NewInvoiceHandler(invoiceService)
+	notificationHandler := handler.NewNotificationHandler(notificationService, invoiceRepo)
 	utilityHandler := handler.NewUtilityHandler()
 	startTime := time.Now()
 	systemMetricsHandler := handler.NewSystemMetricsHandler(dbPool, redisClient, startTime)
@@ -311,6 +316,16 @@ func main() {
 				r.With(middleware.RequirePermission("invoices.delete")).Delete("/{id}", invoiceHandler.Delete)
 			})
 
+			// Notification Routes (Pusat Notifikasi & Alert Keuangan)
+			r.Route("/notifications", func(r chi.Router) {
+				r.Get("/", notificationHandler.List)
+				r.Get("/unread-count", notificationHandler.GetUnreadCount)
+				r.Patch("/{id}/read", notificationHandler.MarkAsRead)
+				r.Post("/read-all", notificationHandler.MarkAllAsRead)
+				r.Delete("/{id}", notificationHandler.Delete)
+				r.Post("/check-invoices", notificationHandler.TriggerCheckInvoices)
+			})
+
 			// System Metrics & Telemetry (PBAC Protected)
 			r.Route("/system", func(r chi.Router) {
 				r.Use(middleware.RequirePermission("system.view"))
@@ -328,6 +343,23 @@ func main() {
 			})
 		})
 	})
+
+	// Background Routine: Scan invoice due dates on startup and periodically every hour
+	go func() {
+		time.Sleep(3 * time.Second) // wait for server to initialize
+		count, err := notificationService.CheckInvoiceDueDates(context.Background(), invoiceRepo)
+		if err != nil {
+			log.Printf("[Notification] Startup invoice check error: %v\n", err)
+		} else if count > 0 {
+			log.Printf("[Notification] Startup invoice check generated %d notifications\n", count)
+		}
+
+		ticker := time.NewTicker(1 * time.Hour)
+		defer ticker.Stop()
+		for range ticker.C {
+			_, _ = notificationService.CheckInvoiceDueDates(context.Background(), invoiceRepo)
+		}
+	}()
 
 	port := os.Getenv("PORT")
 	if port == "" {

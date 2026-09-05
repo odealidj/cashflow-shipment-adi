@@ -15,15 +15,19 @@ import {
   ChevronDown,
   Users,
   ShieldCheck,
-  Activity
+  Activity,
+  Bell
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { useNotifications } from "@/hooks/useNotifications";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, logout, canManageUsers, isSuperAdmin, can } = useAuth();
+  const { unreadCount } = useNotifications(true);
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
   const [isMasterRekananOpen, setIsMasterRekananOpen] = useState<boolean>(true);
   const [isPresetAktivitasOpen, setIsPresetAktivitasOpen] = useState<boolean>(true);
@@ -54,6 +58,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const isUsersActive = pathname.startsWith("/dashboard/users");
   const isRolesActive = pathname.startsWith("/dashboard/roles");
   const isMetricsActive = pathname.startsWith("/dashboard/system-metrics");
+  const isNotificationsActive = pathname.startsWith("/dashboard/notifications");
 
   // Auto expand parent group when active child route is selected
   useEffect(() => {
@@ -228,6 +233,38 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   >
                     <ShieldCheck className="w-5 h-5 shrink-0" />
                     {!isCollapsed && <span className="truncate">Monitoring Invoice</span>}
+                  </Link>
+                )}
+
+                {/* 4. Pusat Notifikasi */}
+                {can("notifications.view") && (
+                  <Link 
+                    href="/dashboard/notifications" 
+                    title="Pusat Notifikasi & Peringatan"
+                    className={`flex items-center gap-3 rounded-xl transition-all text-xs font-bold ${
+                      isCollapsed ? "justify-center p-3" : "px-3.5 py-2.5"
+                    } ${
+                      isNotificationsActive 
+                      ? "bg-sky-600 text-white shadow-xs" 
+                      : "text-slate-300 hover:text-white hover:bg-white/10"
+                    }`}
+                  >
+                    <div className="relative">
+                      <Bell className="w-5 h-5 shrink-0" />
+                      {unreadCount > 0 && (
+                        <span className="absolute -top-1 -right-1.5 w-2.5 h-2.5 bg-rose-500 rounded-full ring-2 ring-[#223249] animate-pulse" />
+                      )}
+                    </div>
+                    {!isCollapsed && (
+                      <div className="flex items-center justify-between flex-1 min-w-0">
+                        <span className="truncate">Pusat Notifikasi</span>
+                        {unreadCount > 0 && (
+                          <span className="px-1.5 py-0.5 text-[10px] font-black rounded-full bg-rose-500 text-white">
+                            {unreadCount > 99 ? "99+" : unreadCount}
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </Link>
                 )}
               </div>
@@ -464,10 +501,41 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
       </aside>
 
-      {/* Main Content Area */}
-      <main className="flex-1 p-6 lg:p-8 overflow-y-auto soft-scrollbar scroll-smooth min-w-0">
-        {children}
-      </main>
+      {/* Main Content Area with Persistent Top Header */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        {/* Top Header Navigation Bar */}
+        <header className="h-14 bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-6 lg:px-8 flex items-center justify-between shrink-0 shadow-2xs z-30">
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-black tracking-tight text-slate-800 uppercase hidden sm:inline">
+              PT Adijayantara Logistics Indonesia
+            </span>
+            <span className="text-slate-300 text-xs hidden sm:inline">•</span>
+            <span className="text-xs text-slate-500 font-semibold truncate">
+              Shipment & Cashflow Control
+            </span>
+          </div>
+
+          <div className="flex items-center gap-3">
+            {/* Live Notification Bell */}
+            <NotificationBell />
+
+            <div className="h-4 w-px bg-slate-200 hidden sm:block" />
+
+            {/* User Profile Info Pill */}
+            <div className="hidden sm:flex items-center gap-2 text-xs">
+              <span className="font-bold text-slate-700">{user?.full_name || "Pengguna"}</span>
+              <span className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-slate-100 text-slate-600 border border-slate-200">
+                {getRoleLabel(user?.role)}
+              </span>
+            </div>
+          </div>
+        </header>
+
+        {/* Dynamic Page Content */}
+        <main className="flex-1 p-6 lg:p-8 overflow-y-auto soft-scrollbar scroll-smooth min-w-0">
+          {children}
+        </main>
+      </div>
     </div>
   );
 }

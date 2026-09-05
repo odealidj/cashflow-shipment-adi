@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Bell, ArrowLeft, Check } from 'lucide-react';
+import { useNotifications } from '@/hooks/useNotifications';
 
 interface MobileHeaderProps {
   title?: string;
@@ -24,8 +25,10 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
   showSave = false,
   onSave,
   isSaving = false,
-  notificationCount = 1,
+  notificationCount,
 }) => {
+  const { unreadCount } = useNotifications(true);
+  const activeCount = notificationCount !== undefined ? notificationCount : unreadCount;
   if (variant === 'dark') {
     return (
       <header className="sticky top-0 z-40 bg-[#223249] text-white px-4 py-3 flex items-center justify-between shadow-sm">
@@ -75,14 +78,14 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
       </div>
 
       <Link
-        href="/m/tagihan"
+        href="/dashboard/notifications"
         className="relative p-2 text-slate-600 hover:text-slate-900 transition-colors"
         aria-label="Notifikasi"
       >
         <Bell className="w-5 h-5" />
-        {notificationCount > 0 && (
+        {activeCount > 0 && (
           <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-rose-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-sm animate-pulse">
-            {notificationCount}
+            {activeCount > 99 ? '99+' : activeCount}
           </span>
         )}
       </Link>

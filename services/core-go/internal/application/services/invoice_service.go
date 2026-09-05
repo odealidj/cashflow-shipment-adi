@@ -14,11 +14,16 @@ import (
 )
 
 type InvoiceService struct {
-	repo ports.InvoiceRepository
+	repo     ports.InvoiceRepository
+	notifSvc *NotificationService
 }
 
 func NewInvoiceService(repo ports.InvoiceRepository) *InvoiceService {
 	return &InvoiceService{repo: repo}
+}
+
+func (s *InvoiceService) SetNotificationService(notifSvc *NotificationService) {
+	s.notifSvc = notifSvc
 }
 
 type CreateInvoiceInput struct {
@@ -181,10 +186,38 @@ func (s *InvoiceService) UpdateInvoice(ctx context.Context, id int, input Create
 }
 
 func (s *InvoiceService) MarkAsPaid(ctx context.Context, id int) error {
+	inv, _ := s.repo.GetByID(ctx, id)
+
 	if err := s.repo.MarkPaid(ctx, id); err != nil {
 		return err
 	}
 	telemetry.RecordInvoicePaid()
+
+	if s.notifSvc != nil && inv != nil {
+		go func() {
+			bgCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			target := "finance"
+			title := fmt.Sprintf("✅ Invoice Lunas: %s", inv.InvoiceNo)
+			msg := fmt.Sprintf("Tagihan Invoice %s dari '%s' sebesar Rp %s telah dilunasi dan kas bertambah.",
+				inv.InvoiceNo, inv.ClientName, FormatRupiah(inv.Amount))
+			actionURL := fmt.Sprintf("/dashboard/invoices?search=%s", inv.InvoiceNo)
+			_, _ = s.notifSvc.Create(bgCtx, CreateNotificationInput{
+				TargetRole: &target,
+				Title:      title,
+				Message:    msg,
+				Category:   domain.NotificationCategoryInvoice,
+				Severity:   domain.NotificationSeverityInfo,
+				ActionURL:  &actionURL,
+				Metadata: map[string]interface{}{
+					"invoice_id": inv.ID,
+					"invoice_no": inv.InvoiceNo,
+					"amount":     inv.Amount,
+				},
+			})
+		}()
+	}
+
 	return nil
 }
 
