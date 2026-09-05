@@ -150,7 +150,7 @@ export function InvoiceHistoryModal({ isOpen, invoice, onClose }: InvoiceHistory
                     : "bg-amber-50 text-amber-700 border-amber-200"
                 }`}
               >
-                {isPaid ? "Lunas" : isOverdue ? "Jatuh Tempo" : "Menunggu Pembayaran"}
+                {isPaid ? "Lunas" : isOverdue ? "Jatuh Tempo (Overdue)" : "Menunggu Pembayaran"}
               </span>
             </div>
           </div>

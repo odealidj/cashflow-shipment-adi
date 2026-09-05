@@ -761,12 +761,12 @@ export default function InvoicesPage() {
                           ) : isOverdue ? (
                             <>
                               <AlertTriangle className="w-3 h-3" />
-                              Jatuh Tempo
+                              Jatuh Tempo (Overdue)
                             </>
                           ) : (
                             <>
                               <Clock className="w-3 h-3" />
-                              Pending
+                              Menunggu Pembayaran
                             </>
                           )}
                         </span>
