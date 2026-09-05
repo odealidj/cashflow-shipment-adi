@@ -454,13 +454,13 @@ export default function RolesManagementPage() {
                   <div className="w-7 h-7 rounded-lg bg-sky-100/80 text-sky-800 flex items-center justify-center shadow-2xs">
                     <ShieldCheck className="w-4 h-4" />
                   </div>
-                  <span>Daftar Jabatan</span>
+                  <span>Daftar Role</span>
                   <span className="text-[11px] font-bold text-slate-500 bg-slate-200/60 px-2 py-0.5 rounded-full">
                     {roles.length}
                   </span>
                 </h2>
                 <p className="text-[11px] text-slate-500 font-medium mt-0.5">
-                  Pilih jabatan untuk kelola hak akses
+                  Pilih role untuk kelola hak akses
                 </p>
               </div>
 
