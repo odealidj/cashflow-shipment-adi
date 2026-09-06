@@ -20,8 +20,10 @@ import {
   Plus,
   TrendingUp,
   Calendar,
-  Printer
+  Printer,
+  ExternalLink
 } from "lucide-react";
+import Link from "next/link";
 
 import { TopUpModal } from "./TopUpModal";
 import { ShipmentModal } from "./ShipmentModal";
@@ -233,6 +235,16 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
 
   const renderRemarksBadge = (entry: any) => {
     const status = entry.remarks;
+    if (entry.entry_type === "INVOICE_PAYMENT") {
+      return (
+        <span
+          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-2xs"
+          title="Pelunasan Piutang Invoice Resmi"
+        >
+          <CheckCircle2 className="w-3 h-3 text-indigo-600" /> Lunas
+        </span>
+      );
+    }
     if (entry.entry_type === "TOP_UP" || status === "PAID") {
       return (
         <button
@@ -515,6 +527,7 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
               ) : (
                 safeEntries.map((entry: any, idx: number) => {
                   const isShipment = entry.entry_type === "SHIPMENT";
+                  const isInvoicePayment = entry.entry_type === "INVOICE_PAYMENT";
 
                   return (
                     <tr 
@@ -537,17 +550,34 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
                           <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider ${
                             isShipment 
                               ? "bg-sky-100 text-sky-800 border border-sky-200" 
+                              : isInvoicePayment
+                              ? "bg-indigo-100 text-indigo-800 border border-indigo-200"
                               : "bg-emerald-100 text-emerald-800 border border-emerald-200"
                           }`}>
-                            {entry.entry_type}
+                            {isInvoicePayment ? "PELUNASAN INVOICE" : entry.entry_type}
                           </span>
                           <span className="font-extrabold text-slate-900 text-xs line-clamp-1">
                             {entry.vendor_name_raw || "-"}
                           </span>
                         </div>
-                        <div className="text-xs text-slate-600 mt-1 font-medium line-clamp-1">
-                          {entry.act_information || "-"}
-                        </div>
+                        {isInvoicePayment ? (
+                          <div className="mt-1">
+                            <Link
+                              href={`/dashboard/invoices?search=${encodeURIComponent(
+                                (entry.act_information || "").replace("Pelunasan Invoice: ", "").split(" - ")[0].trim()
+                              )}`}
+                              className="text-xs font-semibold text-indigo-700 hover:text-indigo-900 hover:underline inline-flex items-center gap-1 group/link"
+                              title="Buka dokumen invoice terkait di Rekapitulasi Invoice"
+                            >
+                              <span>{entry.act_information || "-"}</span>
+                              <ExternalLink className="w-3 h-3 opacity-70 group-hover/link:opacity-100 transition-opacity" />
+                            </Link>
+                          </div>
+                        ) : (
+                          <div className="text-xs text-slate-600 mt-1 font-medium line-clamp-1">
+                            {entry.act_information || "-"}
+                          </div>
+                        )}
                         {entry.act_explaination && (
                           <div className="text-[11px] text-slate-400 mt-0.5 line-clamp-1 italic">
                             {entry.act_explaination}
@@ -618,10 +648,12 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
                           </div>
                         ) : entry.kredit > 0 ? (
                           <div>
-                            <span className="text-emerald-700 font-black text-xs">
+                            <span className={`font-black text-xs ${isInvoicePayment ? "text-indigo-700" : "text-emerald-700"}`}>
                               + {formatCurrency(entry.kredit)}
                             </span>
-                            <span className="text-[9px] text-slate-400 block font-sans uppercase">Kas Masuk</span>
+                            <span className={`text-[9px] block font-sans uppercase font-bold ${isInvoicePayment ? "text-indigo-600" : "text-slate-400"}`}>
+                              {isInvoicePayment ? "Pelunasan Masuk" : "Kas Masuk"}
+                            </span>
                           </div>
                         ) : (
                           <span className="text-slate-300 font-bold">-</span>

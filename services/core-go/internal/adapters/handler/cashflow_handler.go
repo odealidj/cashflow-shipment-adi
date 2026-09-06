@@ -647,6 +647,37 @@ func (h *CashflowHandler) ExportExcel(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 
+			// Entri PELUNASAN INVOICE
+			if entry.EntryType == domain.EntryInvoicePayment {
+				var kreditCell float64
+				if previousSaldo == nil {
+					kreditCell = entry.Saldo
+				} else {
+					kreditCell = *previousSaldo + pendingTopUp + entry.Kredit
+				}
+				pendingTopUp = 0
+				saldoCell := kreditCell
+				previousSaldo = &saldoCell
+
+				rows = append(rows, exportRow{
+					Kredit:          entry.Kredit,
+					Debit:           0,
+					Saldo:           saldoCell,
+					DateOfEntry:     entry.DateOfEntry.Format("02/01/2006"),
+					ActInformation:  entry.ActInformation,
+					ActExplaination: entry.ActExplaination,
+					VendorNameRaw:   entry.VendorNameRaw,
+					TopText:         "-",
+					DueDateText:     "-",
+					GrandCost:       0,
+					GrandSelling:    0,
+					Profit:          0,
+					MarginText:      "-",
+					Remarks:         string(entry.Remarks),
+				})
+				continue
+			}
+
 			// Entri SHIPMENT
 			var kreditCell float64
 			if previousSaldo == nil {
@@ -712,7 +743,7 @@ func (h *CashflowHandler) ExportExcel(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		// FORMAT 1: KOLOM TOP-UP TERPISAH (STANDAR TRANSAKSI INDEPENDEN / BUKU KAS)
-		// Top-Up kas berdiri di baris mandiri, shipment berdiri di baris mandiri
+		// Top-Up kas berdiri di baris mandiri, shipment berdiri di baris mandiri, pelunasan invoice berdiri di baris mandiri
 		for _, entry := range entries {
 			topStr := "-"
 			if entry.TopDays > 0 {
@@ -721,6 +752,11 @@ func (h *CashflowHandler) ExportExcel(w http.ResponseWriter, r *http.Request) {
 			dueStr := "-"
 			if entry.DueDate != nil {
 				dueStr = entry.DueDate.Format("02/01/2006")
+			}
+
+			marginStr := "-"
+			if entry.EntryType == domain.EntryShipment && entry.GrandSelling > 0 {
+				marginStr = fmt.Sprintf("%.2f%%", entry.MarginPct*100)
 			}
 
 			rows = append(rows, exportRow{
@@ -736,7 +772,7 @@ func (h *CashflowHandler) ExportExcel(w http.ResponseWriter, r *http.Request) {
 				GrandCost:       entry.GrandCost,
 				GrandSelling:    entry.GrandSelling,
 				Profit:          entry.Profit,
-				MarginText:      fmt.Sprintf("%.2f%%", entry.MarginPct*100),
+				MarginText:      marginStr,
 				Remarks:         string(entry.Remarks),
 			})
 		}

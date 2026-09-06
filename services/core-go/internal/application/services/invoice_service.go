@@ -15,9 +15,10 @@ import (
 )
 
 type InvoiceService struct {
-	repo     ports.InvoiceRepository
-	notifSvc *NotificationService
-	cache    repository.CacheService
+	repo        ports.InvoiceRepository
+	notifSvc    *NotificationService
+	cache       repository.CacheService
+	cashflowSvc *CashflowService
 }
 
 func NewInvoiceService(repo ports.InvoiceRepository) *InvoiceService {
@@ -32,9 +33,14 @@ func (s *InvoiceService) SetCacheService(cache repository.CacheService) {
 	s.cache = cache
 }
 
+func (s *InvoiceService) SetCashflowService(cashflowSvc *CashflowService) {
+	s.cashflowSvc = cashflowSvc
+}
+
 func (s *InvoiceService) invalidateCache(ctx context.Context) {
 	if s.cache != nil {
 		_ = s.cache.InvalidatePrefix(ctx, "cache:invoices:")
+		_ = s.cache.InvalidatePrefix(ctx, "cache:cashflow:")
 	}
 }
 
@@ -259,6 +265,43 @@ func (s *InvoiceService) SettleInvoice(ctx context.Context, id int, input Settle
 		return nil, err
 	}
 	telemetry.RecordInvoicePaid()
+
+	// Catat otomatis penerimaan kas masuk ke buku kas Transaksi Cashflow & Shipment
+	if s.cashflowSvc != nil {
+		actInfo := fmt.Sprintf("Pelunasan Invoice: %s - %s", inv.InvoiceNo, inv.ClientName)
+		actExplain := ""
+		if payment.ReferenceNo != "" {
+			actExplain = fmt.Sprintf("Ref: %s", payment.ReferenceNo)
+		}
+		if payment.Notes != "" {
+			if actExplain != "" {
+				actExplain += " | "
+			}
+			actExplain += payment.Notes
+		}
+
+		cashflowEntry := &domain.CashflowEntry{
+			EntryType:       domain.EntryInvoicePayment,
+			Kredit:          inv.Amount,
+			Debit:           0,
+			DateOfEntry:     payDate,
+			ActInformation:  actInfo,
+			ActExplaination: actExplain,
+			VendorNameRaw:   inv.ClientName,
+			GrandCost:       0,
+			GrandSelling:    inv.Amount,
+			Profit:          0,
+			MarginPct:       0,
+			Remarks:         domain.PaymentPaid,
+			InvoiceID:       &inv.ID,
+		}
+		if payment.CreatedBy != nil {
+			cashflowEntry.CreatedBy = *payment.CreatedBy
+			cashflowEntry.UpdatedBy = *payment.CreatedBy
+		}
+
+		_ = s.cashflowSvc.RecordInvoicePayment(ctx, cashflowEntry)
+	}
 
 	if s.notifSvc != nil {
 		go func() {

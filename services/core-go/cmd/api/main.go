@@ -145,6 +145,7 @@ func main() {
 	cashflowService.SetNotificationService(notificationService)
 	cashflowService.SetCacheService(cacheService)
 	invoiceService := services.NewInvoiceService(invoiceRepo)
+	invoiceService.SetCashflowService(cashflowService)
 	invoiceService.SetNotificationService(notificationService)
 	invoiceService.SetCacheService(cacheService)
 

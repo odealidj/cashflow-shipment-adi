@@ -27,6 +27,7 @@ export function EntryDetailModal({ isOpen, entry, onClose, onEdit, onStatusChang
   };
 
   const isShipment = entry.entry_type === "SHIPMENT";
+  const isInvoicePayment = entry.entry_type === "INVOICE_PAYMENT";
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -44,7 +45,7 @@ export function EntryDetailModal({ isOpen, entry, onClose, onEdit, onStatusChang
         );
       default:
         return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200">
             <AlertCircle className="w-3.5 h-3.5" /> Belum Lunas (UNPAID)
           </span>
         );
@@ -69,10 +70,14 @@ export function EntryDetailModal({ isOpen, entry, onClose, onEdit, onStatusChang
             <h2 className="text-lg font-black text-slate-900 flex items-center gap-2">
               Detail Transaksi
               <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
-                isShipment ? "bg-blue-50 text-blue-700 border border-blue-200" : "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                isShipment 
+                  ? "bg-blue-50 text-blue-700 border border-blue-200" 
+                  : isInvoicePayment
+                  ? "bg-indigo-50 text-indigo-700 border border-indigo-200"
+                  : "bg-emerald-50 text-emerald-700 border border-emerald-200"
               }`}>
                 {isShipment ? <ArrowDownRight className="w-3 h-3" /> : <ArrowUpRight className="w-3 h-3" />}
-                {entry.entry_type}
+                {isInvoicePayment ? "PELUNASAN INVOICE" : entry.entry_type}
               </span>
             </h2>
             <p className="text-xs text-slate-500 font-medium">Tanggal: {formatDate(entry.date_of_entry)}</p>

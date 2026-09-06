@@ -13,8 +13,9 @@ const (
 	PaymentUnpaid  PaymentStatus = "UNPAID"
 	PaymentPending PaymentStatus = "PENDING"
 
-	EntryShipment EntryType = "SHIPMENT"
-	EntryTopUp    EntryType = "TOP_UP"
+	EntryShipment       EntryType = "SHIPMENT"
+	EntryTopUp          EntryType = "TOP_UP"
+	EntryInvoicePayment EntryType = "INVOICE_PAYMENT"
 )
 
 type CashflowEntry struct {
@@ -40,4 +41,5 @@ type CashflowEntry struct {
 	UpdatedBy       uuid.UUID     `json:"updated_by" db:"updated_by"`
 	CreatedAt       time.Time     `json:"created_at" db:"created_at"`
 	UpdatedAt       time.Time     `json:"updated_at" db:"updated_at"`
+	InvoiceID       *int          `json:"invoice_id,omitempty" db:"invoice_id"`
 }

@@ -68,6 +68,27 @@ func (s *CashflowService) RecordTopUp(ctx context.Context, entry *domain.Cashflo
 	return nil
 }
 
+func (s *CashflowService) RecordInvoicePayment(ctx context.Context, entry *domain.CashflowEntry) error {
+	if entry.Kredit <= 0 {
+		return errors.New("pelunasan invoice harus memiliki nilai penerimaan kas (kredit) yang valid")
+	}
+	entry.EntryType = domain.EntryInvoicePayment
+	entry.Debit = 0
+	if entry.ActInformation == "" {
+		entry.ActInformation = "Pelunasan Invoice"
+	}
+	if entry.Remarks == "" {
+		entry.Remarks = domain.PaymentPaid
+	}
+
+	if err := s.cashflowRepo.Create(ctx, entry); err != nil {
+		return err
+	}
+	s.invalidateCache(ctx)
+	telemetry.RecordCashflowEntryCreated("INVOICE_PAYMENT")
+	return nil
+}
+
 func (s *CashflowService) RecordShipment(ctx context.Context, entry *domain.CashflowEntry) error {
 	entry.EntryType = domain.EntryShipment
 

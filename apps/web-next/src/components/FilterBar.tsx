@@ -388,6 +388,7 @@ export function FilterBar({
             { label: "Semua Tipe", entry_type: "", remarks: "" },
             { label: "Shipment", entry_type: "SHIPMENT", remarks: "" },
             { label: "Top Up Modal", entry_type: "TOP_UP", remarks: "" },
+            { label: "Pelunasan Invoice", entry_type: "INVOICE_PAYMENT", remarks: "" },
             { label: "Belum Lunas", entry_type: "", remarks: "UNPAID" }
           ].map((pill, idx) => {
             const isActive = 
@@ -511,6 +512,7 @@ export function FilterBar({
                   <option value="">Semua Tipe Transaksi</option>
                   <option value="SHIPMENT">SHIPMENT (Pengiriman / Biaya)</option>
                   <option value="TOP_UP">TOP_UP (Kas Masuk / Modal)</option>
+                  <option value="INVOICE_PAYMENT">PELUNASAN INVOICE (Penerimaan Tagihan)</option>
                 </select>
               </div>
 
