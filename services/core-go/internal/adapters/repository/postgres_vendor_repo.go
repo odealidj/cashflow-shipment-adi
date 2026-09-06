@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
+	"strings"
 
 	"github.com/cashflow-shipment-app/backend/internal/core/domain"
 	"github.com/jmoiron/sqlx"
@@ -106,21 +108,52 @@ func (r *PostgresVendorRepo) SoftDelete(ctx context.Context, id int) error {
 	return nil
 }
 
-func (r *PostgresVendorRepo) ListAll(ctx context.Context, offset, limit int) ([]domain.Vendor, int, error) {
+func (r *PostgresVendorRepo) ListAll(ctx context.Context, offset, limit int, search, sortBy, sortDir string) ([]domain.Vendor, int, error) {
+	search = strings.TrimSpace(search)
+
+	// Determine sorting column
+	sortCol := "created_at"
+	if strings.ToLower(sortBy) == "name" {
+		sortCol = "name"
+	}
+
+	// Determine sorting direction (default DESC for created_at, ASC for name)
+	dir := "DESC"
+	if strings.ToUpper(sortDir) == "ASC" {
+		dir = "ASC"
+	} else if strings.ToUpper(sortDir) == "DESC" {
+		dir = "DESC"
+	} else if sortCol == "name" {
+		dir = "ASC"
+	}
+
+	where := "WHERE deleted_at IS NULL"
+	var args []interface{}
+	argIdx := 1
+
+	if search != "" {
+		searchPattern := fmt.Sprintf("%%%s%%", strings.ToLower(search))
+		where += fmt.Sprintf(" AND (LOWER(name) LIKE $%d OR LOWER(email) LIKE $%d OR LOWER(phone) LIKE $%d OR LOWER(notes) LIKE $%d)", argIdx, argIdx, argIdx, argIdx)
+		args = append(args, searchPattern)
+		argIdx++
+	}
+
+	countQuery := fmt.Sprintf("SELECT COUNT(*) FROM vendors %s", where)
 	var total int
-	err := r.db.GetContext(ctx, &total, `SELECT COUNT(*) FROM vendors WHERE deleted_at IS NULL`)
-	if err != nil {
+	if err := r.db.GetContext(ctx, &total, countQuery, args...); err != nil {
 		return nil, 0, err
 	}
 
-	query := `
+	query := fmt.Sprintf(`
 		SELECT id, name, email, phone, notes, created_at, updated_at, deleted_at 
 		FROM vendors 
-		WHERE deleted_at IS NULL
-		ORDER BY name ASC
-		LIMIT $1 OFFSET $2
-	`
+		%s 
+		ORDER BY %s %s, id DESC 
+		LIMIT $%d OFFSET $%d
+	`, where, sortCol, dir, argIdx, argIdx+1)
+
+	args = append(args, limit, offset)
 	var vendors []domain.Vendor
-	err = r.db.SelectContext(ctx, &vendors, query, limit, offset)
+	err := r.db.SelectContext(ctx, &vendors, query, args...)
 	return vendors, total, err
 }

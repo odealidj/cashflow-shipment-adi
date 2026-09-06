@@ -16,6 +16,8 @@ import {
   Calendar,
   Building,
   ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
   Download,
   Edit2,
   Edit3,
@@ -69,7 +71,8 @@ export default function InvoicesPage() {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [dateFrom, setDateFrom] = useState<string>(() => getCurrentMonthRange().date_from);
   const [dateTo, setDateTo] = useState<string>(() => getCurrentMonthRange().date_to);
-  const [sortDir, setSortDir] = useState<"ASC" | "DESC">("ASC");
+  const [sortBy, setSortBy] = useState<string>("created_at");
+  const [sortDir, setSortDir] = useState<"ASC" | "DESC">("DESC");
   const [isRangeFilterOpen, setIsRangeFilterOpen] = useState(false);
 
   // 18 Month Dropdown Options (Sama dengan CashflowTable)
@@ -206,7 +209,7 @@ export default function InvoicesPage() {
   // Reset to page 1 on filter changes
   useEffect(() => {
     setPage(1);
-  }, [statusFilter, searchQuery, dateFrom, dateTo, sortDir]);
+  }, [statusFilter, searchQuery, dateFrom, dateTo, sortBy, sortDir]);
 
   const fetchInvoices = useCallback(async () => {
     setLoading(true);
@@ -216,6 +219,7 @@ export default function InvoicesPage() {
       if (searchQuery.trim()) params.set("client_name", searchQuery.trim());
       if (dateFrom) params.set("date_from", dateFrom);
       if (dateTo) params.set("date_to", dateTo);
+      params.set("sort_by", sortBy);
       params.set("sort_dir", sortDir);
       params.set("page", String(page));
       params.set("limit", String(pageSize));
@@ -235,7 +239,7 @@ export default function InvoicesPage() {
     } finally {
       setLoading(false);
     }
-  }, [statusFilter, searchQuery, dateFrom, dateTo, sortDir, page, pageSize]);
+  }, [statusFilter, searchQuery, dateFrom, dateTo, sortBy, sortDir, page, pageSize]);
 
   const fetchSummary = useCallback(async () => {
     try {
@@ -319,7 +323,8 @@ export default function InvoicesPage() {
     setSearchQuery("");
     setDateFrom(cur.date_from);
     setDateTo(cur.date_to);
-    setSortDir("ASC");
+    setSortBy("created_at");
+    setSortDir("DESC");
     setIsRangeFilterOpen(false);
   };
 
@@ -576,21 +581,36 @@ export default function InvoicesPage() {
             </div>
 
             {/* Status Periode Aktif & Urutan */}
-            <div className="flex items-center gap-2 text-[11px]">
+            <div className="flex items-center gap-2 text-[11px] flex-wrap">
               <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-sky-100/70 text-sky-900 font-bold border border-sky-200">
                 <Calendar className="w-3 h-3 text-sky-700" />
                 <span>Periode: {formatActivePeriod(dateFrom, dateTo)}</span>
               </span>
 
-              <button
-                type="button"
-                onClick={() => setSortDir(s => (s === "ASC" ? "DESC" : "ASC"))}
-                className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-white text-slate-600 border border-slate-200 font-bold hover:text-sky-800 cursor-pointer shadow-2xs"
-                title="Klik untuk ubah urutan"
-              >
-                <ArrowUpDown className="w-3 h-3 text-slate-400" />
-                <span>Urut: {sortDir === "ASC" ? "Tgl Lama → Baru (ASC)" : "Tgl Baru → Lama (DESC)"}</span>
-              </button>
+              {/* Urutan Dropdown */}
+              <div className="relative flex items-center bg-white border border-slate-200 rounded-xl px-2.5 py-0.5 shadow-2xs">
+                <ArrowUpDown className="w-3 h-3 text-slate-400 mr-1.5 pointer-events-none" />
+                <select
+                  value={`${sortBy}-${sortDir}`}
+                  onChange={(e) => {
+                    const [sb, sd] = e.target.value.split("-") as [string, "ASC" | "DESC"];
+                    setSortBy(sb);
+                    setSortDir(sd);
+                  }}
+                  className="bg-transparent text-[11px] font-bold text-slate-700 focus:outline-hidden cursor-pointer"
+                >
+                  <option value="created_at-DESC">Urutkan: Terbaru Dibuat (Default)</option>
+                  <option value="due_date-ASC">Jatuh Tempo: Terdekat</option>
+                  <option value="due_date-DESC">Jatuh Tempo: Terjauh</option>
+                  <option value="client_name-ASC">Nama Customer: A-Z</option>
+                  <option value="client_name-DESC">Nama Customer: Z-A</option>
+                  <option value="shipment_date-DESC">Tgl Kirim: Terbaru</option>
+                  <option value="shipment_date-ASC">Tgl Kirim: Terlama</option>
+                  <option value="amount-DESC">Nominal: Tertinggi</option>
+                  <option value="amount-ASC">Nominal: Terendah</option>
+                  <option value="created_at-ASC">Terlama Dibuat</option>
+                </select>
+              </div>
             </div>
           </div>
 
@@ -669,11 +689,107 @@ export default function InvoicesPage() {
               <tr>
                 <th className="py-3.5 px-3 text-center w-12">No</th>
                 <th className="py-3.5 px-3">No. Invoice</th>
-                <th className="py-3.5 px-3">Customer</th>
-                <th className="py-3.5 px-3 text-center">Tgl Pengiriman</th>
+                <th 
+                  onClick={() => {
+                    if (sortBy === "client_name") {
+                      setSortDir(sortDir === "ASC" ? "DESC" : "ASC");
+                    } else {
+                      setSortBy("client_name");
+                      setSortDir("ASC");
+                    }
+                  }}
+                  className="py-3.5 px-3 cursor-pointer hover:bg-slate-100/80 transition-colors select-none group"
+                  title="Klik untuk mengubah urutan nama customer"
+                >
+                  <div className="flex items-center gap-1.5">
+                    <span>Customer</span>
+                    {sortBy === "client_name" ? (
+                      sortDir === "ASC" ? (
+                        <ArrowUp className="w-3.5 h-3.5 text-sky-600 font-bold" />
+                      ) : (
+                        <ArrowDown className="w-3.5 h-3.5 text-sky-600 font-bold" />
+                      )
+                    ) : (
+                      <ArrowUpDown className="w-3 h-3 text-slate-300 group-hover:text-slate-500 transition-colors" />
+                    )}
+                  </div>
+                </th>
+                <th 
+                  onClick={() => {
+                    if (sortBy === "shipment_date") {
+                      setSortDir(sortDir === "ASC" ? "DESC" : "ASC");
+                    } else {
+                      setSortBy("shipment_date");
+                      setSortDir("DESC");
+                    }
+                  }}
+                  className="py-3.5 px-3 text-center cursor-pointer hover:bg-slate-100/80 transition-colors select-none group"
+                  title="Klik untuk mengubah urutan tanggal pengiriman"
+                >
+                  <div className="flex items-center justify-center gap-1.5">
+                    <span>Tgl Pengiriman</span>
+                    {sortBy === "shipment_date" ? (
+                      sortDir === "ASC" ? (
+                        <ArrowUp className="w-3.5 h-3.5 text-sky-600 font-bold" />
+                      ) : (
+                        <ArrowDown className="w-3.5 h-3.5 text-sky-600 font-bold" />
+                      )
+                    ) : (
+                      <ArrowUpDown className="w-3 h-3 text-slate-300 group-hover:text-slate-500 transition-colors" />
+                    )}
+                  </div>
+                </th>
                 <th className="py-3.5 px-3 text-center">TOP (Terms)</th>
-                <th className="py-3.5 px-3 text-center">Tgl Jatuh Tempo</th>
-                <th className="py-3.5 px-4 text-right">Nominal Tagihan</th>
+                <th 
+                  onClick={() => {
+                    if (sortBy === "due_date") {
+                      setSortDir(sortDir === "ASC" ? "DESC" : "ASC");
+                    } else {
+                      setSortBy("due_date");
+                      setSortDir("ASC");
+                    }
+                  }}
+                  className="py-3.5 px-3 text-center cursor-pointer hover:bg-slate-100/80 transition-colors select-none group"
+                  title="Klik untuk mengubah urutan tanggal jatuh tempo"
+                >
+                  <div className="flex items-center justify-center gap-1.5">
+                    <span>Tgl Jatuh Tempo</span>
+                    {sortBy === "due_date" ? (
+                      sortDir === "ASC" ? (
+                        <ArrowUp className="w-3.5 h-3.5 text-sky-600 font-bold" />
+                      ) : (
+                        <ArrowDown className="w-3.5 h-3.5 text-sky-600 font-bold" />
+                      )
+                    ) : (
+                      <ArrowUpDown className="w-3 h-3 text-slate-300 group-hover:text-slate-500 transition-colors" />
+                    )}
+                  </div>
+                </th>
+                <th 
+                  onClick={() => {
+                    if (sortBy === "amount") {
+                      setSortDir(sortDir === "ASC" ? "DESC" : "ASC");
+                    } else {
+                      setSortBy("amount");
+                      setSortDir("DESC");
+                    }
+                  }}
+                  className="py-3.5 px-4 text-right cursor-pointer hover:bg-slate-100/80 transition-colors select-none group"
+                  title="Klik untuk mengubah urutan nominal tagihan"
+                >
+                  <div className="flex items-center justify-end gap-1.5">
+                    <span>Nominal Tagihan</span>
+                    {sortBy === "amount" ? (
+                      sortDir === "ASC" ? (
+                        <ArrowUp className="w-3.5 h-3.5 text-sky-600 font-bold" />
+                      ) : (
+                        <ArrowDown className="w-3.5 h-3.5 text-sky-600 font-bold" />
+                      )
+                    ) : (
+                      <ArrowUpDown className="w-3 h-3 text-slate-300 group-hover:text-slate-500 transition-colors" />
+                    )}
+                  </div>
+                </th>
                 <th className="py-3.5 px-3 text-center">Status</th>
                 <th className="py-3.5 px-3 text-center w-44">Aksi</th>
               </tr>

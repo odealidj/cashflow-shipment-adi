@@ -25,12 +25,16 @@ func NewInvoiceHandler(invoiceService *services.InvoiceService) *InvoiceHandler 
 func extractInvoiceFilter(r *http.Request) ports.InvoiceFilter {
 	q := r.URL.Query()
 	filter := ports.InvoiceFilter{
-		SortDir: "ASC",
-		SortBy:  "shipment_date",
+		SortDir: "DESC",
+		SortBy:  "created_at",
 	}
 
-	if sd := strings.ToUpper(strings.TrimSpace(q.Get("sort_dir"))); sd == "DESC" {
-		filter.SortDir = "DESC"
+	if sd := strings.ToUpper(strings.TrimSpace(q.Get("sort_dir"))); sd != "" {
+		if sd == "ASC" {
+			filter.SortDir = "ASC"
+		} else {
+			filter.SortDir = "DESC"
+		}
 	}
 	if sb := strings.TrimSpace(q.Get("sort_by")); sb != "" {
 		filter.SortBy = sb

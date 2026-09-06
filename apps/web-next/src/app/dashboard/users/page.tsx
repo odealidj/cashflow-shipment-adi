@@ -18,7 +18,10 @@ import {
   Briefcase,
   UserCheck,
   Building,
-  Crown
+  Crown,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown
 } from "lucide-react";
 import { API_BASE_URL, fetchWithAuth } from "@/lib/apiClient";
 import { useAuth } from "@/hooks/useAuth";
@@ -54,6 +57,8 @@ export default function UsersManagementPage() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(15);
   const [total, setTotal] = useState(0);
+  const [sortBy, setSortBy] = useState<"created_at" | "full_name">("created_at");
+  const [sortDir, setSortDir] = useState<"ASC" | "DESC">("DESC");
 
   // Modal States
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
@@ -73,6 +78,8 @@ export default function UsersManagementPage() {
       const params = new URLSearchParams();
       params.set("page", String(page));
       params.set("limit", String(limit));
+      params.set("sort_by", sortBy);
+      params.set("sort_dir", sortDir);
       if (searchTerm.trim()) params.set("search", searchTerm.trim());
       if (selectedRole !== "ALL") params.set("role", selectedRole);
       if (selectedStatus !== "ALL") params.set("status", selectedStatus);
@@ -91,7 +98,7 @@ export default function UsersManagementPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, limit, searchTerm, selectedRole, selectedStatus]);
+  }, [page, limit, searchTerm, selectedRole, selectedStatus, sortBy, sortDir]);
 
   useEffect(() => {
     fetchUsers();
@@ -382,6 +389,26 @@ export default function UsersManagementPage() {
                 </select>
               </div>
 
+              {/* Urutan Dropdown */}
+              <div className="relative flex items-center bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 shadow-2xs">
+                <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 mr-1.5 pointer-events-none" />
+                <select
+                  value={`${sortBy}-${sortDir}`}
+                  onChange={(e) => {
+                    const [sb, sd] = e.target.value.split("-") as ["created_at" | "full_name", "ASC" | "DESC"];
+                    setSortBy(sb);
+                    setSortDir(sd);
+                    setPage(1);
+                  }}
+                  className="bg-transparent text-xs font-bold text-slate-700 focus:outline-hidden cursor-pointer"
+                >
+                  <option value="created_at-DESC">Urutkan: Terbaru (Default)</option>
+                  <option value="full_name-ASC">Urutkan: Nama (A-Z)</option>
+                  <option value="full_name-DESC">Urutkan: Nama (Z-A)</option>
+                  <option value="created_at-ASC">Urutkan: Terlama</option>
+                </select>
+              </div>
+
               {/* Refresh Button */}
               <button
                 onClick={fetchUsers}
@@ -400,7 +427,32 @@ export default function UsersManagementPage() {
             <thead className={tableTheadClass}>
               <tr>
                 <th className="py-3 px-4 text-center w-12">No</th>
-                <th className="py-3 px-4 min-w-[200px]">Pengguna</th>
+                <th 
+                  onClick={() => {
+                    if (sortBy === "full_name") {
+                      setSortDir(sortDir === "ASC" ? "DESC" : "ASC");
+                    } else {
+                      setSortBy("full_name");
+                      setSortDir("ASC");
+                    }
+                    setPage(1);
+                  }}
+                  className="py-3 px-4 min-w-[200px] cursor-pointer hover:bg-slate-100/80 transition-colors select-none group"
+                  title="Klik untuk mengubah urutan nama pengguna"
+                >
+                  <div className="flex items-center gap-1.5">
+                    <span>Pengguna</span>
+                    {sortBy === "full_name" ? (
+                      sortDir === "ASC" ? (
+                        <ArrowUp className="w-3.5 h-3.5 text-sky-600 font-bold" />
+                      ) : (
+                        <ArrowDown className="w-3.5 h-3.5 text-sky-600 font-bold" />
+                      )
+                    ) : (
+                      <ArrowUpDown className="w-3 h-3 text-slate-300 group-hover:text-slate-500 transition-colors" />
+                    )}
+                  </div>
+                </th>
                 <th className="py-3 px-4 min-w-[180px]">Email & Kontak</th>
                 <th className="py-3 px-4 min-w-[160px]">Peran (Role)</th>
                 <th className="py-3 px-4 text-center min-w-[150px]">Status Akun</th>

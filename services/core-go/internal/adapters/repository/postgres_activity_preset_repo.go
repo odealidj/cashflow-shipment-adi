@@ -104,7 +104,7 @@ func (r *PostgresActivityPresetRepo) SoftDelete(ctx context.Context, id int) err
 	return nil
 }
 
-func (r *PostgresActivityPresetRepo) ListAll(ctx context.Context, category, search string, offset, limit int) ([]domain.ActivityPreset, int, error) {
+func (r *PostgresActivityPresetRepo) ListAll(ctx context.Context, category, search string, offset, limit int, sortBy, sortDir string) ([]domain.ActivityPreset, int, error) {
 	var conditions []string
 	var args []interface{}
 	argIdx := 1
@@ -133,14 +133,30 @@ func (r *PostgresActivityPresetRepo) ListAll(ctx context.Context, category, sear
 		return nil, 0, err
 	}
 
+	// Determine sorting column
+	sortCol := "created_at"
+	if strings.ToLower(sortBy) == "name" {
+		sortCol = "name"
+	}
+
+	// Determine sorting direction
+	dir := "DESC"
+	if strings.ToUpper(sortDir) == "ASC" {
+		dir = "ASC"
+	} else if strings.ToUpper(sortDir) == "DESC" {
+		dir = "DESC"
+	} else if sortCol == "name" {
+		dir = "ASC"
+	}
+
 	// Query data dengan pagination
 	query := fmt.Sprintf(`
 		SELECT id, category, name, description, is_active, created_at, updated_at, deleted_at 
 		FROM activity_presets 
 		WHERE %s 
-		ORDER BY id ASC 
+		ORDER BY %s %s, id DESC 
 		LIMIT $%d OFFSET $%d
-	`, whereClause, argIdx, argIdx+1)
+	`, whereClause, sortCol, dir, argIdx, argIdx+1)
 
 	args = append(args, limit, offset)
 

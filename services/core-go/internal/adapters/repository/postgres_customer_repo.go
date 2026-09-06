@@ -110,56 +110,53 @@ func (r *PostgresCustomerRepo) SoftDelete(ctx context.Context, id int) error {
 	return nil
 }
 
-func (r *PostgresCustomerRepo) ListAll(ctx context.Context, offset, limit int, search string) ([]domain.Customer, int, error) {
+func (r *PostgresCustomerRepo) ListAll(ctx context.Context, offset, limit int, search, sortBy, sortDir string) ([]domain.Customer, int, error) {
 	search = strings.TrimSpace(search)
-	var countQuery string
-	var listQuery string
+
+	// Determine sorting column
+	sortCol := "created_at"
+	if strings.ToLower(sortBy) == "name" {
+		sortCol = "name"
+	}
+
+	// Determine sorting direction (default DESC for created_at, ASC for name)
+	dir := "DESC"
+	if strings.ToUpper(sortDir) == "ASC" {
+		dir = "ASC"
+	} else if strings.ToUpper(sortDir) == "DESC" {
+		dir = "DESC"
+	} else if sortCol == "name" {
+		dir = "ASC"
+	}
+
+	where := "WHERE deleted_at IS NULL"
 	var args []interface{}
+	argIdx := 1
 
 	if search != "" {
 		searchPattern := fmt.Sprintf("%%%s%%", strings.ToLower(search))
-		countQuery = `
-			SELECT COUNT(*) 
-			FROM customers 
-			WHERE deleted_at IS NULL 
-			  AND (LOWER(name) LIKE $1 OR LOWER(pic_name) LIKE $1 OR LOWER(phone) LIKE $1 OR LOWER(email) LIKE $1 OR LOWER(address) LIKE $1 OR LOWER(notes) LIKE $1)
-		`
-		listQuery = `
-			SELECT id, name, pic_name, email, phone, address, notes, created_at, updated_at, deleted_at 
-			FROM customers 
-			WHERE deleted_at IS NULL 
-			  AND (LOWER(name) LIKE $1 OR LOWER(pic_name) LIKE $1 OR LOWER(phone) LIKE $1 OR LOWER(email) LIKE $1 OR LOWER(address) LIKE $1 OR LOWER(notes) LIKE $1)
-			ORDER BY name ASC 
-			LIMIT $2 OFFSET $3
-		`
-		args = []interface{}{searchPattern, limit, offset}
-		var total int
-		if err := r.db.GetContext(ctx, &total, countQuery, searchPattern); err != nil {
-			return nil, 0, err
-		}
-
-		var customers []domain.Customer
-		if err := r.db.SelectContext(ctx, &customers, listQuery, args...); err != nil {
-			return nil, 0, err
-		}
-		return customers, total, nil
+		where += fmt.Sprintf(" AND (LOWER(name) LIKE $%d OR LOWER(pic_name) LIKE $%d OR LOWER(phone) LIKE $%d OR LOWER(email) LIKE $%d OR LOWER(address) LIKE $%d OR LOWER(notes) LIKE $%d)", argIdx, argIdx, argIdx, argIdx, argIdx, argIdx)
+		args = append(args, searchPattern)
+		argIdx++
 	}
 
-	countQuery = `SELECT COUNT(*) FROM customers WHERE deleted_at IS NULL`
-	listQuery = `
-		SELECT id, name, pic_name, email, phone, address, notes, created_at, updated_at, deleted_at 
-		FROM customers 
-		WHERE deleted_at IS NULL 
-		ORDER BY id ASC 
-		LIMIT $1 OFFSET $2
-	`
+	countQuery := fmt.Sprintf("SELECT COUNT(*) FROM customers %s", where)
 	var total int
-	if err := r.db.GetContext(ctx, &total, countQuery); err != nil {
+	if err := r.db.GetContext(ctx, &total, countQuery, args...); err != nil {
 		return nil, 0, err
 	}
 
+	listQuery := fmt.Sprintf(`
+		SELECT id, name, pic_name, email, phone, address, notes, created_at, updated_at, deleted_at 
+		FROM customers 
+		%s 
+		ORDER BY %s %s, id DESC 
+		LIMIT $%d OFFSET $%d
+	`, where, sortCol, dir, argIdx, argIdx+1)
+
+	args = append(args, limit, offset)
 	var customers []domain.Customer
-	if err := r.db.SelectContext(ctx, &customers, listQuery, limit, offset); err != nil {
+	if err := r.db.SelectContext(ctx, &customers, listQuery, args...); err != nil {
 		return nil, 0, err
 	}
 

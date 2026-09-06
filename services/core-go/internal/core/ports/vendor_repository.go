@@ -11,5 +11,5 @@ type VendorRepository interface {
 	GetByName(ctx context.Context, name string) (*domain.Vendor, error)
 	Update(ctx context.Context, vendor *domain.Vendor) error
 	SoftDelete(ctx context.Context, id int) error
-	ListAll(ctx context.Context, offset, limit int) ([]domain.Vendor, int, error)
+	ListAll(ctx context.Context, offset, limit int, search, sortBy, sortDir string) ([]domain.Vendor, int, error)
 }

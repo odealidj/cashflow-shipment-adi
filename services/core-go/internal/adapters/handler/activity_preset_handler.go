@@ -45,7 +45,10 @@ func (h *ActivityPresetHandler) List(w http.ResponseWriter, r *http.Request) {
 	category := r.URL.Query().Get("category")
 	search := r.URL.Query().Get("search")
 
-	presets, total, err := h.service.ListPresets(r.Context(), category, search, page, limit)
+	sortBy := r.URL.Query().Get("sort_by")
+	sortDir := r.URL.Query().Get("sort_dir")
+
+	presets, total, err := h.service.ListPresets(r.Context(), category, search, page, limit, sortBy, sortDir)
 	if err != nil {
 		response.HandleError(w, err, http.StatusInternalServerError)
 		return

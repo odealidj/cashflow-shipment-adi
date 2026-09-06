@@ -5,16 +5,31 @@ import (
 	"errors"
 	"strings"
 
+	"fmt"
+	"time"
+
+	"github.com/cashflow-shipment-app/backend/internal/adapters/repository"
 	"github.com/cashflow-shipment-app/backend/internal/core/domain"
 	"github.com/cashflow-shipment-app/backend/internal/core/ports"
 )
 
 type ActivityPresetService struct {
-	repo ports.ActivityPresetRepository
+	repo  ports.ActivityPresetRepository
+	cache repository.CacheService
 }
 
 func NewActivityPresetService(repo ports.ActivityPresetRepository) *ActivityPresetService {
 	return &ActivityPresetService{repo: repo}
+}
+
+func (s *ActivityPresetService) SetCacheService(cache repository.CacheService) {
+	s.cache = cache
+}
+
+func (s *ActivityPresetService) invalidateCache(ctx context.Context) {
+	if s.cache != nil {
+		_ = s.cache.InvalidatePrefix(ctx, "cache:presets:")
+	}
 }
 
 func (s *ActivityPresetService) CreatePreset(ctx context.Context, preset *domain.ActivityPreset) error {
@@ -37,7 +52,11 @@ func (s *ActivityPresetService) CreatePreset(ctx context.Context, preset *domain
 	preset.Description = strings.TrimSpace(preset.Description)
 	preset.IsActive = true
 
-	return s.repo.Create(ctx, preset)
+	if err := s.repo.Create(ctx, preset); err != nil {
+		return err
+	}
+	s.invalidateCache(ctx)
+	return nil
 }
 
 func (s *ActivityPresetService) UpdatePreset(ctx context.Context, preset *domain.ActivityPreset) error {
@@ -65,7 +84,11 @@ func (s *ActivityPresetService) UpdatePreset(ctx context.Context, preset *domain
 
 	preset.Description = strings.TrimSpace(preset.Description)
 
-	return s.repo.Update(ctx, preset)
+	if err := s.repo.Update(ctx, preset); err != nil {
+		return err
+	}
+	s.invalidateCache(ctx)
+	return nil
 }
 
 func (s *ActivityPresetService) GetPresetByID(ctx context.Context, id int) (*domain.ActivityPreset, error) {
@@ -79,10 +102,19 @@ func (s *ActivityPresetService) DeletePreset(ctx context.Context, id int) error 
 	if id <= 0 {
 		return errors.New("ID preset tidak valid")
 	}
-	return s.repo.SoftDelete(ctx, id)
+	if err := s.repo.SoftDelete(ctx, id); err != nil {
+		return err
+	}
+	s.invalidateCache(ctx)
+	return nil
 }
 
-func (s *ActivityPresetService) ListPresets(ctx context.Context, category, search string, page, limit int) ([]domain.ActivityPreset, int, error) {
+type CachedPresetList struct {
+	Presets []domain.ActivityPreset `json:"presets"`
+	Total   int                     `json:"total"`
+}
+
+func (s *ActivityPresetService) ListPresets(ctx context.Context, category, search string, page, limit int, sortBy, sortDir string) ([]domain.ActivityPreset, int, error) {
 	if page < 1 {
 		page = 1
 	}
@@ -91,5 +123,22 @@ func (s *ActivityPresetService) ListPresets(ctx context.Context, category, searc
 	}
 	offset := (page - 1) * limit
 
-	return s.repo.ListAll(ctx, category, search, offset, limit)
+	cacheKey := fmt.Sprintf("cache:presets:cat:%s:p:%d:l:%d:s:%s:sb:%s:sd:%s", category, page, limit, search, sortBy, sortDir)
+	if s.cache != nil {
+		var cached CachedPresetList
+		if found, err := s.cache.Get(ctx, cacheKey, &cached); err == nil && found {
+			return cached.Presets, cached.Total, nil
+		}
+	}
+
+	presets, total, err := s.repo.ListAll(ctx, category, search, offset, limit, sortBy, sortDir)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	if s.cache != nil {
+		_ = s.cache.Set(ctx, cacheKey, CachedPresetList{Presets: presets, Total: total}, 5*time.Minute)
+	}
+
+	return presets, total, nil
 }

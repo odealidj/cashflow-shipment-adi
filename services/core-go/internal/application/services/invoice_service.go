@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cashflow-shipment-app/backend/internal/adapters/repository"
 	"github.com/cashflow-shipment-app/backend/internal/core/domain"
 	"github.com/cashflow-shipment-app/backend/internal/core/ports"
 	"github.com/cashflow-shipment-app/backend/internal/infrastructure/telemetry"
@@ -16,6 +17,7 @@ import (
 type InvoiceService struct {
 	repo     ports.InvoiceRepository
 	notifSvc *NotificationService
+	cache    repository.CacheService
 }
 
 func NewInvoiceService(repo ports.InvoiceRepository) *InvoiceService {
@@ -24,6 +26,16 @@ func NewInvoiceService(repo ports.InvoiceRepository) *InvoiceService {
 
 func (s *InvoiceService) SetNotificationService(notifSvc *NotificationService) {
 	s.notifSvc = notifSvc
+}
+
+func (s *InvoiceService) SetCacheService(cache repository.CacheService) {
+	s.cache = cache
+}
+
+func (s *InvoiceService) invalidateCache(ctx context.Context) {
+	if s.cache != nil {
+		_ = s.cache.InvalidatePrefix(ctx, "cache:invoices:")
+	}
 }
 
 type CreateInvoiceInput struct {
@@ -114,6 +126,7 @@ func (s *InvoiceService) CreateInvoice(ctx context.Context, input CreateInvoiceI
 	if err := s.repo.Create(ctx, invoice); err != nil {
 		return nil, err
 	}
+	s.invalidateCache(ctx)
 	telemetry.RecordInvoiceCreated()
 
 	return invoice, nil
@@ -181,6 +194,7 @@ func (s *InvoiceService) UpdateInvoice(ctx context.Context, id int, input Create
 	if err := s.repo.Update(ctx, inv); err != nil {
 		return nil, err
 	}
+	s.invalidateCache(ctx)
 
 	return inv, nil
 }
@@ -271,6 +285,7 @@ func (s *InvoiceService) SettleInvoice(ctx context.Context, id int, input Settle
 		}()
 	}
 
+	s.invalidateCache(ctx)
 	return s.repo.GetByID(ctx, id)
 }
 
@@ -342,6 +357,7 @@ func (s *InvoiceService) RescheduleDueDate(ctx context.Context, id int, input Re
 		}()
 	}
 
+	s.invalidateCache(ctx)
 	return s.repo.GetByID(ctx, id)
 }
 
@@ -350,11 +366,20 @@ func (s *InvoiceService) GetInvoiceHistory(ctx context.Context, id int) (*domain
 }
 
 func (s *InvoiceService) DeleteInvoice(ctx context.Context, id int) error {
-	return s.repo.Delete(ctx, id)
+	if err := s.repo.Delete(ctx, id); err != nil {
+		return err
+	}
+	s.invalidateCache(ctx)
+	return nil
 }
 
 func (s *InvoiceService) GetInvoice(ctx context.Context, id int) (*domain.Invoice, error) {
 	return s.repo.GetByID(ctx, id)
+}
+
+type CachedInvoiceList struct {
+	Invoices []domain.Invoice `json:"invoices"`
+	Total    int              `json:"total"`
 }
 
 func (s *InvoiceService) ListInvoices(ctx context.Context, page, limit int, filter ports.InvoiceFilter) ([]domain.Invoice, int, error) {
@@ -365,9 +390,79 @@ func (s *InvoiceService) ListInvoices(ctx context.Context, page, limit int, filt
 		limit = 50
 	}
 	offset := (page - 1) * limit
-	return s.repo.ListAll(ctx, offset, limit, filter)
+
+	var df, dt, st, cn, invNo string
+	if filter.DateFrom != nil {
+		df = *filter.DateFrom
+	}
+	if filter.DateTo != nil {
+		dt = *filter.DateTo
+	}
+	if filter.Status != nil {
+		st = string(*filter.Status)
+	}
+	if filter.ClientName != nil {
+		cn = *filter.ClientName
+	}
+	if filter.InvoiceNo != nil {
+		invNo = *filter.InvoiceNo
+	}
+
+	cacheKey := fmt.Sprintf("cache:invoices:p:%d:l:%d:df:%s:dt:%s:st:%s:cn:%s:inv:%s:sb:%s:sd:%s", page, limit, df, dt, st, cn, invNo, filter.SortBy, filter.SortDir)
+	if s.cache != nil {
+		var cached CachedInvoiceList
+		if found, err := s.cache.Get(ctx, cacheKey, &cached); err == nil && found {
+			return cached.Invoices, cached.Total, nil
+		}
+	}
+
+	invoices, total, err := s.repo.ListAll(ctx, offset, limit, filter)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	if s.cache != nil {
+		_ = s.cache.Set(ctx, cacheKey, CachedInvoiceList{Invoices: invoices, Total: total}, 5*time.Minute)
+	}
+
+	return invoices, total, nil
 }
 
 func (s *InvoiceService) GetSummary(ctx context.Context, filter ports.InvoiceFilter) (map[string]interface{}, error) {
-	return s.repo.GetSummary(ctx, filter)
+	var df, dt, st, cn, invNo string
+	if filter.DateFrom != nil {
+		df = *filter.DateFrom
+	}
+	if filter.DateTo != nil {
+		dt = *filter.DateTo
+	}
+	if filter.Status != nil {
+		st = string(*filter.Status)
+	}
+	if filter.ClientName != nil {
+		cn = *filter.ClientName
+	}
+	if filter.InvoiceNo != nil {
+		invNo = *filter.InvoiceNo
+	}
+
+	cacheKey := fmt.Sprintf("cache:invoices:sum:df:%s:dt:%s:st:%s:cn:%s:inv:%s", df, dt, st, cn, invNo)
+	if s.cache != nil {
+		var cached map[string]interface{}
+		if found, err := s.cache.Get(ctx, cacheKey, &cached); err == nil && found {
+			return cached, nil
+		}
+	}
+
+	summary, err := s.repo.GetSummary(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+
+	if s.cache != nil {
+		_ = s.cache.Set(ctx, cacheKey, summary, 5*time.Minute)
+	}
+
+	return summary, nil
 }
+

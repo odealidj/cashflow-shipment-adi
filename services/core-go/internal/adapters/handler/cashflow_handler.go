@@ -31,8 +31,8 @@ func NewCashflowHandler(cashflowService *services.CashflowService) *CashflowHand
 func extractListFilter(r *http.Request) ports.ListFilter {
 	q := r.URL.Query()
 	sortDir := strings.ToUpper(strings.TrimSpace(q.Get("sort")))
-	if sortDir != "DESC" {
-		sortDir = "ASC" // Default is ASC as discussed
+	if sortDir != "ASC" {
+		sortDir = "DESC" // Default is DESC
 	}
 
 	filter := ports.ListFilter{

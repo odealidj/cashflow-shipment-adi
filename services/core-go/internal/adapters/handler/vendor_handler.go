@@ -39,7 +39,11 @@ func (h *VendorHandler) List(w http.ResponseWriter, r *http.Request) {
 		limit = 50
 	}
 
-	vendors, total, err := h.vendorService.ListAllVendors(r.Context(), page, limit)
+	search := r.URL.Query().Get("search")
+	sortBy := r.URL.Query().Get("sort_by")
+	sortDir := r.URL.Query().Get("sort_dir")
+
+	vendors, total, err := h.vendorService.ListAllVendors(r.Context(), page, limit, search, sortBy, sortDir)
 	if err != nil {
 		response.HandleError(w, err, http.StatusInternalServerError)
 		return

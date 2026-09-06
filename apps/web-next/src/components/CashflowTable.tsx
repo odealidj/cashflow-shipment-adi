@@ -45,7 +45,7 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
-  const [sortDir, setSortDir] = useState<"ASC" | "DESC">("ASC"); // Default ASC (urut dari awal bulan/tanggal terlama)
+  const [sortDir, setSortDir] = useState<"ASC" | "DESC">("DESC"); // Default DESC (urut dari transaksi terbaru)
 
   // Default Filter: Bulan Ini (Range 1 s/d Akhir Bulan Ini)
   const [filters, setFilters] = useState<FilterState>(() => {
@@ -460,7 +460,7 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
                 remarks: "",
                 vendor_name: ""
               });
-              setSortDir("ASC");
+              setSortDir("DESC");
               setPage(1);
             }}
           />

@@ -86,7 +86,7 @@ func (r *PostgresUserRepo) GetByID(ctx context.Context, id uuid.UUID) (*domain.U
 	return &user, nil
 }
 
-func (r *PostgresUserRepo) List(ctx context.Context, limit, offset int, search, role, status string, includeHiddenSuperAdmin bool) ([]domain.User, int, error) {
+func (r *PostgresUserRepo) List(ctx context.Context, limit, offset int, search, role, status string, includeHiddenSuperAdmin bool, sortBy, sortDir string) ([]domain.User, int, error) {
 	var whereClauses []string
 	var args []interface{}
 	argIdx := 1
@@ -128,14 +128,30 @@ func (r *PostgresUserRepo) List(ctx context.Context, limit, offset int, search, 
 		return nil, 0, err
 	}
 
+	// Determine sorting column
+	sortCol := "created_at"
+	if strings.ToLower(sortBy) == "name" || strings.ToLower(sortBy) == "full_name" {
+		sortCol = "full_name"
+	}
+
+	// Determine sorting direction
+	dir := "DESC"
+	if strings.ToUpper(sortDir) == "ASC" {
+		dir = "ASC"
+	} else if strings.ToUpper(sortDir) == "DESC" {
+		dir = "DESC"
+	} else if sortCol == "full_name" {
+		dir = "ASC"
+	}
+
 	// Data query
 	dataQuery := fmt.Sprintf(`
 		SELECT id, email, phone, full_name, role, role_id, status, last_login_at, created_at, updated_at 
 		FROM users 
 		WHERE %s 
-		ORDER BY created_at DESC 
+		ORDER BY %s %s, id DESC 
 		LIMIT $%d OFFSET $%d
-	`, whereSQL, argIdx, argIdx+1)
+	`, whereSQL, sortCol, dir, argIdx, argIdx+1)
 
 	args = append(args, limit, offset)
 

@@ -11,5 +11,5 @@ type ActivityPresetRepository interface {
 	GetByCategoryAndName(ctx context.Context, category, name string) (*domain.ActivityPreset, error)
 	Update(ctx context.Context, preset *domain.ActivityPreset) error
 	SoftDelete(ctx context.Context, id int) error
-	ListAll(ctx context.Context, category, search string, offset, limit int) ([]domain.ActivityPreset, int, error)
+	ListAll(ctx context.Context, category, search string, offset, limit int, sortBy, sortDir string) ([]domain.ActivityPreset, int, error)
 }

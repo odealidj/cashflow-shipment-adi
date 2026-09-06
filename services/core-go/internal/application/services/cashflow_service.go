@@ -3,11 +3,13 @@ package services
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/cashflow-shipment-app/backend/internal/adapters/repository"
 	"github.com/cashflow-shipment-app/backend/internal/core/domain"
 	"github.com/cashflow-shipment-app/backend/internal/core/ports"
 	"github.com/cashflow-shipment-app/backend/internal/infrastructure/telemetry"
@@ -19,6 +21,7 @@ type CashflowService struct {
 	cashflowRepo ports.CashflowRepository
 	vendorSvc    *VendorService
 	notifSvc     *NotificationService
+	cache        repository.CacheService
 }
 
 func NewCashflowService(cashflowRepo ports.CashflowRepository, vendorSvc *VendorService) *CashflowService {
@@ -30,6 +33,16 @@ func NewCashflowService(cashflowRepo ports.CashflowRepository, vendorSvc *Vendor
 
 func (s *CashflowService) SetNotificationService(notifSvc *NotificationService) {
 	s.notifSvc = notifSvc
+}
+
+func (s *CashflowService) SetCacheService(cache repository.CacheService) {
+	s.cache = cache
+}
+
+func (s *CashflowService) invalidateCache(ctx context.Context) {
+	if s.cache != nil {
+		_ = s.cache.InvalidatePrefix(ctx, "cache:cashflow:")
+	}
 }
 
 func (s *CashflowService) RecordTopUp(ctx context.Context, entry *domain.CashflowEntry) error {
@@ -47,6 +60,7 @@ func (s *CashflowService) RecordTopUp(ctx context.Context, entry *domain.Cashflo
 	if err := s.cashflowRepo.Create(ctx, entry); err != nil {
 		return err
 	}
+	s.invalidateCache(ctx)
 	telemetry.RecordCashflowEntryCreated("TOP_UP")
 	if s.notifSvc != nil {
 		s.notifSvc.NotifyLowCashBalance(ctx, entry.Saldo, 15000000.0)
@@ -89,6 +103,7 @@ func (s *CashflowService) RecordShipment(ctx context.Context, entry *domain.Cash
 	if err := s.cashflowRepo.Create(ctx, entry); err != nil {
 		return err
 	}
+	s.invalidateCache(ctx)
 	telemetry.RecordCashflowEntryCreated("SHIPMENT")
 	if s.notifSvc != nil {
 		s.notifSvc.NotifyLowCashBalance(ctx, entry.Saldo, 15000000.0)
@@ -148,6 +163,8 @@ func (s *CashflowService) UpdateEntry(ctx context.Context, entry *domain.Cashflo
 		}
 	}
 
+	s.invalidateCache(ctx)
+
 	if s.notifSvc != nil {
 		s.notifSvc.NotifyLowCashBalance(ctx, entry.Saldo, 15000000.0)
 		if entry.Profit < 0 || entry.MarginPct < 0 {
@@ -179,20 +196,109 @@ func (s *CashflowService) DeleteEntry(ctx context.Context, id int, userID uuid.U
 		}
 	}
 
+	s.invalidateCache(ctx)
 	return nil
 }
 
 func (s *CashflowService) UpdatePaymentStatus(ctx context.Context, id int, status domain.PaymentStatus, userID uuid.UUID) error {
-	return s.cashflowRepo.UpdateRemarks(ctx, id, status, userID)
+	if err := s.cashflowRepo.UpdateRemarks(ctx, id, status, userID); err != nil {
+		return err
+	}
+	s.invalidateCache(ctx)
+	return nil
+}
+
+type CachedCashflowList struct {
+	Entries []domain.CashflowEntry `json:"entries"`
+	Total   int                    `json:"total"`
 }
 
 func (s *CashflowService) GetDashboardData(ctx context.Context, page, limit int, filter ports.ListFilter) ([]domain.CashflowEntry, int, error) {
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 {
+		limit = 50
+	}
 	offset := (page - 1) * limit
-	return s.cashflowRepo.ListAll(ctx, offset, limit, filter)
+
+	var df, dt, et, rem, vn string
+	if filter.DateFrom != nil {
+		df = *filter.DateFrom
+	}
+	if filter.DateTo != nil {
+		dt = *filter.DateTo
+	}
+	if filter.EntryType != nil {
+		et = string(*filter.EntryType)
+	}
+	if filter.Remarks != nil {
+		rem = string(*filter.Remarks)
+	}
+	if filter.VendorName != nil {
+		vn = *filter.VendorName
+	}
+
+	cacheKey := fmt.Sprintf("cache:cashflow:p:%d:l:%d:df:%s:dt:%s:et:%s:rem:%s:vn:%s:sort:%s",
+		page, limit, df, dt, et, rem, vn, filter.SortDir)
+
+	if s.cache != nil {
+		var cached CachedCashflowList
+		if found, err := s.cache.Get(ctx, cacheKey, &cached); err == nil && found {
+			return cached.Entries, cached.Total, nil
+		}
+	}
+
+	entries, total, err := s.cashflowRepo.ListAll(ctx, offset, limit, filter)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	if s.cache != nil {
+		_ = s.cache.Set(ctx, cacheKey, CachedCashflowList{Entries: entries, Total: total}, 5*time.Minute)
+	}
+
+	return entries, total, nil
 }
 
 func (s *CashflowService) GetSummary(ctx context.Context, filter ports.ListFilter) (map[string]interface{}, error) {
-	return s.cashflowRepo.GetSummary(ctx, filter)
+	var df, dt, et, rem, vn string
+	if filter.DateFrom != nil {
+		df = *filter.DateFrom
+	}
+	if filter.DateTo != nil {
+		dt = *filter.DateTo
+	}
+	if filter.EntryType != nil {
+		et = string(*filter.EntryType)
+	}
+	if filter.Remarks != nil {
+		rem = string(*filter.Remarks)
+	}
+	if filter.VendorName != nil {
+		vn = *filter.VendorName
+	}
+
+	cacheKey := fmt.Sprintf("cache:cashflow:sum:df:%s:dt:%s:et:%s:rem:%s:vn:%s",
+		df, dt, et, rem, vn)
+
+	if s.cache != nil {
+		var cached map[string]interface{}
+		if found, err := s.cache.Get(ctx, cacheKey, &cached); err == nil && found {
+			return cached, nil
+		}
+	}
+
+	summary, err := s.cashflowRepo.GetSummary(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+
+	if s.cache != nil {
+		_ = s.cache.Set(ctx, cacheKey, summary, 5*time.Minute)
+	}
+
+	return summary, nil
 }
 
 func parseExcelDate(s string) time.Time {
@@ -365,5 +471,6 @@ func (s *CashflowService) ProcessExcelImport(ctx context.Context, reader io.Read
 		}
 	}
 
+	s.invalidateCache(ctx)
 	return nil
 }

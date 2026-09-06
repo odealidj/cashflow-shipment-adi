@@ -4,6 +4,10 @@ import (
 	"context"
 	"errors"
 
+	"fmt"
+	"time"
+
+	"github.com/cashflow-shipment-app/backend/internal/adapters/repository"
 	"github.com/cashflow-shipment-app/backend/internal/core/domain"
 	"github.com/cashflow-shipment-app/backend/internal/core/ports"
 	"github.com/cashflow-shipment-app/backend/pkg/hash"
@@ -14,6 +18,7 @@ type UserService struct {
 	userRepo       ports.UserRepository
 	roleRepo       ports.RoleRepository
 	sessionService *SessionService
+	cache          repository.CacheService
 }
 
 func NewUserService(userRepo ports.UserRepository, roleRepo ports.RoleRepository, sessionService *SessionService) *UserService {
@@ -21,6 +26,16 @@ func NewUserService(userRepo ports.UserRepository, roleRepo ports.RoleRepository
 		userRepo:       userRepo,
 		roleRepo:       roleRepo,
 		sessionService: sessionService,
+	}
+}
+
+func (s *UserService) SetCacheService(cache repository.CacheService) {
+	s.cache = cache
+}
+
+func (s *UserService) invalidateCache(ctx context.Context) {
+	if s.cache != nil {
+		_ = s.cache.InvalidatePrefix(ctx, "cache:users:")
 	}
 }
 
@@ -41,9 +56,32 @@ type UpdateUserInput struct {
 	Status   domain.UserStatus `json:"status"`
 }
 
-func (s *UserService) List(ctx context.Context, limit, offset int, search, role, status string, currentUserRole domain.UserRole) ([]domain.User, int, error) {
+type CachedUserList struct {
+	Users []domain.User `json:"users"`
+	Total int           `json:"total"`
+}
+
+func (s *UserService) List(ctx context.Context, limit, offset int, search, role, status string, currentUserRole domain.UserRole, sortBy, sortDir string) ([]domain.User, int, error) {
 	includeSuperAdmin := (currentUserRole == domain.RoleSuperAdmin)
-	return s.userRepo.List(ctx, limit, offset, search, role, status, includeSuperAdmin)
+
+	cacheKey := fmt.Sprintf("cache:users:lim:%d:off:%d:s:%s:r:%s:st:%s:sa:%v:sb:%s:sd:%s", limit, offset, search, role, status, includeSuperAdmin, sortBy, sortDir)
+	if s.cache != nil {
+		var cached CachedUserList
+		if found, err := s.cache.Get(ctx, cacheKey, &cached); err == nil && found {
+			return cached.Users, cached.Total, nil
+		}
+	}
+
+	users, total, err := s.userRepo.List(ctx, limit, offset, search, role, status, includeSuperAdmin, sortBy, sortDir)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	if s.cache != nil {
+		_ = s.cache.Set(ctx, cacheKey, CachedUserList{Users: users, Total: total}, 5*time.Minute)
+	}
+
+	return users, total, nil
 }
 
 func (s *UserService) GetByID(ctx context.Context, id uuid.UUID) (*domain.User, error) {
@@ -91,6 +129,7 @@ func (s *UserService) Create(ctx context.Context, input CreateUserInput, current
 	if err := s.userRepo.Create(ctx, user); err != nil {
 		return nil, err
 	}
+	s.invalidateCache(ctx)
 
 	return user, nil
 }
@@ -143,6 +182,7 @@ func (s *UserService) Update(ctx context.Context, id uuid.UUID, input UpdateUser
 	if err := s.userRepo.Update(ctx, targetUser); err != nil {
 		return nil, err
 	}
+	s.invalidateCache(ctx)
 
 	// Force Logout active sessions if role or status was changed
 	if roleOrStatusChanged {
@@ -180,6 +220,7 @@ func (s *UserService) ResetPassword(ctx context.Context, id uuid.UUID, newPasswo
 	if err := s.userRepo.UpdatePassword(ctx, id, hashedPassword); err != nil {
 		return err
 	}
+	s.invalidateCache(ctx)
 
 	// Force Logout all old sessions for this user
 	_ = s.sessionService.RevokeAllUserSessions(ctx, id)
@@ -221,6 +262,7 @@ func (s *UserService) Delete(ctx context.Context, id uuid.UUID, currentUserID uu
 	if err := s.userRepo.Delete(ctx, id); err != nil {
 		return err
 	}
+	s.invalidateCache(ctx)
 
 	// Force Logout all active sessions immediately
 	_ = s.sessionService.RevokeAllUserSessions(ctx, id)

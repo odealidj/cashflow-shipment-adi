@@ -40,8 +40,10 @@ func (h *CustomerHandler) List(w http.ResponseWriter, r *http.Request) {
 		limit = 50
 	}
 	search := r.URL.Query().Get("search")
+	sortBy := r.URL.Query().Get("sort_by")
+	sortDir := r.URL.Query().Get("sort_dir")
 
-	customers, total, err := h.customerService.ListAllCustomers(r.Context(), page, limit, search)
+	customers, total, err := h.customerService.ListAllCustomers(r.Context(), page, limit, search, sortBy, sortDir)
 	if err != nil {
 		response.HandleError(w, err, http.StatusInternalServerError)
 		return

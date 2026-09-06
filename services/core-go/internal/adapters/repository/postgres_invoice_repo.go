@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/cashflow-shipment-app/backend/internal/core/domain"
@@ -163,15 +164,29 @@ func (r *PostgresInvoiceRepo) ListAll(ctx context.Context, offset, limit int, fi
 		return nil, 0, err
 	}
 
-	// Sorting
-	sortBy := "i.shipment_date"
-	if filter.SortBy == "due_date" {
+	// Sorting (Default: created_at DESC)
+	sortBy := "i.created_at"
+	sortDir := "DESC"
+
+	switch strings.ToLower(filter.SortBy) {
+	case "name", "client_name":
+		sortBy = "i.client_name"
+		sortDir = "ASC"
+	case "due_date":
 		sortBy = "i.due_date"
-	} else if filter.SortBy == "invoice_no" {
+	case "shipment_date":
+		sortBy = "i.shipment_date"
+	case "invoice_no":
 		sortBy = "i.invoice_no"
+	case "amount":
+		sortBy = "i.amount"
+	case "created_at":
+		sortBy = "i.created_at"
 	}
-	sortDir := "ASC"
-	if filter.SortDir == "DESC" {
+
+	if strings.ToUpper(filter.SortDir) == "ASC" {
+		sortDir = "ASC"
+	} else if strings.ToUpper(filter.SortDir) == "DESC" {
 		sortDir = "DESC"
 	}
 

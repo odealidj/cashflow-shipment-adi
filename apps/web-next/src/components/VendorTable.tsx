@@ -14,7 +14,10 @@ import {
   AlertTriangle,
   Route,
   CheckCircle2,
-  FileText
+  FileText,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown
 } from "lucide-react";
 import { VendorModal } from "@/components/VendorModal";
 import { fetchWithAuth } from "@/lib/apiClient";
@@ -39,6 +42,8 @@ export function VendorTable() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(15);
   const [total, setTotal] = useState(0);
+  const [sortBy, setSortBy] = useState<"created_at" | "name">("created_at");
+  const [sortDir, setSortDir] = useState<"ASC" | "DESC">("DESC");
 
   // Reset to page 1 on search change
   useEffect(() => {
@@ -57,7 +62,8 @@ export function VendorTable() {
     setLoading(true);
     try {
       const searchParam = searchTerm ? `&search=${encodeURIComponent(searchTerm.trim())}` : "";
-      const res = await fetchWithAuth(`http://localhost:8080/api/v1/vendors?page=${page}&limit=${pageSize}${searchParam}`);
+      const sortParam = `&sort_by=${sortBy}&sort_dir=${sortDir}`;
+      const res = await fetchWithAuth(`http://localhost:8080/api/v1/vendors?page=${page}&limit=${pageSize}${searchParam}${sortParam}`);
       const data = await res.json();
       if (data.status && data.data) {
         setVendors(Array.isArray(data.data) ? data.data : (data.data.entries || []));
@@ -76,7 +82,7 @@ export function VendorTable() {
 
   useEffect(() => {
     fetchVendors();
-  }, [page, pageSize, searchTerm]);
+  }, [page, pageSize, searchTerm, sortBy, sortDir]);
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return "-";
@@ -218,6 +224,27 @@ export function VendorTable() {
                   className="w-full bg-white border border-slate-200 rounded-xl py-1.5 pl-9 pr-3 text-xs text-slate-800 focus:ring-2 focus:ring-sky-500 focus:outline-none font-medium placeholder:text-slate-400 shadow-2xs"
                 />
               </div>
+
+              {/* Urutan Dropdown */}
+              <div className="relative flex items-center">
+                <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 absolute left-3 pointer-events-none" />
+                <select
+                  value={`${sortBy}-${sortDir}`}
+                  onChange={(e) => {
+                    const [sb, sd] = e.target.value.split("-") as ["created_at" | "name", "ASC" | "DESC"];
+                    setSortBy(sb);
+                    setSortDir(sd);
+                  }}
+                  className="bg-white border border-slate-200 rounded-xl py-1.5 pl-8 pr-7 text-xs text-slate-700 font-semibold focus:ring-2 focus:ring-sky-500 focus:outline-none cursor-pointer appearance-none shadow-2xs"
+                >
+                  <option value="created_at-DESC">Urutkan: Terbaru (Default)</option>
+                  <option value="name-ASC">Urutkan: Nama (A-Z)</option>
+                  <option value="name-DESC">Urutkan: Nama (Z-A)</option>
+                  <option value="created_at-ASC">Urutkan: Terlama</option>
+                </select>
+                <div className="absolute right-2.5 pointer-events-none text-slate-400 text-[10px]">▼</div>
+              </div>
+
               {searchTerm && (
                 <button
                   onClick={() => setSearchTerm("")}
@@ -236,7 +263,31 @@ export function VendorTable() {
               <thead className={tableTheadClass}>
                 <tr>
                   <th className="px-6 py-3.5 w-12 text-center">No</th>
-                  <th className="px-6 py-3.5 min-w-[220px]">Nama Vendor</th>
+                  <th 
+                    onClick={() => {
+                      if (sortBy === "name") {
+                        setSortDir(sortDir === "ASC" ? "DESC" : "ASC");
+                      } else {
+                        setSortBy("name");
+                        setSortDir("ASC");
+                      }
+                    }}
+                    className="px-6 py-3.5 min-w-[220px] cursor-pointer hover:bg-slate-100/80 transition-colors select-none group"
+                    title="Klik untuk mengubah urutan nama vendor"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span>Nama Vendor</span>
+                      {sortBy === "name" ? (
+                        sortDir === "ASC" ? (
+                          <ArrowUp className="w-3.5 h-3.5 text-sky-600 font-bold" />
+                        ) : (
+                          <ArrowDown className="w-3.5 h-3.5 text-sky-600 font-bold" />
+                        )
+                      ) : (
+                        <ArrowUpDown className="w-3 h-3 text-slate-300 group-hover:text-slate-500 transition-colors" />
+                      )}
+                    </div>
+                  </th>
                   <th className="px-6 py-3.5 min-w-[180px]">No. Telepon / WhatsApp</th>
                   <th className="px-6 py-3.5 min-w-[200px]">Email Korespondensi</th>
                   <th className="px-6 py-3.5 min-w-[240px]">Catatan / Rute Armada</th>

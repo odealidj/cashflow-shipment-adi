@@ -3,18 +3,32 @@ package services
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
+	"time"
 
+	"github.com/cashflow-shipment-app/backend/internal/adapters/repository"
 	"github.com/cashflow-shipment-app/backend/internal/core/domain"
 	"github.com/cashflow-shipment-app/backend/internal/core/ports"
 )
 
 type CustomerService struct {
 	customerRepo ports.CustomerRepository
+	cache        repository.CacheService
 }
 
 func NewCustomerService(customerRepo ports.CustomerRepository) *CustomerService {
 	return &CustomerService{customerRepo: customerRepo}
+}
+
+func (s *CustomerService) SetCacheService(cache repository.CacheService) {
+	s.cache = cache
+}
+
+func (s *CustomerService) invalidateCache(ctx context.Context) {
+	if s.cache != nil {
+		_ = s.cache.InvalidatePrefix(ctx, "cache:customers:")
+	}
 }
 
 func (s *CustomerService) CreateCustomer(ctx context.Context, customer *domain.Customer) error {
@@ -35,7 +49,11 @@ func (s *CustomerService) CreateCustomer(ctx context.Context, customer *domain.C
 	customer.Address = strings.TrimSpace(customer.Address)
 	customer.Notes = strings.TrimSpace(customer.Notes)
 
-	return s.customerRepo.Create(ctx, customer)
+	if err := s.customerRepo.Create(ctx, customer); err != nil {
+		return err
+	}
+	s.invalidateCache(ctx)
+	return nil
 }
 
 func (s *CustomerService) UpdateCustomer(ctx context.Context, customer *domain.Customer) error {
@@ -62,18 +80,31 @@ func (s *CustomerService) UpdateCustomer(ctx context.Context, customer *domain.C
 	customer.Address = strings.TrimSpace(customer.Address)
 	customer.Notes = strings.TrimSpace(customer.Notes)
 
-	return s.customerRepo.Update(ctx, customer)
+	if err := s.customerRepo.Update(ctx, customer); err != nil {
+		return err
+	}
+	s.invalidateCache(ctx)
+	return nil
 }
 
 func (s *CustomerService) DeleteCustomer(ctx context.Context, id int) error {
-	return s.customerRepo.SoftDelete(ctx, id)
+	if err := s.customerRepo.SoftDelete(ctx, id); err != nil {
+		return err
+	}
+	s.invalidateCache(ctx)
+	return nil
 }
 
 func (s *CustomerService) GetCustomerByID(ctx context.Context, id int) (*domain.Customer, error) {
 	return s.customerRepo.GetByID(ctx, id)
 }
 
-func (s *CustomerService) ListAllCustomers(ctx context.Context, page, limit int, search string) ([]domain.Customer, int, error) {
+type CachedCustomerList struct {
+	Customers []domain.Customer `json:"customers"`
+	Total     int               `json:"total"`
+}
+
+func (s *CustomerService) ListAllCustomers(ctx context.Context, page, limit int, search, sortBy, sortDir string) ([]domain.Customer, int, error) {
 	if page < 1 {
 		page = 1
 	}
@@ -81,7 +112,25 @@ func (s *CustomerService) ListAllCustomers(ctx context.Context, page, limit int,
 		limit = 50
 	}
 	offset := (page - 1) * limit
-	return s.customerRepo.ListAll(ctx, offset, limit, search)
+
+	cacheKey := fmt.Sprintf("cache:customers:p:%d:l:%d:s:%s:sb:%s:sd:%s", page, limit, search, sortBy, sortDir)
+	if s.cache != nil {
+		var cached CachedCustomerList
+		if found, err := s.cache.Get(ctx, cacheKey, &cached); err == nil && found {
+			return cached.Customers, cached.Total, nil
+		}
+	}
+
+	customers, total, err := s.customerRepo.ListAll(ctx, offset, limit, search, sortBy, sortDir)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	if s.cache != nil {
+		_ = s.cache.Set(ctx, cacheKey, CachedCustomerList{Customers: customers, Total: total}, 5*time.Minute)
+	}
+
+	return customers, total, nil
 }
 
 func (s *CustomerService) FindOrCreateCustomer(ctx context.Context, name string, picName string, email string, phone string) (*domain.Customer, error) {

@@ -50,10 +50,12 @@ func (h *UserHandler) List(w http.ResponseWriter, r *http.Request) {
 	search := r.URL.Query().Get("search")
 	role := r.URL.Query().Get("role")
 	status := r.URL.Query().Get("status")
+	sortBy := r.URL.Query().Get("sort_by")
+	sortDir := r.URL.Query().Get("sort_dir")
 
 	currentUserRole := middleware.GetUserRoleFromContext(r.Context())
 
-	users, total, err := h.userService.List(r.Context(), limit, offset, search, role, status, currentUserRole)
+	users, total, err := h.userService.List(r.Context(), limit, offset, search, role, status, currentUserRole, sortBy, sortDir)
 	if err != nil {
 		response.HandleError(w, err, http.StatusInternalServerError)
 		return

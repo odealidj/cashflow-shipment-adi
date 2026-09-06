@@ -14,7 +14,10 @@ import {
   Calendar,
   Layers,
   CheckCircle2,
-  FileText
+  FileText,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown
 } from "lucide-react";
 import { ActivityPresetModal, ActivityPreset } from "@/components/ActivityPresetModal";
 import { fetchWithAuth } from "@/lib/apiClient";
@@ -35,6 +38,8 @@ export function ActivityPresetTable({ category }: ActivityPresetTableProps) {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(15);
   const [total, setTotal] = useState(0);
+  const [sortBy, setSortBy] = useState<"created_at" | "name">("created_at");
+  const [sortDir, setSortDir] = useState<"ASC" | "DESC">("DESC");
 
   // Reset to page 1 when filter or search changes
   useEffect(() => {
@@ -58,7 +63,8 @@ export function ActivityPresetTable({ category }: ActivityPresetTableProps) {
     try {
       const categoryParam = effectiveCategory ? `&category=${effectiveCategory}` : "";
       const searchParam = searchTerm ? `&search=${encodeURIComponent(searchTerm.trim())}` : "";
-      const res = await fetchWithAuth(`http://localhost:8080/api/v1/activity-presets?page=${page}&limit=${pageSize}${categoryParam}${searchParam}`);
+      const sortParam = `&sort_by=${sortBy}&sort_dir=${sortDir}`;
+      const res = await fetchWithAuth(`http://localhost:8080/api/v1/activity-presets?page=${page}&limit=${pageSize}${categoryParam}${searchParam}${sortParam}`);
       const data = await res.json();
       if (data.status && data.data) {
         setPresets(Array.isArray(data.data) ? data.data : (data.data.entries || []));
@@ -77,7 +83,7 @@ export function ActivityPresetTable({ category }: ActivityPresetTableProps) {
 
   useEffect(() => {
     fetchPresets();
-  }, [page, pageSize, activeTab, category, searchTerm]);
+  }, [page, pageSize, activeTab, category, searchTerm, sortBy, sortDir]);
 
   const handleOpenCreate = () => {
     setSelectedPreset(null);
@@ -246,9 +252,29 @@ export function ActivityPresetTable({ category }: ActivityPresetTableProps) {
                 </div>
               )}
 
-              {/* Search Bar */}
-              <div className="flex items-center gap-2 flex-1 max-w-xs ml-auto">
-                <div className="relative flex-1">
+              {/* Search & Sort Bar */}
+              <div className="flex flex-wrap items-center gap-2.5 ml-auto">
+                {/* Urutan Dropdown */}
+                <div className="relative flex items-center">
+                  <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 absolute left-3 pointer-events-none" />
+                  <select
+                    value={`${sortBy}-${sortDir}`}
+                    onChange={(e) => {
+                      const [sb, sd] = e.target.value.split("-") as ["created_at" | "name", "ASC" | "DESC"];
+                      setSortBy(sb);
+                      setSortDir(sd);
+                    }}
+                    className="bg-white border border-slate-200 rounded-xl py-1.5 pl-8 pr-7 text-xs text-slate-700 font-semibold focus:ring-2 focus:ring-sky-500 focus:outline-none cursor-pointer appearance-none shadow-2xs"
+                  >
+                    <option value="created_at-DESC">Urutkan: Terbaru (Default)</option>
+                    <option value="name-ASC">Urutkan: Nama (A-Z)</option>
+                    <option value="name-DESC">Urutkan: Nama (Z-A)</option>
+                    <option value="created_at-ASC">Urutkan: Terlama</option>
+                  </select>
+                  <div className="absolute right-2.5 pointer-events-none text-slate-400 text-[10px]">▼</div>
+                </div>
+
+                <div className="relative min-w-[200px] max-w-xs">
                   <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
@@ -280,8 +306,30 @@ export function ActivityPresetTable({ category }: ActivityPresetTableProps) {
                 <tr>
                   <th className="px-6 py-3.5 w-12 text-center">No</th>
                   {!isDedicated && <th className="px-6 py-3.5 min-w-[160px]">Kategori</th>}
-                  <th className="px-6 py-3.5 min-w-[240px]">
-                    {isDedicated ? (isArmada ? "Nama Keterangan / Armada" : "Nama Rute / Catatan Delivery") : "Nama Opsi Preset"}
+                  <th 
+                    onClick={() => {
+                      if (sortBy === "name") {
+                        setSortDir(sortDir === "ASC" ? "DESC" : "ASC");
+                      } else {
+                        setSortBy("name");
+                        setSortDir("ASC");
+                      }
+                    }}
+                    className="px-6 py-3.5 min-w-[240px] cursor-pointer hover:bg-slate-100/80 transition-colors select-none group"
+                    title="Klik untuk mengubah urutan nama"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span>{isDedicated ? (isArmada ? "Nama Keterangan / Armada" : "Nama Rute / Catatan Delivery") : "Nama Opsi Preset"}</span>
+                      {sortBy === "name" ? (
+                        sortDir === "ASC" ? (
+                          <ArrowUp className="w-3.5 h-3.5 text-sky-600 font-bold" />
+                        ) : (
+                          <ArrowDown className="w-3.5 h-3.5 text-sky-600 font-bold" />
+                        )
+                      ) : (
+                        <ArrowUpDown className="w-3 h-3 text-slate-300 group-hover:text-slate-500 transition-colors" />
+                      )}
+                    </div>
                   </th>
                   <th className="px-6 py-3.5 min-w-[280px]">
                     {isDedicated ? (isArmada ? "Deskripsi / Rincian Kapasitas" : "Deskripsi / Rincian Rute") : "Deskripsi / Penjelasan"}
