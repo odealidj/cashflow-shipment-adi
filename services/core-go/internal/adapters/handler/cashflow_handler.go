@@ -312,10 +312,6 @@ func findLogoPath() string {
 // @Router       /cashflow/export [get]
 func (h *CashflowHandler) ExportExcel(w http.ResponseWriter, r *http.Request) {
 	filter := extractListFilter(r)
-	formatMode := strings.ToLower(strings.TrimSpace(r.URL.Query().Get("format")))
-	if formatMode == "" {
-		formatMode = "separated" // default: Versi 1 (Kolom Top-Up Terpisah)
-	}
 
 	entries, _, err := h.cashflowService.GetDashboardData(r.Context(), 1, 100000, filter)
 	if err != nil {
@@ -558,11 +554,6 @@ func (h *CashflowHandler) ExportExcel(w http.ResponseWriter, r *http.Request) {
 
 	// Judul Dokumen di Baris 4
 	docTitle := "CASHFLOW SHIPMENT CONTROL"
-	if formatMode == "merged" || formatMode == "rolling" {
-		docTitle = "CASHFLOW SHIPMENT CONTROL (VERSI 2: TOP-UP + SALDO SEBELUMNYA)"
-	} else {
-		docTitle = "CASHFLOW SHIPMENT CONTROL (VERSI 1: TOP-UP TERPISAH)"
-	}
 	f.MergeCell(sheetName, "A4", "N4")
 	f.SetCellValue(sheetName, "A4", docTitle)
 	f.SetCellStyle(sheetName, "A4", "N4", docTitleStyle)
@@ -614,11 +605,7 @@ func (h *CashflowHandler) ExportExcel(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Baris 6: Header Tabel 14 Kolom
-	col1Header := "KREDIT"
-	if formatMode == "merged" || formatMode == "rolling" {
-		col1Header = "TOPUP+SALDO"
-	}
-	headers := []string{col1Header, "DEBIT", "SALDO", "DATE OF ENTRY", "ACT INFORMATION", "ACT EXPLAINATION", "VENDOR", "T O P", "DUE DATE", "GRAND COST", "GRAND SELLING", "PROFIT", "MARGIN IN %", "REMARKS"}
+	headers := []string{"KREDIT", "DEBIT", "SALDO", "DATE OF ENTRY", "ACT INFORMATION", "ACT EXPLAINATION", "VENDOR", "T O P", "DUE DATE", "GRAND COST", "GRAND SELLING", "PROFIT", "MARGIN IN %", "REMARKS"}
 
 	for i, header := range headers {
 		cell, _ := excelize.CoordinatesToCellName(i+1, 6)
@@ -645,152 +632,37 @@ func (h *CashflowHandler) ExportExcel(w http.ResponseWriter, r *http.Request) {
 
 	var rows []exportRow
 
-	if formatMode == "merged" || formatMode == "rolling" {
-		// FORMAT 2: TOP-UP + SALDO SEBELUMNYA (PERSIS DOKUMEN EXCEL ASLI KANTOR BARIS 7 & 8)
-		// Row 7: Kredit = TopUp (100jt), Debit = 28.15jt, Saldo = 71.85jt
-		// Row 8: Kredit = Saldo Sebelumnya (71.85jt) + TopUp baru jika ada, Debit = 7.5jt, Saldo = 64.35jt
-		var previousSaldo *float64
-		var pendingTopUp float64
-
-		for _, entry := range entries {
-			if entry.EntryType == domain.EntryTopUp {
-				pendingTopUp += entry.Kredit
-				if previousSaldo == nil {
-					val := entry.Saldo - entry.Kredit
-					previousSaldo = &val
-				}
-				continue
-			}
-
-			// Entri PELUNASAN INVOICE
-			if entry.EntryType == domain.EntryInvoicePayment {
-				var kreditCell float64
-				if previousSaldo == nil {
-					kreditCell = entry.Saldo
-				} else {
-					kreditCell = *previousSaldo + pendingTopUp + entry.Kredit
-				}
-				pendingTopUp = 0
-				saldoCell := kreditCell
-				previousSaldo = &saldoCell
-
-				rows = append(rows, exportRow{
-					Kredit:          entry.Kredit,
-					Debit:           0,
-					Saldo:           saldoCell,
-					DateOfEntry:     dateutil.FormatDateIndo(entry.DateOfEntry),
-					ActInformation:  entry.ActInformation,
-					ActExplaination: entry.ActExplaination,
-					VendorNameRaw:   entry.VendorNameRaw,
-					TopText:         "-",
-					DueDateText:     "-",
-					GrandCost:       0,
-					GrandSelling:    0,
-					Profit:          0,
-					MarginText:      "-",
-					Remarks:         string(entry.Remarks),
-				})
-				continue
-			}
-
-			// Entri SHIPMENT
-			var kreditCell float64
-			if previousSaldo == nil {
-				kreditCell = entry.Saldo + entry.Debit
-			} else {
-				kreditCell = *previousSaldo + pendingTopUp
-			}
-			pendingTopUp = 0
-			saldoCell := kreditCell - entry.Debit
-			previousSaldo = &saldoCell
-
-			topStr := "-"
-			if entry.TopDays > 0 {
-				topStr = fmt.Sprintf("%d HARI", entry.TopDays)
-			}
-			dueStr := "-"
-			if entry.DueDate != nil {
-				dueStr = dateutil.FormatDateIndo(*entry.DueDate)
-			}
-
-			rows = append(rows, exportRow{
-				Kredit:          kreditCell,
-				Debit:           entry.Debit,
-				Saldo:           saldoCell,
-				DateOfEntry:     dateutil.FormatDateIndo(entry.DateOfEntry),
-				ActInformation:  entry.ActInformation,
-				ActExplaination: entry.ActExplaination,
-				VendorNameRaw:   entry.VendorNameRaw,
-				TopText:         topStr,
-				DueDateText:     dueStr,
-				GrandCost:       entry.GrandCost,
-				GrandSelling:    entry.GrandSelling,
-				Profit:          entry.Profit,
-				MarginText:      fmt.Sprintf("%.2f%%", entry.MarginPct*100),
-				Remarks:         string(entry.Remarks),
-			})
+	for _, entry := range entries {
+		topStr := "-"
+		if entry.TopDays > 0 {
+			topStr = fmt.Sprintf("%d HARI", entry.TopDays)
+		}
+		dueStr := "-"
+		if entry.DueDate != nil {
+			dueStr = dateutil.FormatDateIndo(*entry.DueDate)
 		}
 
-		// Jika ada sisa Top-Up di akhir periode tanpa shipment lanjutan
-		if pendingTopUp > 0 {
-			var base float64
-			if previousSaldo != nil {
-				base = *previousSaldo
-			}
-			kreditCell := base + pendingTopUp
-			var lastDate string
-			if len(entries) > 0 {
-				lastDate = dateutil.FormatDateIndo(entries[len(entries)-1].DateOfEntry)
-			} else {
-				lastDate = dateutil.FormatDateIndo(time.Now())
-			}
-			rows = append(rows, exportRow{
-				Kredit:         kreditCell,
-				Debit:          0,
-				Saldo:          kreditCell,
-				DateOfEntry:    lastDate,
-				ActInformation: "Top-Up Modal Kas",
-				VendorNameRaw:  "-",
-				TopText:        "-",
-				DueDateText:    "-",
-				Remarks:        "PAID",
-			})
+		marginStr := "-"
+		if entry.EntryType == domain.EntryShipment && entry.GrandSelling > 0 {
+			marginStr = fmt.Sprintf("%.2f%%", entry.MarginPct*100)
 		}
-	} else {
-		// FORMAT 1: KOLOM TOP-UP TERPISAH (STANDAR TRANSAKSI INDEPENDEN / BUKU KAS)
-		// Top-Up kas berdiri di baris mandiri, shipment berdiri di baris mandiri, pelunasan invoice berdiri di baris mandiri
-		for _, entry := range entries {
-			topStr := "-"
-			if entry.TopDays > 0 {
-				topStr = fmt.Sprintf("%d HARI", entry.TopDays)
-			}
-			dueStr := "-"
-			if entry.DueDate != nil {
-				dueStr = dateutil.FormatDateIndo(*entry.DueDate)
-			}
 
-			marginStr := "-"
-			if entry.EntryType == domain.EntryShipment && entry.GrandSelling > 0 {
-				marginStr = fmt.Sprintf("%.2f%%", entry.MarginPct*100)
-			}
-
-			rows = append(rows, exportRow{
-				Kredit:          entry.Kredit,
-				Debit:           entry.Debit,
-				Saldo:           entry.Saldo,
-				DateOfEntry:     dateutil.FormatDateIndo(entry.DateOfEntry),
-				ActInformation:  entry.ActInformation,
-				ActExplaination: entry.ActExplaination,
-				VendorNameRaw:   entry.VendorNameRaw,
-				TopText:         topStr,
-				DueDateText:     dueStr,
-				GrandCost:       entry.GrandCost,
-				GrandSelling:    entry.GrandSelling,
-				Profit:          entry.Profit,
-				MarginText:      marginStr,
-				Remarks:         string(entry.Remarks),
-			})
-		}
+		rows = append(rows, exportRow{
+			Kredit:          entry.Kredit,
+			Debit:           entry.Debit,
+			Saldo:           entry.Saldo,
+			DateOfEntry:     dateutil.FormatDateIndo(entry.DateOfEntry),
+			ActInformation:  entry.ActInformation,
+			ActExplaination: entry.ActExplaination,
+			VendorNameRaw:   entry.VendorNameRaw,
+			TopText:         topStr,
+			DueDateText:     dueStr,
+			GrandCost:       entry.GrandCost,
+			GrandSelling:    entry.GrandSelling,
+			Profit:          entry.Profit,
+			MarginText:      marginStr,
+			Remarks:         string(entry.Remarks),
+		})
 	}
 
 	// Tulis Baris Data ke File Excel Mulai Baris 7
@@ -912,10 +784,7 @@ func (h *CashflowHandler) ExportExcel(w http.ResponseWriter, r *http.Request) {
 	f.SetColWidth(sheetName, "J", "L", 16)
 	f.SetColWidth(sheetName, "M", "N", 14)
 
-	filename := "Cashflow_Versi1_TopUp_Terpisah.xlsx"
-	if formatMode == "merged" || formatMode == "rolling" {
-		filename = "Cashflow_Versi2_TopUp_Plus_Saldo_Asli.xlsx"
-	}
+	filename := "Laporan_Cashflow_Shipment_Control.xlsx"
 
 	w.Header().Set("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, filename))

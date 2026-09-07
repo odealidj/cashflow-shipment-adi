@@ -34,9 +34,6 @@ export function CashflowReportModal({
   defaultDateFrom,
   defaultDateTo
 }: CashflowReportModalProps) {
-  // Mode Tampilan: "separated" (Versi 1: Kolom Top-Up Terpisah) | "rolling" (Versi 2: Kolom Top-Up + Saldo Sebelumnya)
-  const [reportVersion, setReportVersion] = useState<"separated" | "rolling">("separated");
-
   // State Periode
   const currentMonth = useMemo(() => getCurrentMonthRange(), []);
   const [dateFrom, setDateFrom] = useState(defaultDateFrom ?? currentMonth.date_from);
@@ -145,70 +142,7 @@ export function CashflowReportModal({
     };
   }, [isOpen, dateFrom, dateTo]);
 
-  // Transformasi Data Khusus Tab 2 (Versi Dokumen Asli Kantor - Top-Up + Saldo Sebelumnya):
-  // Persis baris 7 & 8 di file CASHFLOW SHIPMENT CONTROL.xlsx:
-  // Row 7: Kredit = TopUp (100jt), Debit = 28.15jt, Saldo = 71.85jt
-  // Row 8: Kredit = Saldo Sebelumnya (71.85jt) + TopUp baru jika ada, Debit = 7.5jt, Saldo = 64.35jt
-  const rollingMergedEntries = useMemo(() => {
-    const result: any[] = [];
-    let previousSaldo: number | null = null;
-    let pendingTopUp = 0;
 
-    for (const entry of entries) {
-      if (entry.entry_type === "TOP_UP") {
-        pendingTopUp += (entry.kredit || 0);
-        if (previousSaldo === null) {
-          previousSaldo = (entry.saldo || 0) - (entry.kredit || 0);
-        }
-        continue;
-      }
-
-      // Entri SHIPMENT
-      let kreditCell: number;
-      if (previousSaldo === null) {
-        kreditCell = (entry.saldo || 0) + (entry.debit || 0);
-      } else {
-        kreditCell = previousSaldo + pendingTopUp;
-      }
-      pendingTopUp = 0;
-      const saldoCell = kreditCell - (entry.debit || 0);
-      previousSaldo = saldoCell;
-
-      result.push({
-        ...entry,
-        kredit: kreditCell,
-        saldo: saldoCell,
-        hasMergedTopUp: kreditCell > 0,
-      });
-    }
-
-    // Jika ada sisa Top-Up di akhir tanpa shipment lanjutan
-    if (pendingTopUp > 0) {
-      const base = previousSaldo !== null ? previousSaldo : 0;
-      const kreditCell = base + pendingTopUp;
-      const lastDate = entries.length > 0 ? entries[entries.length - 1].date_of_entry : new Date().toISOString();
-      result.push({
-        id: "merged-tail-topup",
-        entry_type: "TOP_UP",
-        kredit: kreditCell,
-        debit: 0,
-        saldo: kreditCell,
-        date_of_entry: lastDate,
-        act_information: "Top-Up Modal Kas",
-        act_explaination: "Dana modal tersedia",
-        vendor_name_raw: "-",
-        top_days: 0,
-        due_date: null,
-        grand_cost: 0,
-        grand_selling: 0,
-        profit: 0,
-        margin_pct: 0,
-        remarks: "PAID"
-      });
-    }
-
-    return result;
-  }, [entries]);
 
   if (!isOpen) return null;
 
@@ -278,23 +212,18 @@ export function CashflowReportModal({
     window.print();
   };
 
-  const handleDownloadExcel = async (formatOverride?: "separated" | "rolling") => {
-    const activeFormat = formatOverride || reportVersion;
+  const handleDownloadExcel = async () => {
     try {
       const query = new URLSearchParams();
       if (dateFrom) query.append("date_from", dateFrom);
       if (dateTo) query.append("date_to", dateTo);
-      query.append("format", activeFormat);
 
       const res = await fetchWithAuth(`http://localhost:8080/api/v1/cashflow/export?${query.toString()}`);
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      const formatLabel = activeFormat === "rolling" 
-        ? "Versi2_TopUp_Plus_Saldo_Asli" 
-        : "Versi1_TopUp_Terpisah";
-      a.download = `Laporan_Cashflow_${formatLabel}_${dateFrom || "awal"}_sd_${dateTo || "akhir"}.xlsx`;
+      a.download = `Laporan_Cashflow_${dateFrom || "awal"}_sd_${dateTo || "akhir"}.xlsx`;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -444,50 +373,22 @@ export function CashflowReportModal({
             </div>
           </div>
 
-          {/* SISI KANAN: FORMAT SWITCHER & TOMBOL AKSI */}
+          {/* SISI KANAN: TOMBOL AKSI */}
           <div className="flex flex-wrap items-center gap-2 ml-auto">
-            {/* Switcher 2 Versi Tampilan Excel */}
-            <div className="flex items-center bg-slate-200/80 p-0.5 rounded-xl border border-slate-300 shadow-inner">
-              <button
-                onClick={() => setReportVersion("separated")}
-                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                  reportVersion === "separated"
-                    ? "bg-white text-slate-900 shadow-xs"
-                    : "text-slate-600 hover:text-slate-900"
-                }`}
-                title="Format Versi 1: Baris Top-Up Terpisah (Standar Akuntansi)"
-              >
-                <FileSpreadsheet className="w-3.5 h-3.5 text-sky-600" />
-                <span>1. Top-Up Terpisah</span>
-              </button>
-              <button
-                onClick={() => setReportVersion("rolling")}
-                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                  reportVersion === "rolling"
-                    ? "bg-white text-slate-900 shadow-xs"
-                    : "text-slate-600 hover:text-slate-900"
-                }`}
-                title="Format Versi 2: Top-Up + Saldo Berjalan (Sesuai File Excel Asli Kantor)"
-              >
-                <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
-                <span>2. Top-Up + Saldo</span>
-              </button>
-            </div>
-
             {/* Tombol Unduh Excel */}
             <button
-              onClick={() => handleDownloadExcel(reportVersion)}
-              className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs active:scale-95"
-              title="Unduh format Excel sesuai versi yang aktif"
+              onClick={handleDownloadExcel}
+              className="px-3.5 py-1.5 rounded-xl bg-teal-700 hover:bg-teal-600 text-white font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs active:scale-95 text-xs"
+              title="Unduh berkas laporan dalam format Excel (.xlsx)"
             >
-              <Download className="w-3.5 h-3.5" />
+              <FileSpreadsheet className="w-4 h-4" />
               <span>Unduh Excel</span>
             </button>
 
             {/* Tombol Cetak PDF */}
             <button
               onClick={handlePrint}
-              className="px-3.5 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs active:scale-95"
+              className="px-3.5 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs active:scale-95 text-xs"
               title="Cetak Dokumen atau Simpan ke PDF (A4 Landscape)"
             >
               <Printer className="w-4 h-4" />
@@ -556,9 +457,7 @@ export function CashflowReportModal({
               {/* 2. JUDUL DOKUMEN & PERIODE (Sesuai Baris 4 & 5 Excel) */}
               <div className="text-center mb-4 pb-2.5 border-b border-slate-700">
                 <h2 className="text-sm md:text-base font-black text-slate-900 tracking-wider uppercase font-sans">
-                  {reportVersion === "rolling"
-                    ? "CASHFLOW SHIPMENT CONTROL (VERSI 2: TOP-UP + SALDO SEBELUMNYA)"
-                    : "CASHFLOW SHIPMENT CONTROL (VERSI 1: TOP-UP TERPISAH)"}
+                  CASHFLOW SHIPMENT CONTROL
                 </h2>
                 <div className="flex items-center justify-center gap-3 mt-1 text-xs font-bold text-slate-700 font-sans">
                   <span>
@@ -577,7 +476,7 @@ export function CashflowReportModal({
                   <thead>
                     <tr className="bg-[#E2EFDA] text-[#276A3C] font-black uppercase text-center border-b border-slate-400 print:bg-[#E2EFDA] print:text-[#276A3C]">
                       <th className="border border-slate-400 px-1.5 py-1.5 text-center whitespace-nowrap">
-                        {reportVersion === "rolling" ? "TOPUP+SALDO" : "KREDIT"}
+                        KREDIT
                       </th>
                       <th className="border border-slate-400 px-1.5 py-1.5 text-center whitespace-nowrap">DEBIT</th>
                       <th className="border border-slate-400 px-1.5 py-1.5 text-center whitespace-nowrap bg-[#C6E0B4] text-[#1E4620]">SALDO</th>
@@ -595,7 +494,7 @@ export function CashflowReportModal({
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-300 font-mono text-slate-800">
-                    {(reportVersion === "rolling" ? rollingMergedEntries : entries).map((entry, idx) => (
+                    {entries.map((entry, idx) => (
                       <tr key={entry.id || idx} className="hover:bg-slate-50 transition-colors">
                         {/* Kredit */}
                         <td className="border border-slate-300 px-1.5 py-1 text-right font-bold text-emerald-800 whitespace-nowrap">
