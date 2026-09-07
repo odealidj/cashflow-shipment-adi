@@ -11,6 +11,7 @@ import (
 	"github.com/cashflow-shipment-app/backend/internal/core/domain"
 	"github.com/cashflow-shipment-app/backend/internal/core/ports"
 	"github.com/cashflow-shipment-app/backend/internal/infrastructure/telemetry"
+	"github.com/cashflow-shipment-app/backend/pkg/dateutil"
 	"github.com/google/uuid"
 )
 
@@ -383,7 +384,7 @@ func (s *InvoiceService) RescheduleDueDate(ctx context.Context, id int, input Re
 			target := "finance"
 			title := fmt.Sprintf("📅 Jatuh Tempo Invoice Diundur: %s", inv.InvoiceNo)
 			msg := fmt.Sprintf("Jatuh tempo invoice %s (%s) diperpanjang ke %s (%+d hari). Alasan: %s",
-				inv.InvoiceNo, inv.ClientName, newDueDate.Format("02 Jan 2006"), daysAdded, input.Reason)
+				inv.InvoiceNo, inv.ClientName, dateutil.FormatDateIndo(newDueDate), daysAdded, input.Reason)
 			actionURL := fmt.Sprintf("/dashboard/invoices?search=%s", inv.InvoiceNo)
 			_, _ = s.notifSvc.Create(bgCtx, CreateNotificationInput{
 				TargetRole: &target,

@@ -19,6 +19,7 @@ import {
   formatActivePeriod 
 } from "./FilterBar";
 import { fetchWithAuth } from "@/lib/apiClient";
+import { formatDate } from "@/lib/dateUtils";
 
 interface CashflowReportModalProps {
   isOpen: boolean;
@@ -315,15 +316,6 @@ export function CashflowReportModal({
     return new Intl.NumberFormat("id-ID").format(amount);
   };
 
-  const formatDate = (dateStr: string) => {
-    if (!dateStr) return "-";
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return "-";
-    const day = String(d.getDate()).padStart(2, "0");
-    const month = String(d.getMonth() + 1).padStart(2, "0");
-    const year = d.getFullYear();
-    return `${day}/${month}/${year}`;
-  };
 
   // Kalkulasi agregat langsung dari daftar entri
   const totalKredit = entries.reduce((acc, curr) => acc + (curr.kredit || 0), 0);
@@ -574,7 +566,7 @@ export function CashflowReportModal({
                   </span>
                   <span className="text-slate-300">•</span>
                   <span className="text-[11px] text-slate-500 font-normal">
-                    Tanggal Cetak: {new Date().toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" })}
+                    Tanggal Cetak: {formatDate(new Date())}
                   </span>
                 </div>
               </div>
@@ -589,7 +581,7 @@ export function CashflowReportModal({
                       </th>
                       <th className="border border-slate-400 px-1.5 py-1.5 text-center whitespace-nowrap">DEBIT</th>
                       <th className="border border-slate-400 px-1.5 py-1.5 text-center whitespace-nowrap bg-[#C6E0B4] text-[#1E4620]">SALDO</th>
-                      <th className="border border-slate-400 px-1.5 py-1.5 text-center whitespace-nowrap">DATE OF DEBIT</th>
+                      <th className="border border-slate-400 px-1.5 py-1.5 text-center whitespace-nowrap">DATE OF ENTRY</th>
                       <th className="border border-slate-400 px-2 py-1.5 text-center min-w-[140px] print:min-w-0">ACT INFORMATION</th>
                       <th className="border border-slate-400 px-2 py-1.5 text-center min-w-[130px] print:min-w-0">ACT EXPLAINATION</th>
                       <th className="border border-slate-400 px-2 py-1.5 text-center min-w-[110px] print:min-w-0">VENDOR</th>
@@ -617,7 +609,7 @@ export function CashflowReportModal({
                         <td className="border border-slate-300 px-1.5 py-1 text-right font-black bg-slate-50/50 print:bg-transparent text-slate-900 whitespace-nowrap">
                           {formatNumber(entry.saldo)}
                         </td>
-                        {/* Date of Debit */}
+                        {/* Date of Entry */}
                         <td className="border border-slate-300 px-1.5 py-1 text-center font-sans whitespace-nowrap">
                           {formatDate(entry.date_of_entry)}
                         </td>

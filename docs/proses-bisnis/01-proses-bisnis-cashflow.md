@@ -123,7 +123,7 @@ Format dokumen Excel `CASHFLOW SHIPMENT CONTROL.xlsx` memiliki struktur khusus d
 
 | Col A | Col B | Col C | Col D | Col E | Col F | Col G | Col H | Col I | Col J | Col K | Col L | Col M | Col N |
 |-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|
-| KREDIT | DEBIT | SALDO | DATE OF DEBIT | ACT INFORMATION | ACT EXPLAINATION | VENDOR | T O P | DUE DATE | GRAND COST | GRAND SELLING | PROFIT | MARGIN IN % | REMARKS |
+| KREDIT | DEBIT | SALDO | DATE OF ENTRY | ACT INFORMATION | ACT EXPLAINATION | VENDOR | T O P | DUE DATE | GRAND COST | GRAND SELLING | PROFIT | MARGIN IN % | REMARKS |
 
 > Data dimulai dari **baris ke-7** (baris ke-1 s/d 5 adalah header/judul dokumen).
 

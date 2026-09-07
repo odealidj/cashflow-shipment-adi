@@ -46,7 +46,7 @@ const MONTH_NAMES = [
 
 const MONTH_SHORT = [
   "Jan", "Feb", "Mar", "Apr", "Mei", "Jun", 
-  "Jul", "Ags", "Sep", "Okt", "Nov", "Des"
+  "Jul", "Agu", "Sep", "Okt", "Nov", "Des"
 ];
 
 export function BusinessGrowthChart({

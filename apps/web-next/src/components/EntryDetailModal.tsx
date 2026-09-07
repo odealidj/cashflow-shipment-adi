@@ -1,6 +1,7 @@
 "use client";
 
 import { X, Edit, ArrowUpRight, ArrowDownRight, Clock, CheckCircle2, AlertCircle } from "lucide-react";
+import { formatDate } from "@/lib/dateUtils";
 
 interface EntryDetailModalProps {
   isOpen: boolean;
@@ -15,15 +16,6 @@ export function EntryDetailModal({ isOpen, entry, onClose, onEdit, onStatusChang
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(amount || 0);
-  };
-
-  const formatDate = (dateString: string) => {
-    if (!dateString) return "-";
-    return new Date(dateString).toLocaleDateString("id-ID", {
-      day: "2-digit",
-      month: "long",
-      year: "numeric"
-    });
   };
 
   const isShipment = entry.entry_type === "SHIPMENT";

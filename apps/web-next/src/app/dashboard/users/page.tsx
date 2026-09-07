@@ -24,6 +24,7 @@ import {
   ArrowDown
 } from "lucide-react";
 import { API_BASE_URL, fetchWithAuth } from "@/lib/apiClient";
+import { formatDateTime } from "@/lib/dateUtils";
 import { useAuth } from "@/hooks/useAuth";
 import { TablePagination } from "@/components/shared/TablePagination";
 import { tableTheadClass } from "@/components/shared/TableCard";
@@ -149,22 +150,6 @@ export default function UsersManagementPage() {
       status: u.status,
     });
     setIsDeleteModalOpen(true);
-  };
-
-  const formatDateTime = (dateStr?: string) => {
-    if (!dateStr) return "Belum pernah";
-    try {
-      const d = new Date(dateStr);
-      return new Intl.DateTimeFormat("id-ID", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      }).format(d);
-    } catch (_) {
-      return dateStr;
-    }
   };
 
   const getRoleBadge = (role: string) => {
@@ -549,7 +534,7 @@ export default function UsersManagementPage() {
 
                       {/* Terakhir Login */}
                       <td className="py-3 px-4 text-slate-600">
-                        {formatDateTime(u.last_login_at)}
+                        {u.last_login_at ? formatDateTime(u.last_login_at) : "Belum pernah"}
                       </td>
 
                       {/* Aksi */}

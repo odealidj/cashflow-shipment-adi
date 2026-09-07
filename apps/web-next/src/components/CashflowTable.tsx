@@ -33,6 +33,7 @@ import { DeleteConfirmModal } from "./DeleteConfirmModal";
 import { CashflowReportModal } from "./CashflowReportModal";
 import { FilterBar, FilterState, getCurrentMonthRange, formatActivePeriod } from "./FilterBar";
 import { fetchWithAuth } from "@/lib/apiClient";
+import { formatDate } from "@/lib/dateUtils";
 import { TableCard, tableTheadClass, ActionButton } from "@/components/shared/TableCard";
 import { TablePagination } from "@/components/shared/TablePagination";
 import { useAuth } from "@/hooks/useAuth";
@@ -223,15 +224,6 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
     }).format(amount || 0);
   };
 
-  const formatDate = (dateString: string) => {
-    if (!dateString) return "-";
-    const d = new Date(dateString);
-    if (isNaN(d.getTime())) return "-";
-    const day = String(d.getDate()).padStart(2, "0");
-    const month = String(d.getMonth() + 1).padStart(2, "0");
-    const year = d.getFullYear();
-    return `${day}/${month}/${year}`;
-  };
 
   const renderRemarksBadge = (entry: any) => {
     const status = entry.remarks;

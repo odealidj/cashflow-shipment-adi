@@ -17,6 +17,7 @@ import {
   CreditCard
 } from "lucide-react";
 import { fetchWithAuth } from "@/lib/apiClient";
+import { formatDate, formatDateTime } from "@/lib/dateUtils";
 
 interface InvoiceHistoryModalProps {
   isOpen: boolean;
@@ -62,27 +63,6 @@ export function InvoiceHistoryModal({ isOpen, invoice, onClose }: InvoiceHistory
     }).format(val || 0);
   };
 
-  const formatDate = (dateStr: string) => {
-    if (!dateStr) return "-";
-    const d = new Date(dateStr);
-    return d.toLocaleDateString("id-ID", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric"
-    });
-  };
-
-  const formatDateTime = (dateStr: string) => {
-    if (!dateStr) return "-";
-    const d = new Date(dateStr);
-    return d.toLocaleDateString("id-ID", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit"
-    });
-  };
 
   const currentInvoice = historyData?.invoice || invoice;
   const dueHistories = historyData?.reschedule_logs || historyData?.due_date_histories || [];

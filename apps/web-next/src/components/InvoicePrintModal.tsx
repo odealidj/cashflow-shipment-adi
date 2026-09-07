@@ -3,6 +3,7 @@
 import React from "react";
 import { X, Printer, Building, FileText, CheckCircle2 } from "lucide-react";
 import { terbilangLengkap } from "@/hooks/useTerbilang";
+import { formatDate } from "@/lib/dateUtils";
 
 interface InvoicePrintModalProps {
   isOpen: boolean;
@@ -21,15 +22,7 @@ export function InvoicePrintModal({ isOpen, onClose, invoice }: InvoicePrintModa
     }).format(val || 0);
   };
 
-  const formatDateIndo = (dateStr: string) => {
-    if (!dateStr) return "-";
-    const d = new Date(dateStr);
-    return d.toLocaleDateString("id-ID", {
-      day: "2-digit",
-      month: "long",
-      year: "numeric"
-    });
-  };
+  const formatDateIndo = (dateStr: string) => formatDate(dateStr);
 
   const handlePrint = () => {
     window.print();

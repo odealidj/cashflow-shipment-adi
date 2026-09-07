@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { useNotifications } from "@/hooks/useNotifications";
 import { NotificationItem, NotificationSeverity } from "@/types/notification";
+import { formatDate } from "@/lib/dateUtils";
 
 export function formatRelativeTime(dateString: string): string {
   try {
@@ -32,7 +33,7 @@ export function formatRelativeTime(dateString: string): string {
     const diffDays = Math.floor(diffHours / 24);
     if (diffDays === 1) return "Kemarin";
     if (diffDays < 7) return `${diffDays} hari lalu`;
-    return date.toLocaleDateString("id-ID", { day: "numeric", month: "short" });
+    return formatDate(dateString);
   } catch {
     return dateString;
   }

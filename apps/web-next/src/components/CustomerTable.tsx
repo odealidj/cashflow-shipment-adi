@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { CustomerModal, Customer } from "@/components/CustomerModal";
 import { fetchWithAuth } from "@/lib/apiClient";
+import { formatDate } from "@/lib/dateUtils";
 import { tableTheadClass, ActionButton } from "@/components/shared/TableCard";
 import { TablePagination } from "@/components/shared/TablePagination";
 import { KpiCardGrid } from "@/components/shared/KpiCardGrid";
@@ -78,12 +79,6 @@ export function CustomerTable() {
     fetchCustomers();
   }, [page, pageSize, searchTerm, sortBy, sortDir]);
 
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return "-";
-    return new Date(dateString).toLocaleDateString("id-ID", {
-      day: "2-digit", month: "short", year: "numeric"
-    });
-  };
 
   const handleOpenCreate = () => {
     setSelectedCustomer(null);

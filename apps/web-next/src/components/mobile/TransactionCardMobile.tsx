@@ -4,6 +4,7 @@ import React from 'react';
 import { Calendar, Clock } from 'lucide-react';
 import { formatRupiah } from '@/hooks/useAutoCalculate';
 import { CashflowEntry } from '@/hooks/useCashflowMobile';
+import { formatDate } from '@/lib/dateUtils';
 
 interface TransactionCardMobileProps {
   entry: CashflowEntry;
@@ -25,17 +26,6 @@ export const TransactionCardMobile: React.FC<TransactionCardMobileProps> = ({ en
       overdueDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     }
   }
-
-  // Format date display
-  const formatDate = (dateStr: string) => {
-    if (!dateStr) return '-';
-    try {
-      const d = new Date(dateStr);
-      return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
-    } catch {
-      return dateStr;
-    }
-  };
 
   return (
     <div className="bg-white rounded-2xl p-3.5 shadow-sm border border-slate-100 border-l-4 border-l-rose-500 relative transition-all">

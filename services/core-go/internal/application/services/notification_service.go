@@ -11,6 +11,7 @@ import (
 
 	"github.com/cashflow-shipment-app/backend/internal/core/domain"
 	"github.com/cashflow-shipment-app/backend/internal/core/ports"
+	"github.com/cashflow-shipment-app/backend/pkg/dateutil"
 	"github.com/google/uuid"
 )
 
@@ -249,7 +250,7 @@ func (s *NotificationService) CheckInvoiceDueDates(ctx context.Context, invoiceR
 		if daysDiff == 3 {
 			title := fmt.Sprintf("⏳ Invoice Jatuh Tempo dalam 3 Hari: %s", inv.InvoiceNo)
 			msg := fmt.Sprintf("Tagihan Invoice %s kepada '%s' senilai Rp %s akan jatuh tempo pada %s. Siapkan berkas tanda terima & penagihan.",
-				inv.InvoiceNo, inv.ClientName, FormatRupiah(inv.Amount), inv.DueDate.Format("02/01/2006"))
+				inv.InvoiceNo, inv.ClientName, FormatRupiah(inv.Amount), dateutil.FormatDateIndo(inv.DueDate))
 
 			_, err := s.Create(ctx, CreateNotificationInput{
 				TargetRole: &targetFinance,
@@ -300,7 +301,7 @@ func (s *NotificationService) CheckInvoiceDueDates(ctx context.Context, invoiceR
 			overdueDays := -daysDiff
 			title := fmt.Sprintf("🚨 Tagihan Invoice OVERDUE (%d Hari): %s", overdueDays, inv.InvoiceNo)
 			msg := fmt.Sprintf("Invoice %s dari '%s' senilai Rp %s telah MELEWATI batas jatuh tempo selama %d hari (sejak %s). Tindak lanjuti surat peringatan/penangguhan trip.",
-				inv.InvoiceNo, inv.ClientName, FormatRupiah(inv.Amount), overdueDays, inv.DueDate.Format("02/01/2006"))
+				inv.InvoiceNo, inv.ClientName, FormatRupiah(inv.Amount), overdueDays, dateutil.FormatDateIndo(inv.DueDate))
 
 			// Kirim ke Finance
 			_, err := s.Create(ctx, CreateNotificationInput{

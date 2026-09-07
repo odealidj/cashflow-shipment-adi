@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { AlertTriangle, Trash2, X, ShieldAlert, FileText, CheckCircle2, Clock } from "lucide-react";
+import { formatDate } from "@/lib/dateUtils";
 
 export interface InvoiceItem {
   id: number;
@@ -48,14 +49,6 @@ export function DeleteInvoiceModal({
     }).format(val || 0);
   };
 
-  const formatDate = (dateStr?: string) => {
-    if (!dateStr) return "-";
-    return new Date(dateStr).toLocaleDateString("id-ID", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric"
-    });
-  };
 
   const handleExecuteDelete = async () => {
     if (!canDelete) return;

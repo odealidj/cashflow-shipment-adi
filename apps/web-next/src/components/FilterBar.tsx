@@ -13,6 +13,7 @@ import {
   CheckCircle2,
   AlertCircle
 } from "lucide-react";
+import { formatDate } from "@/lib/dateUtils";
 
 export interface FilterState {
   date_from: string;
@@ -66,15 +67,7 @@ export function getCurrentMonthRange() {
 export function formatActivePeriod(dateFrom: string, dateTo: string): string {
   if (!dateFrom && !dateTo) return "Semua Waktu";
 
-  const formatDateIndo = (str: string) => {
-    if (!str) return "";
-    const parts = str.split("-");
-    if (parts.length !== 3) return str;
-    const d = parseInt(parts[2], 10);
-    const m = parseInt(parts[1], 10) - 1;
-    const y = parts[0];
-    return `${d} ${MONTH_NAMES[m]?.slice(0, 3)} ${y}`;
-  };
+  const formatDateIndo = (str: string) => formatDate(str);
 
   if (dateFrom && dateTo) {
     const fromParts = dateFrom.split("-");

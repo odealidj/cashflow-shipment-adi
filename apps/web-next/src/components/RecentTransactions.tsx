@@ -13,6 +13,7 @@ import {
   Receipt
 } from "lucide-react";
 import { EntryDetailModal } from "./EntryDetailModal";
+import { formatDate } from "@/lib/dateUtils";
 
 interface RecentTransactionsProps {
   entries: any[];
@@ -32,14 +33,6 @@ export function RecentTransactions({ entries, loading = false, onRefresh }: Rece
     }).format(amount || 0);
   };
 
-  const formatDate = (dateString: string) => {
-    if (!dateString) return "-";
-    return new Date(dateString).toLocaleDateString("id-ID", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric"
-    });
-  };
 
   const renderStatusBadge = (entry: any) => {
     const status = entry.remarks;

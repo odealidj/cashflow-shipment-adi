@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { X, CheckCircle2, DollarSign, Calendar, FileText, Link, ShieldCheck, Loader2 } from "lucide-react";
 import { fetchWithAuth } from "@/lib/apiClient";
+import { formatDate } from "@/lib/dateUtils";
 
 interface SettleInvoiceModalProps {
   isOpen: boolean;
@@ -40,15 +41,6 @@ export function SettleInvoiceModal({ isOpen, invoice, onClose, onSuccess }: Sett
     }).format(val || 0);
   };
 
-  const formatDate = (dateStr: string) => {
-    if (!dateStr) return "-";
-    const d = new Date(dateStr);
-    return d.toLocaleDateString("id-ID", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric"
-    });
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

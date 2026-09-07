@@ -3,6 +3,7 @@
 import React, { useState, useMemo } from "react";
 import { X, Calendar, Clock, AlertTriangle, CheckCircle2, History, Loader2, ArrowRight } from "lucide-react";
 import { fetchWithAuth } from "@/lib/apiClient";
+import { formatDate } from "@/lib/dateUtils";
 
 interface RescheduleInvoiceModalProps {
   isOpen: boolean;
@@ -43,15 +44,6 @@ export function RescheduleInvoiceModal({ isOpen, invoice, onClose, onSuccess }: 
   const todayStr = new Date().toISOString().split("T")[0];
   const willResetOverdue = invoice?.status === "OVERDUE" && newDueDate >= todayStr;
 
-  const formatDate = (dateStr: string) => {
-    if (!dateStr) return "-";
-    const d = new Date(dateStr);
-    return d.toLocaleDateString("id-ID", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric"
-    });
-  };
 
   if (!isOpen || !invoice) return null;
 

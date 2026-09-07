@@ -120,7 +120,7 @@ Body: { "remarks": "PAID" }
 | KREDIT | Angka | 100,000,000 | Bisa berisi carry-over + modal baru |
 | DEBIT | Angka | 20,104,875 | Biaya riil yang keluar dari kas |
 | SALDO | Angka/Formula | =A7-B7 | Dihitung di Excel, diabaikan saat import |
-| DATE OF DEBIT | Tanggal | 04/02/2026 | Format DD/MM/YYYY atau otomatis Excel |
+| DATE OF ENTRY | Tanggal | 04/02/2026 | Format DD/MM/YYYY atau otomatis Excel |
 | ACT INFORMATION | Teks | Tronton Tracking Cost | Jenis/nama layanan |
 | ACT EXPLAINATION | Teks | DPK-MDN, DELIVERY | Rute atau keterangan tambahan |
 | VENDOR | Teks | CV AIRA | Nama vendor/transporter |

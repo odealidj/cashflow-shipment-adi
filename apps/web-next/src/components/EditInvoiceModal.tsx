@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { X, Calendar, Clock, FileText, CheckCircle2, ShieldCheck, Edit3 } from "lucide-react";
 import { formatThousand, cleanThousand, terbilangRingkas } from "@/hooks/useTerbilang";
 import { fetchWithAuth } from "@/lib/apiClient";
+import { formatDate } from "@/lib/dateUtils";
 import { CustomerSelect } from "@/components/CustomerSelect";
 
 interface InvoiceData {
@@ -72,7 +73,7 @@ export function EditInvoiceModal({ isOpen, invoice, onClose, onSuccess }: EditIn
     if (!shipmentDate) return "-";
     const d = new Date(shipmentDate);
     d.setDate(d.getDate() + Number(topDays));
-    return d.toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" });
+    return formatDate(d);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

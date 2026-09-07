@@ -6,6 +6,7 @@ import { formatRupiah, calculateProfit, calculateMarginPct, calculateDueDate } f
 import { formatThousand, cleanThousand, terbilangRingkas } from "@/hooks/useTerbilang";
 import { VendorSelect } from "@/components/VendorSelect";
 import { ActivityPresetSelect } from "@/components/shared/ActivityPresetSelect";
+import { formatDate } from "@/lib/dateUtils";
 
 interface ShipmentModalProps {
   isOpen: boolean;
@@ -381,7 +382,7 @@ export function ShipmentModal({ isOpen, onClose, onSuccess }: ShipmentModalProps
               <div className="bg-white rounded-xl p-2.5 border border-slate-200/70 shadow-2xs">
                 <div className="text-[10px] text-slate-500 font-bold uppercase tracking-tight">Jatuh Tempo</div>
                 <div className="text-xs font-black text-amber-700 mt-0.5 truncate">
-                  {effectiveDueDate ? new Date(effectiveDueDate).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : "-"}
+                  {formatDate(effectiveDueDate)}
                 </div>
                 <div className="text-[9px] text-slate-400 mt-0.5 leading-none">{formData.top_days || 0} hari kerja</div>
               </div>

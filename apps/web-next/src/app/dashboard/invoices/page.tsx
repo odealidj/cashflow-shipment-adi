@@ -35,6 +35,7 @@ import { SettleInvoiceModal } from "@/components/SettleInvoiceModal";
 import { RescheduleInvoiceModal } from "@/components/RescheduleInvoiceModal";
 import { InvoiceHistoryModal } from "@/components/InvoiceHistoryModal";
 import { fetchWithAuth } from "@/lib/apiClient";
+import { formatDate } from "@/lib/dateUtils";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { KpiCardGrid } from "@/components/shared/KpiCardGrid";
 import { KpiCard } from "@/components/shared/KpiCard";
@@ -307,15 +308,6 @@ export default function InvoicesPage() {
     }).format(val || 0);
   };
 
-  const formatDate = (dateStr: string) => {
-    if (!dateStr) return "-";
-    const d = new Date(dateStr);
-    return d.toLocaleDateString("id-ID", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric"
-    });
-  };
 
   const handleResetFilter = () => {
     const cur = getCurrentMonthRange();
@@ -791,20 +783,21 @@ export default function InvoicesPage() {
                   </div>
                 </th>
                 <th className="py-3.5 px-3 text-center">Status</th>
+                <th className="py-3.5 px-3 text-center">Tgl. Pelunasan</th>
                 <th className="py-3.5 px-3 text-center w-44">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
               {loading ? (
                 <tr>
-                  <td colSpan={9} className="py-12 text-center text-slate-400 font-semibold">
+                  <td colSpan={10} className="py-12 text-center text-slate-400 font-semibold">
                     <div className="inline-block animate-spin rounded-full h-7 w-7 border-b-2 border-sky-700"></div>
                     <p className="mt-2 text-xs font-semibold">Memuat data invoice...</p>
                   </td>
                 </tr>
               ) : invoices.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="py-12 text-center text-slate-400 font-semibold">
+                  <td colSpan={10} className="py-12 text-center text-slate-400 font-semibold">
                     Tidak ada data invoice yang sesuai kriteria filter.
                   </td>
                 </tr>
@@ -894,6 +887,15 @@ export default function InvoicesPage() {
                             </>
                           )}
                         </span>
+                      </td>
+                      <td className="py-3 px-3 text-center font-mono">
+                        {inv.paid_at ? (
+                          <span className="inline-block px-2 py-0.5 rounded-md font-bold text-xs text-emerald-800 bg-emerald-50 border border-emerald-200">
+                            {formatDate(inv.paid_at)}
+                          </span>
+                        ) : (
+                          <span className="text-slate-400 font-medium">-</span>
+                        )}
                       </td>
                       <td className="py-3 px-3 text-center">
                         <div className="flex items-center justify-center gap-1.5">

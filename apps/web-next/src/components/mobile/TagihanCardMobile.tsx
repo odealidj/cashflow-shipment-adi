@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { AlertCircle, Check } from 'lucide-react';
 import { formatRupiah } from '@/hooks/useAutoCalculate';
 import { CashflowEntry } from '@/hooks/useCashflowMobile';
+import { formatDate } from '@/lib/dateUtils';
 
 interface TagihanCardMobileProps {
   entry: CashflowEntry;
@@ -30,17 +31,6 @@ export const TagihanCardMobile: React.FC<TagihanCardMobileProps> = ({ entry, onQ
     setIsPaying(true);
     await onQuickPay(entry.id);
     setIsPaying(false);
-  };
-
-  // Format date display
-  const formatDate = (dateStr?: string) => {
-    if (!dateStr) return '-';
-    try {
-      const d = new Date(dateStr);
-      return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
-    } catch {
-      return dateStr;
-    }
   };
 
   return (

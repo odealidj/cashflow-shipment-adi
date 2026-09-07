@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { VendorModal } from "@/components/VendorModal";
 import { fetchWithAuth } from "@/lib/apiClient";
+import { formatDate } from "@/lib/dateUtils";
 import { tableTheadClass, ActionButton } from "@/components/shared/TableCard";
 import { TablePagination } from "@/components/shared/TablePagination";
 import { KpiCardGrid } from "@/components/shared/KpiCardGrid";
@@ -84,12 +85,6 @@ export function VendorTable() {
     fetchVendors();
   }, [page, pageSize, searchTerm, sortBy, sortDir]);
 
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return "-";
-    return new Date(dateString).toLocaleDateString("id-ID", {
-      day: "2-digit", month: "short", year: "numeric"
-    });
-  };
 
   const handleOpenCreate = () => {
     setSelectedVendor(null);

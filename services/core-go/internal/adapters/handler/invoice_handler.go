@@ -12,6 +12,7 @@ import (
 	"github.com/cashflow-shipment-app/backend/internal/core/domain"
 	"github.com/cashflow-shipment-app/backend/internal/core/ports"
 	"github.com/cashflow-shipment-app/backend/internal/middleware"
+	"github.com/cashflow-shipment-app/backend/pkg/dateutil"
 	"github.com/cashflow-shipment-app/backend/pkg/response"
 	"github.com/go-chi/chi/v5"
 	"github.com/xuri/excelize/v2"
@@ -314,18 +315,7 @@ func (h *InvoiceHandler) Delete(w http.ResponseWriter, r *http.Request) {
 }
 
 func formatDateIndo(t time.Time) string {
-	if t.IsZero() {
-		return "-"
-	}
-	months := [...]string{
-		"", "Januari", "Februari", "Maret", "April", "Mei", "Juni",
-		"Juli", "Agustus", "September", "Oktober", "November", "Desember",
-	}
-	m := int(t.Month())
-	if m < 1 || m > 12 {
-		return t.Format("02/01/2006")
-	}
-	return fmt.Sprintf("%02d %s %d", t.Day(), months[m], t.Year())
+	return dateutil.FormatDateIndo(t)
 }
 
 func formatTopTerms(inv domain.Invoice) string {
@@ -345,13 +335,23 @@ func formatPeriodLabel(dateFrom, dateTo *string) string {
 	if (dateFrom == nil || *dateFrom == "") && (dateTo == nil || *dateTo == "") {
 		return "Semua Periode"
 	}
+	formatStr := func(s *string) string {
+		if s == nil || *s == "" {
+			return ""
+		}
+		t, err := time.Parse("2006-01-02", *s)
+		if err != nil {
+			return *s
+		}
+		return formatDateIndo(t)
+	}
 	if dateFrom != nil && *dateFrom != "" && dateTo != nil && *dateTo != "" {
-		return fmt.Sprintf("%s s/d %s", *dateFrom, *dateTo)
+		return fmt.Sprintf("%s s/d %s", formatStr(dateFrom), formatStr(dateTo))
 	}
 	if dateFrom != nil && *dateFrom != "" {
-		return fmt.Sprintf("Mulai %s", *dateFrom)
+		return fmt.Sprintf("Mulai %s", formatStr(dateFrom))
 	}
-	return fmt.Sprintf("Sampai %s", *dateTo)
+	return fmt.Sprintf("Sampai %s", formatStr(dateTo))
 }
 
 func formatStatusLabel(st *domain.InvoiceStatus) string {
@@ -752,32 +752,32 @@ func (h *InvoiceHandler) ExportExcel(w http.ResponseWriter, r *http.Request) {
 	f.SetRowHeight(sheetName, 14, 24)
 
 	// Write Kop Surat
-	f.MergeCell(sheetName, "B1", "G1")
+	f.MergeCell(sheetName, "B1", "H1")
 	f.SetCellValue(sheetName, "B1", "PT ADIJAYANTARA LOGISTIC INDONESIA")
-	f.SetCellStyle(sheetName, "B1", "G1", companyTitleStyle)
+	f.SetCellStyle(sheetName, "B1", "H1", companyTitleStyle)
 
-	f.MergeCell(sheetName, "B2", "G2")
+	f.MergeCell(sheetName, "B2", "H2")
 	f.SetCellValue(sheetName, "B2", "Freight Forwarding & Logistics Services")
-	f.SetCellStyle(sheetName, "B2", "G2", taglineStyle)
+	f.SetCellStyle(sheetName, "B2", "H2", taglineStyle)
 
-	f.MergeCell(sheetName, "B3", "G3")
+	f.MergeCell(sheetName, "B3", "H3")
 	f.SetCellValue(sheetName, "B3", "WISMA SMR JL YOS SUDARSO, Kav. 89 Lantai 9, UNIT 904, Jakarta Utara 14350")
-	f.SetCellStyle(sheetName, "B3", "G3", addressStyle)
+	f.SetCellStyle(sheetName, "B3", "H3", addressStyle)
 
-	f.MergeCell(sheetName, "B4", "G4")
+	f.MergeCell(sheetName, "B4", "H4")
 	f.SetCellValue(sheetName, "B4", "Email: adijantara.logistic@gmail.com")
-	f.SetCellStyle(sheetName, "B4", "G4", addressStyle)
+	f.SetCellStyle(sheetName, "B4", "H4", addressStyle)
 
 	// Row 5: Border double bottom
-	for c := 1; c <= 8; c++ {
+	for c := 1; c <= 9; c++ {
 		cell, _ := excelize.CoordinatesToCellName(c, 5)
 		f.SetCellStyle(sheetName, cell, cell, borderDoubleBottomStyle)
 	}
 
-	// Insert Logo at Top Right (H1)
+	// Insert Logo at Top Right (I1)
 	if logoPath := findLogoPath(); logoPath != "" {
 		enable := true
-		_ = f.AddPicture(sheetName, "H1", logoPath, &excelize.GraphicOptions{
+		_ = f.AddPicture(sheetName, "I1", logoPath, &excelize.GraphicOptions{
 			ScaleX:          0.12,
 			ScaleY:          0.12,
 			OffsetX:         10,
@@ -789,13 +789,13 @@ func (h *InvoiceHandler) ExportExcel(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Document Title & Subtitle (Row 6 & 7)
-	f.MergeCell(sheetName, "A6", "H6")
+	f.MergeCell(sheetName, "A6", "I6")
 	f.SetCellValue(sheetName, "A6", "DAFTAR REKAPITULASI INVOICE & PIUTANG")
-	f.SetCellStyle(sheetName, "A6", "H6", docTitleStyle)
+	f.SetCellStyle(sheetName, "A6", "I6", docTitleStyle)
 
-	f.MergeCell(sheetName, "A7", "H7")
+	f.MergeCell(sheetName, "A7", "I7")
 	f.SetCellValue(sheetName, "A7", "Laporan Pengiriman, Syarat Pembayaran (TOP), dan Jatuh Tempo Tagihan")
-	f.SetCellStyle(sheetName, "A7", "H7", docSubtitleStyle)
+	f.SetCellStyle(sheetName, "A7", "I7", docSubtitleStyle)
 
 	// Metadata Row 8
 	periodText := "Periode: " + formatPeriodLabel(filter.DateFrom, filter.DateTo)
@@ -803,17 +803,17 @@ func (h *InvoiceHandler) ExportExcel(w http.ResponseWriter, r *http.Request) {
 	now := time.Now()
 	printDateText := "Tanggal Cetak: " + formatDateIndo(now)
 
-	f.MergeCell(sheetName, "A8", "B8")
+	f.MergeCell(sheetName, "A8", "C8")
 	f.SetCellValue(sheetName, "A8", periodText)
-	f.SetCellStyle(sheetName, "A8", "B8", metaStyleLeft)
+	f.SetCellStyle(sheetName, "A8", "C8", metaStyleLeft)
 
-	f.MergeCell(sheetName, "C8", "F8")
-	f.SetCellValue(sheetName, "C8", statusText)
-	f.SetCellStyle(sheetName, "C8", "F8", metaStyleCenter)
+	f.MergeCell(sheetName, "D8", "F8")
+	f.SetCellValue(sheetName, "D8", statusText)
+	f.SetCellStyle(sheetName, "D8", "F8", metaStyleCenter)
 
-	f.MergeCell(sheetName, "G8", "H8")
+	f.MergeCell(sheetName, "G8", "I8")
 	f.SetCellValue(sheetName, "G8", printDateText)
-	f.SetCellStyle(sheetName, "G8", "H8", metaStyleRight)
+	f.SetCellStyle(sheetName, "G8", "I8", metaStyleRight)
 
 	// 4 Summary KPI Cards (Rows 10-12)
 	// Card 1: Total Tagihan
@@ -856,17 +856,17 @@ func (h *InvoiceHandler) ExportExcel(w http.ResponseWriter, r *http.Request) {
 	f.SetCellStyle(sheetName, "E12", "F12", kpi3Sub)
 
 	// Card 4: Jatuh Tempo (Overdue)
-	f.MergeCell(sheetName, "G10", "H10")
+	f.MergeCell(sheetName, "G10", "I10")
 	f.SetCellValue(sheetName, "G10", "JATUH TEMPO (OVERDUE)")
-	f.SetCellStyle(sheetName, "G10", "H10", kpi4Header)
+	f.SetCellStyle(sheetName, "G10", "I10", kpi4Header)
 
-	f.MergeCell(sheetName, "G11", "H11")
+	f.MergeCell(sheetName, "G11", "I11")
 	f.SetCellValue(sheetName, "G11", overdueAmount)
-	f.SetCellStyle(sheetName, "G11", "H11", kpi4Value)
+	f.SetCellStyle(sheetName, "G11", "I11", kpi4Value)
 
-	f.MergeCell(sheetName, "G12", "H12")
+	f.MergeCell(sheetName, "G12", "I12")
 	f.SetCellValue(sheetName, "G12", fmt.Sprintf("%d Invoice melewati tempo", overdueCount))
-	f.SetCellStyle(sheetName, "G12", "H12", kpi4Sub)
+	f.SetCellStyle(sheetName, "G12", "I12", kpi4Sub)
 
 	// Row 14: Table Headers
 	f.SetCellValue(sheetName, "A14", "No")
@@ -892,6 +892,9 @@ func (h *InvoiceHandler) ExportExcel(w http.ResponseWriter, r *http.Request) {
 
 	f.SetCellValue(sheetName, "H14", "Status")
 	f.SetCellStyle(sheetName, "H14", "H14", tblHeaderStyle)
+
+	f.SetCellValue(sheetName, "I14", "Tgl. Pelunasan")
+	f.SetCellStyle(sheetName, "I14", "I14", tblHeaderStyle)
 
 	// Data Rows (Row 15 onwards)
 	startRow := 15
@@ -952,6 +955,14 @@ func (h *InvoiceHandler) ExportExcel(w http.ResponseWriter, r *http.Request) {
 			f.SetCellValue(sheetName, fmt.Sprintf("H%d", rNum), "Menunggu Pembayaran")
 			f.SetCellStyle(sheetName, fmt.Sprintf("H%d", rNum), fmt.Sprintf("H%d", rNum), stUnpaidStyle)
 		}
+
+		// I: Tgl. Pelunasan
+		paidAtDisplay := "-"
+		if inv.PaidAt != nil && !inv.PaidAt.IsZero() {
+			paidAtDisplay = formatDateIndo(*inv.PaidAt)
+		}
+		f.SetCellValue(sheetName, fmt.Sprintf("I%d", rNum), paidAtDisplay)
+		f.SetCellStyle(sheetName, fmt.Sprintf("I%d", rNum), fmt.Sprintf("I%d", rNum), cStyle)
 	}
 
 	// Total Row
@@ -972,6 +983,8 @@ func (h *InvoiceHandler) ExportExcel(w http.ResponseWriter, r *http.Request) {
 	f.SetCellValue(sheetName, fmt.Sprintf("H%d", sumRow), fmt.Sprintf("%d Tagihan", len(invoices)))
 	f.SetCellStyle(sheetName, fmt.Sprintf("H%d", sumRow), fmt.Sprintf("H%d", sumRow), totalCountStyle)
 
+	f.SetCellStyle(sheetName, fmt.Sprintf("I%d", sumRow), fmt.Sprintf("I%d", sumRow), totalLabelStyle)
+
 	// Signature Section
 	sigStartRow := sumRow + 3
 	f.SetRowHeight(sheetName, sigStartRow, 18)
@@ -982,53 +995,54 @@ func (h *InvoiceHandler) ExportExcel(w http.ResponseWriter, r *http.Request) {
 	f.SetRowHeight(sheetName, sigStartRow+5, 18)
 
 	// Headers
-	f.MergeCell(sheetName, fmt.Sprintf("B%d", sigStartRow), fmt.Sprintf("C%d", sigStartRow))
-	f.SetCellValue(sheetName, fmt.Sprintf("B%d", sigStartRow), "Dibuat Oleh,")
-	f.SetCellStyle(sheetName, fmt.Sprintf("B%d", sigStartRow), fmt.Sprintf("C%d", sigStartRow), sigHeaderStyle)
+	f.MergeCell(sheetName, fmt.Sprintf("A%d", sigStartRow), fmt.Sprintf("C%d", sigStartRow))
+	f.SetCellValue(sheetName, fmt.Sprintf("A%d", sigStartRow), "Dibuat Oleh,")
+	f.SetCellStyle(sheetName, fmt.Sprintf("A%d", sigStartRow), fmt.Sprintf("C%d", sigStartRow), sigHeaderStyle)
 
-	f.MergeCell(sheetName, fmt.Sprintf("D%d", sigStartRow), fmt.Sprintf("E%d", sigStartRow))
+	f.MergeCell(sheetName, fmt.Sprintf("D%d", sigStartRow), fmt.Sprintf("F%d", sigStartRow))
 	f.SetCellValue(sheetName, fmt.Sprintf("D%d", sigStartRow), "Diperiksa Oleh,")
-	f.SetCellStyle(sheetName, fmt.Sprintf("D%d", sigStartRow), fmt.Sprintf("E%d", sigStartRow), sigHeaderStyle)
+	f.SetCellStyle(sheetName, fmt.Sprintf("D%d", sigStartRow), fmt.Sprintf("F%d", sigStartRow), sigHeaderStyle)
 
-	f.MergeCell(sheetName, fmt.Sprintf("G%d", sigStartRow), fmt.Sprintf("H%d", sigStartRow))
+	f.MergeCell(sheetName, fmt.Sprintf("G%d", sigStartRow), fmt.Sprintf("I%d", sigStartRow))
 	f.SetCellValue(sheetName, fmt.Sprintf("G%d", sigStartRow), "Disetujui Oleh,")
-	f.SetCellStyle(sheetName, fmt.Sprintf("G%d", sigStartRow), fmt.Sprintf("H%d", sigStartRow), sigHeaderStyle)
+	f.SetCellStyle(sheetName, fmt.Sprintf("G%d", sigStartRow), fmt.Sprintf("I%d", sigStartRow), sigHeaderStyle)
 
 	// Underlines
-	f.MergeCell(sheetName, fmt.Sprintf("B%d", sigStartRow+4), fmt.Sprintf("C%d", sigStartRow+4))
-	f.SetCellValue(sheetName, fmt.Sprintf("B%d", sigStartRow+4), "( _______________________ )")
-	f.SetCellStyle(sheetName, fmt.Sprintf("B%d", sigStartRow+4), fmt.Sprintf("C%d", sigStartRow+4), sigLineStyle)
+	f.MergeCell(sheetName, fmt.Sprintf("A%d", sigStartRow+4), fmt.Sprintf("C%d", sigStartRow+4))
+	f.SetCellValue(sheetName, fmt.Sprintf("A%d", sigStartRow+4), "( _______________________ )")
+	f.SetCellStyle(sheetName, fmt.Sprintf("A%d", sigStartRow+4), fmt.Sprintf("C%d", sigStartRow+4), sigLineStyle)
 
-	f.MergeCell(sheetName, fmt.Sprintf("D%d", sigStartRow+4), fmt.Sprintf("E%d", sigStartRow+4))
+	f.MergeCell(sheetName, fmt.Sprintf("D%d", sigStartRow+4), fmt.Sprintf("F%d", sigStartRow+4))
 	f.SetCellValue(sheetName, fmt.Sprintf("D%d", sigStartRow+4), "( _______________________ )")
-	f.SetCellStyle(sheetName, fmt.Sprintf("D%d", sigStartRow+4), fmt.Sprintf("E%d", sigStartRow+4), sigLineStyle)
+	f.SetCellStyle(sheetName, fmt.Sprintf("D%d", sigStartRow+4), fmt.Sprintf("F%d", sigStartRow+4), sigLineStyle)
 
-	f.MergeCell(sheetName, fmt.Sprintf("G%d", sigStartRow+4), fmt.Sprintf("H%d", sigStartRow+4))
+	f.MergeCell(sheetName, fmt.Sprintf("G%d", sigStartRow+4), fmt.Sprintf("I%d", sigStartRow+4))
 	f.SetCellValue(sheetName, fmt.Sprintf("G%d", sigStartRow+4), "( _______________________ )")
-	f.SetCellStyle(sheetName, fmt.Sprintf("G%d", sigStartRow+4), fmt.Sprintf("H%d", sigStartRow+4), sigLineStyle)
+	f.SetCellStyle(sheetName, fmt.Sprintf("G%d", sigStartRow+4), fmt.Sprintf("I%d", sigStartRow+4), sigLineStyle)
 
 	// Roles
-	f.MergeCell(sheetName, fmt.Sprintf("B%d", sigStartRow+5), fmt.Sprintf("C%d", sigStartRow+5))
-	f.SetCellValue(sheetName, fmt.Sprintf("B%d", sigStartRow+5), "Staff Finance & Billing")
-	f.SetCellStyle(sheetName, fmt.Sprintf("B%d", sigStartRow+5), fmt.Sprintf("C%d", sigStartRow+5), sigRoleStyle)
+	f.MergeCell(sheetName, fmt.Sprintf("A%d", sigStartRow+5), fmt.Sprintf("C%d", sigStartRow+5))
+	f.SetCellValue(sheetName, fmt.Sprintf("A%d", sigStartRow+5), "Staff Finance & Billing")
+	f.SetCellStyle(sheetName, fmt.Sprintf("A%d", sigStartRow+5), fmt.Sprintf("C%d", sigStartRow+5), sigRoleStyle)
 
-	f.MergeCell(sheetName, fmt.Sprintf("D%d", sigStartRow+5), fmt.Sprintf("E%d", sigStartRow+5))
+	f.MergeCell(sheetName, fmt.Sprintf("D%d", sigStartRow+5), fmt.Sprintf("F%d", sigStartRow+5))
 	f.SetCellValue(sheetName, fmt.Sprintf("D%d", sigStartRow+5), "Supervisor Keuangan")
-	f.SetCellStyle(sheetName, fmt.Sprintf("D%d", sigStartRow+5), fmt.Sprintf("E%d", sigStartRow+5), sigRoleStyle)
+	f.SetCellStyle(sheetName, fmt.Sprintf("D%d", sigStartRow+5), fmt.Sprintf("F%d", sigStartRow+5), sigRoleStyle)
 
-	f.MergeCell(sheetName, fmt.Sprintf("G%d", sigStartRow+5), fmt.Sprintf("H%d", sigStartRow+5))
+	f.MergeCell(sheetName, fmt.Sprintf("G%d", sigStartRow+5), fmt.Sprintf("I%d", sigStartRow+5))
 	f.SetCellValue(sheetName, fmt.Sprintf("G%d", sigStartRow+5), "Finance Manager")
-	f.SetCellStyle(sheetName, fmt.Sprintf("G%d", sigStartRow+5), fmt.Sprintf("H%d", sigStartRow+5), sigRoleStyle)
+	f.SetCellStyle(sheetName, fmt.Sprintf("G%d", sigStartRow+5), fmt.Sprintf("I%d", sigStartRow+5), sigRoleStyle)
 
 	// Set Column Widths
 	f.SetColWidth(sheetName, "A", "A", 6)
 	f.SetColWidth(sheetName, "B", "B", 20)
-	f.SetColWidth(sheetName, "C", "C", 34)
-	f.SetColWidth(sheetName, "D", "D", 18)
-	f.SetColWidth(sheetName, "E", "E", 18)
-	f.SetColWidth(sheetName, "F", "F", 18)
-	f.SetColWidth(sheetName, "G", "G", 24)
-	f.SetColWidth(sheetName, "H", "H", 22)
+	f.SetColWidth(sheetName, "C", "C", 32)
+	f.SetColWidth(sheetName, "D", "D", 15)
+	f.SetColWidth(sheetName, "E", "E", 16)
+	f.SetColWidth(sheetName, "F", "F", 16)
+	f.SetColWidth(sheetName, "G", "G", 22)
+	f.SetColWidth(sheetName, "H", "H", 20)
+	f.SetColWidth(sheetName, "I", "I", 16)
 
 	filename := "Daftar_Invoice_Monitoring_PT_Adijayantara_Logistic.xlsx"
 	w.Header().Set("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")

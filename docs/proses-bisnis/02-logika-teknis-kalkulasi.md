@@ -106,7 +106,7 @@ UNTUK setiap baris (mulai baris ke-7):
   a. Baca nilai:
      kredit     = Col A (KREDIT)
      debit      = Col B (DEBIT)
-     tanggal    = Col D (DATE OF DEBIT)
+     tanggal    = Col D (DATE OF ENTRY)
      actInfo    = Col E (ACT INFORMATION)
      actExp     = Col F (ACT EXPLAINATION)
      vendor     = Col G (VENDOR)

@@ -15,6 +15,7 @@ import (
 	"github.com/cashflow-shipment-app/backend/internal/core/domain"
 	"github.com/cashflow-shipment-app/backend/internal/core/ports"
 	"github.com/cashflow-shipment-app/backend/internal/middleware"
+	"github.com/cashflow-shipment-app/backend/pkg/dateutil"
 	"github.com/cashflow-shipment-app/backend/pkg/response"
 	"github.com/go-chi/chi/v5"
 	"github.com/xuri/excelize/v2"
@@ -569,11 +570,25 @@ func (h *CashflowHandler) ExportExcel(w http.ResponseWriter, r *http.Request) {
 	// Periode di Baris 5 dengan Garis Pembatas Kop Surat Tebal (Border Bottom)
 	periodText := "PERIODE: SEMUA TRANSAKSI"
 	if filter.DateFrom != nil && *filter.DateFrom != "" && filter.DateTo != nil && *filter.DateTo != "" {
-		periodText = fmt.Sprintf("PERIODE: %s s/d %s", *filter.DateFrom, *filter.DateTo)
+		df, err1 := time.Parse("2006-01-02", *filter.DateFrom)
+		dt, err2 := time.Parse("2006-01-02", *filter.DateTo)
+		if err1 == nil && err2 == nil {
+			periodText = fmt.Sprintf("PERIODE: %s s/d %s", dateutil.FormatDateIndo(df), dateutil.FormatDateIndo(dt))
+		} else {
+			periodText = fmt.Sprintf("PERIODE: %s s/d %s", *filter.DateFrom, *filter.DateTo)
+		}
 	} else if filter.DateFrom != nil && *filter.DateFrom != "" {
-		periodText = fmt.Sprintf("PERIODE MULAI: %s", *filter.DateFrom)
+		if df, err := time.Parse("2006-01-02", *filter.DateFrom); err == nil {
+			periodText = fmt.Sprintf("PERIODE MULAI: %s", dateutil.FormatDateIndo(df))
+		} else {
+			periodText = fmt.Sprintf("PERIODE MULAI: %s", *filter.DateFrom)
+		}
 	} else if filter.DateTo != nil && *filter.DateTo != "" {
-		periodText = fmt.Sprintf("PERIODE SAMPAI: %s", *filter.DateTo)
+		if dt, err := time.Parse("2006-01-02", *filter.DateTo); err == nil {
+			periodText = fmt.Sprintf("PERIODE SAMPAI: %s", dateutil.FormatDateIndo(dt))
+		} else {
+			periodText = fmt.Sprintf("PERIODE SAMPAI: %s", *filter.DateTo)
+		}
 	}
 
 	for col := 1; col <= 14; col++ {
@@ -603,7 +618,7 @@ func (h *CashflowHandler) ExportExcel(w http.ResponseWriter, r *http.Request) {
 	if formatMode == "merged" || formatMode == "rolling" {
 		col1Header = "TOPUP+SALDO"
 	}
-	headers := []string{col1Header, "DEBIT", "SALDO", "DATE OF DEBIT", "ACT INFORMATION", "ACT EXPLAINATION", "VENDOR", "T O P", "DUE DATE", "GRAND COST", "GRAND SELLING", "PROFIT", "MARGIN IN %", "REMARKS"}
+	headers := []string{col1Header, "DEBIT", "SALDO", "DATE OF ENTRY", "ACT INFORMATION", "ACT EXPLAINATION", "VENDOR", "T O P", "DUE DATE", "GRAND COST", "GRAND SELLING", "PROFIT", "MARGIN IN %", "REMARKS"}
 
 	for i, header := range headers {
 		cell, _ := excelize.CoordinatesToCellName(i+1, 6)
@@ -663,7 +678,7 @@ func (h *CashflowHandler) ExportExcel(w http.ResponseWriter, r *http.Request) {
 					Kredit:          entry.Kredit,
 					Debit:           0,
 					Saldo:           saldoCell,
-					DateOfEntry:     entry.DateOfEntry.Format("02/01/2006"),
+					DateOfEntry:     dateutil.FormatDateIndo(entry.DateOfEntry),
 					ActInformation:  entry.ActInformation,
 					ActExplaination: entry.ActExplaination,
 					VendorNameRaw:   entry.VendorNameRaw,
@@ -695,14 +710,14 @@ func (h *CashflowHandler) ExportExcel(w http.ResponseWriter, r *http.Request) {
 			}
 			dueStr := "-"
 			if entry.DueDate != nil {
-				dueStr = entry.DueDate.Format("02/01/2006")
+				dueStr = dateutil.FormatDateIndo(*entry.DueDate)
 			}
 
 			rows = append(rows, exportRow{
 				Kredit:          kreditCell,
 				Debit:           entry.Debit,
 				Saldo:           saldoCell,
-				DateOfEntry:     entry.DateOfEntry.Format("02/01/2006"),
+				DateOfEntry:     dateutil.FormatDateIndo(entry.DateOfEntry),
 				ActInformation:  entry.ActInformation,
 				ActExplaination: entry.ActExplaination,
 				VendorNameRaw:   entry.VendorNameRaw,
@@ -725,9 +740,9 @@ func (h *CashflowHandler) ExportExcel(w http.ResponseWriter, r *http.Request) {
 			kreditCell := base + pendingTopUp
 			var lastDate string
 			if len(entries) > 0 {
-				lastDate = entries[len(entries)-1].DateOfEntry.Format("02/01/2006")
+				lastDate = dateutil.FormatDateIndo(entries[len(entries)-1].DateOfEntry)
 			} else {
-				lastDate = time.Now().Format("02/01/2006")
+				lastDate = dateutil.FormatDateIndo(time.Now())
 			}
 			rows = append(rows, exportRow{
 				Kredit:         kreditCell,
@@ -751,7 +766,7 @@ func (h *CashflowHandler) ExportExcel(w http.ResponseWriter, r *http.Request) {
 			}
 			dueStr := "-"
 			if entry.DueDate != nil {
-				dueStr = entry.DueDate.Format("02/01/2006")
+				dueStr = dateutil.FormatDateIndo(*entry.DueDate)
 			}
 
 			marginStr := "-"
@@ -763,7 +778,7 @@ func (h *CashflowHandler) ExportExcel(w http.ResponseWriter, r *http.Request) {
 				Kredit:          entry.Kredit,
 				Debit:           entry.Debit,
 				Saldo:           entry.Saldo,
-				DateOfEntry:     entry.DateOfEntry.Format("02/01/2006"),
+				DateOfEntry:     dateutil.FormatDateIndo(entry.DateOfEntry),
 				ActInformation:  entry.ActInformation,
 				ActExplaination: entry.ActExplaination,
 				VendorNameRaw:   entry.VendorNameRaw,
@@ -804,7 +819,7 @@ func (h *CashflowHandler) ExportExcel(w http.ResponseWriter, r *http.Request) {
 		f.SetCellValue(sheetName, fmt.Sprintf("C%d", row), rItem.Saldo)
 		f.SetCellStyle(sheetName, fmt.Sprintf("C%d", row), fmt.Sprintf("C%d", row), numStyle)
 
-		// Tanggal (D) -> Format dd/mm/yyyy (02/01/2006), Center
+		// Tanggal (D) -> Format d MMM yyyy (e.g. 7 Sep 2026), Center
 		f.SetCellValue(sheetName, fmt.Sprintf("D%d", row), rItem.DateOfEntry)
 		f.SetCellStyle(sheetName, fmt.Sprintf("D%d", row), fmt.Sprintf("D%d", row), centerStyle)
 
@@ -822,7 +837,7 @@ func (h *CashflowHandler) ExportExcel(w http.ResponseWriter, r *http.Request) {
 		f.SetCellValue(sheetName, fmt.Sprintf("H%d", row), rItem.TopText)
 		f.SetCellStyle(sheetName, fmt.Sprintf("H%d", row), fmt.Sprintf("H%d", row), centerStyle)
 
-		// Due Date (I) -> Format dd/mm/yyyy (02/01/2006), Center
+		// Due Date (I) -> Format d MMM yyyy (e.g. 7 Sep 2026), Center
 		f.SetCellValue(sheetName, fmt.Sprintf("I%d", row), rItem.DueDateText)
 		f.SetCellStyle(sheetName, fmt.Sprintf("I%d", row), fmt.Sprintf("I%d", row), centerStyle)
 

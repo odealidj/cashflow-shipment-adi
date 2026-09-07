@@ -24,6 +24,7 @@ import {
   formatActivePeriod 
 } from "./FilterBar";
 import { fetchWithAuth } from "@/lib/apiClient";
+import { formatDate } from "@/lib/dateUtils";
 
 interface InvoiceRecapReportModalProps {
   isOpen: boolean;
@@ -149,16 +150,8 @@ export function InvoiceRecapReportModal({
     }).format(val || 0);
   };
 
-  // Format date Indonesia (e.g. 01 Agustus 2026)
-  const formatDateIndo = (dateStr: string) => {
-    if (!dateStr) return "-";
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return "-";
-    const day = String(d.getDate()).padStart(2, "0");
-    const month = MONTH_NAMES[d.getMonth()];
-    const year = d.getFullYear();
-    return `${day} ${month} ${year}`;
-  };
+  // Format date Indonesia seragam (misal: 7 Sep 2026, 1 Agu 2025)
+  const formatDateIndo = (dateStr?: string | null) => formatDate(dateStr);
 
   // Format TOP terms
   const formatTopTerms = (inv: any) => {
@@ -362,15 +355,15 @@ export function InvoiceRecapReportModal({
       <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-7xl overflow-hidden flex flex-col h-[96vh] print:h-auto print:border-none print:shadow-none print:rounded-none">
         
         {/* ======================================================== */}
-        {/* TOOLBAR MODAL (SCREEN ONLY - HIDDEN ON PRINT)            */}
+        {/* 1. TOP HEADER: TITLE & POJOK KANAN ATAS CLOSE BUTTON     */}
         {/* ======================================================== */}
-        <div className="bg-[#1A365D] p-4 text-white flex flex-wrap justify-between items-center gap-3 shrink-0 print:hidden shadow-md">
+        <div className="bg-[#1A365D] text-white px-6 py-3.5 flex items-center justify-between border-b border-white/10 shrink-0 print:hidden relative shadow-sm">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-white/10 text-sky-200 flex items-center justify-center font-bold">
               <Printer className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-sm font-black tracking-wide flex items-center gap-2">
+              <h2 className="text-base font-black tracking-wide flex items-center gap-2">
                 Pratinjau Cetak Rekapitulasi Invoice &amp; Piutang
               </h2>
               <p className="text-[11px] text-sky-200/80 font-medium">
@@ -379,6 +372,20 @@ export function InvoiceRecapReportModal({
             </div>
           </div>
 
+          {/* Tombol Close di Pojok Kanan Atas */}
+          <button
+            onClick={onClose}
+            className="w-9 h-9 rounded-full bg-white/10 hover:bg-rose-600/90 text-white/80 hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-sm active:scale-95 shrink-0"
+            title="Tutup (Esc)"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* ======================================================== */}
+        {/* 2. SUB-TOOLBAR: KONTROL FILTER BULAN & AKSI EKSPOR       */}
+        {/* ======================================================== */}
+        <div className="bg-slate-50 border-b border-slate-200 px-6 py-2.5 flex flex-wrap items-center justify-between gap-3 shrink-0 print:hidden text-xs shadow-2xs">
           {/* Quick Filter Controls */}
           <div className="flex flex-wrap items-center gap-2">
             {/* Quick Month Picker */}
@@ -398,7 +405,7 @@ export function InvoiceRecapReportModal({
                   setDateTo(mRange.date_to);
                 }
               }}
-              className="px-2.5 py-1.5 rounded-xl border border-white/20 bg-slate-800 text-xs font-bold text-white focus:outline-none focus:ring-2 focus:ring-sky-400 cursor-pointer shadow-2xs"
+              className="px-2.5 py-1.5 rounded-xl border border-slate-300 bg-white text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500 cursor-pointer shadow-2xs"
             >
               <option value="ALL">Semua Periode</option>
               {monthOptions.map((opt: any) => (
@@ -415,7 +422,7 @@ export function InvoiceRecapReportModal({
             <select
               value={statusFilter}
               onChange={e => setStatusFilter(e.target.value)}
-              className="px-2.5 py-1.5 rounded-xl border border-white/20 bg-slate-800 text-xs font-bold text-white focus:outline-none focus:ring-2 focus:ring-sky-400 cursor-pointer shadow-2xs"
+              className="px-2.5 py-1.5 rounded-xl border border-slate-300 bg-white text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500 cursor-pointer shadow-2xs"
             >
               <option value="ALL">Semua Status</option>
               <option value="UNPAID">Menunggu Pembayaran</option>
@@ -425,17 +432,20 @@ export function InvoiceRecapReportModal({
 
             <button
               onClick={handleResetFilter}
-              className="p-1.5 rounded-xl border border-white/20 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition cursor-pointer"
+              className="p-1.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 text-slate-600 hover:text-slate-900 transition cursor-pointer shadow-2xs"
               title="Reset Filter"
             >
               <RotateCcw className="w-4 h-4" />
             </button>
+          </div>
 
+          {/* Action Buttons */}
+          <div className="flex flex-wrap items-center gap-2">
             {/* Tombol Unduh PDF Langsung (Tanpa Watermark / URL / Header Browser) */}
             <button
               onClick={handleDownloadPdf}
               disabled={isExporting || loading}
-              className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black flex items-center gap-1.5 transition cursor-pointer shadow-xs active:scale-95 disabled:opacity-50 ml-2"
+              className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black flex items-center gap-1.5 transition cursor-pointer shadow-xs active:scale-95 disabled:opacity-50"
               title="Unduh langsung file PDF resmi: Daftar_Invoice_Monitoring_PT_Adijayantara_Logistic.pdf"
             >
               {isExporting ? (
@@ -446,7 +456,7 @@ export function InvoiceRecapReportModal({
               ) : (
                 <>
                   <Download className="w-4 h-4" />
-                  <span>Unduh PDF Resmi</span>
+                  <span>Unduh PDF</span>
                 </>
               )}
             </button>
@@ -474,19 +484,11 @@ export function InvoiceRecapReportModal({
             {/* Tombol Cetak via Printer Fisik */}
             <button
               onClick={handlePrint}
-              className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-white/20 text-white text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs active:scale-95"
+              className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs active:scale-95"
               title="Cetak Dokumen ke Printer Fisik (A4 Landscape)"
             >
               <Printer className="w-4 h-4" />
               <span>Cetak Printer</span>
-            </button>
-
-            {/* Tutup Modal */}
-            <button
-              onClick={onClose}
-              className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition cursor-pointer"
-            >
-              <X className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -631,27 +633,28 @@ export function InvoiceRecapReportModal({
               {/* Header Tabel Dark Navy */}
               <thead>
                 <tr className="bg-[#1A365D] text-white font-bold text-[8.5pt]">
-                  <th className="py-2 px-2 text-center w-[4.4%]">No</th>
-                  <th className="py-2 px-3 text-left w-[13.6%]">No. Invoice</th>
-                  <th className="py-2 px-3 text-left w-[21.4%]">Nama Klien / Perusahaan</th>
-                  <th className="py-2 px-2 text-center w-[11.2%]">Tgl Pengiriman</th>
-                  <th className="py-2 px-2 text-center w-[12.6%]">TOP (Terms)</th>
-                  <th className="py-2 px-2 text-center w-[11.2%]">Tgl Jatuh Tempo</th>
-                  <th className="py-2 px-3 text-right w-[13.1%]">Nominal Tagihan</th>
-                  <th className="py-2 px-2 text-center w-[12.6%]">Status</th>
+                  <th className="py-2 px-2 text-center w-[4%]">No</th>
+                  <th className="py-2 px-3 text-left w-[12%]">No. Invoice</th>
+                  <th className="py-2 px-3 text-left w-[19%]">Nama Klien / Perusahaan</th>
+                  <th className="py-2 px-2 text-center w-[10%]">Tgl Pengiriman</th>
+                  <th className="py-2 px-2 text-center w-[11%]">TOP (Terms)</th>
+                  <th className="py-2 px-2 text-center w-[10%]">Tgl Jatuh Tempo</th>
+                  <th className="py-2 px-3 text-right w-[12%]">Nominal Tagihan</th>
+                  <th className="py-2 px-2 text-center w-[11%]">Status</th>
+                  <th className="py-2 px-2 text-center w-[11%]">Tgl. Pelunasan</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#CBD5E0]">
                 {loading ? (
                   <tr>
-                    <td colSpan={8} className="py-10 text-center text-slate-400 font-semibold">
+                    <td colSpan={9} className="py-10 text-center text-slate-400 font-semibold">
                       <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-[#1A365D]"></div>
                       <p className="mt-2 text-xs font-semibold">Memuat rekapitulasi invoice...</p>
                     </td>
                   </tr>
                 ) : invoices.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="py-10 text-center text-slate-400 font-semibold">
+                    <td colSpan={9} className="py-10 text-center text-slate-400 font-semibold">
                       Tidak ada data invoice yang sesuai kriteria filter.
                     </td>
                   </tr>
@@ -723,6 +726,11 @@ export function InvoiceRecapReportModal({
                             <span className="text-[#C2410C]">Menunggu Pembayaran</span>
                           )}
                         </td>
+
+                        {/* 9. Tgl. Pelunasan */}
+                        <td className="py-2 px-2 text-center text-[#2D3748]">
+                          {inv.paid_at ? formatDateIndo(inv.paid_at) : "-"}
+                        </td>
                       </tr>
                     );
                   })
@@ -738,7 +746,7 @@ export function InvoiceRecapReportModal({
                   <td className="py-2.5 px-3 text-right font-mono text-[9pt] font-bold">
                     {formatCurrency(totalAmount)}
                   </td>
-                  <td className="py-2.5 px-2 text-center text-[8.5pt] font-bold">
+                  <td colSpan={2} className="py-2.5 px-2 text-center text-[8.5pt] font-bold">
                     {invoices.length} Tagihan
                   </td>
                 </tr>
