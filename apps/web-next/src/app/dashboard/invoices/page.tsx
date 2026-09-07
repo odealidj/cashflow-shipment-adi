@@ -330,7 +330,7 @@ export default function InvoicesPage() {
 
   return (
     <>
-      <div className={`flex-1 flex flex-col space-y-4 min-h-0 ${isRecapReportOpen ? "print:hidden" : ""}`}>
+      <div className={`flex-1 flex flex-col space-y-4 min-h-0 ${isRecapReportOpen || !!selectedInvoiceForPrint ? "print:hidden" : ""}`}>
       {/* 4 SUMMARY CARDS (SHARED DESIGN SYSTEM) */}
       {summary && (() => {
         const curMonth = getCurrentMonthRange();

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { X, Plus, Calendar, Clock, DollarSign, Building, FileText, CheckCircle2, ShieldCheck } from "lucide-react";
 import { formatThousand, cleanThousand, terbilangRingkas } from "@/hooks/useTerbilang";
 import { fetchWithAuth } from "@/lib/apiClient";
@@ -46,6 +46,21 @@ export function CreateInvoiceModal({ isOpen, onClose, onSuccess }: CreateInvoice
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Reset form ke kondisi default bersih setiap kali modal dibuka (isOpen bernilai true)
+  useEffect(() => {
+    if (isOpen) {
+      const today = new Date().toISOString().split("T")[0];
+      setShipmentDate(today);
+      setInvoiceNo(getDefaultInvoicePrefix(today));
+      setClientName("");
+      setTopDays(30);
+      setStatus("UNPAID");
+      setAmountRaw("");
+      setNotes("");
+      setError(null);
+    }
+  }, [isOpen]);
 
   // Update prefix otomatis jika user mengubah shipmentDate dan invoiceNo masih berupa prefix default
   const handleShipmentDateChange = (newDate: string) => {

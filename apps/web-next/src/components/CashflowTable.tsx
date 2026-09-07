@@ -496,7 +496,7 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
                     )}
                   </div>
                 </th>
-                <th className="px-4 py-3.5 min-w-[220px]">Vendor & Aktivitas</th>
+                <th className="px-4 py-3.5 min-w-[220px]">Aktivitas</th>
                 <th className="px-3 py-3.5 text-right min-w-[150px]">Penjualan & Biaya</th>
                 <th className="px-3 py-3.5 text-right min-w-[130px]">Profit & Margin</th>
                 <th className="px-3 py-3.5 text-center min-w-[110px]">T.O.P / Due</th>
@@ -544,7 +544,7 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
                         {formatDate(entry.date_of_entry)}
                       </td>
 
-                      {/* 2. Vendor & Aktivitas */}
+                      {/* 2. Aktivitas */}
                       <td className="px-4 py-3.5">
                         <div className="flex items-center gap-2">
                           <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider ${
@@ -556,9 +556,11 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
                           }`}>
                             {isInvoicePayment ? "PELUNASAN INVOICE" : entry.entry_type}
                           </span>
-                          <span className="font-extrabold text-slate-900 text-xs line-clamp-1">
-                            {entry.vendor_name_raw || "-"}
-                          </span>
+                          {!isInvoicePayment && entry.vendor_name_raw && (
+                            <span className="font-extrabold text-slate-900 text-xs line-clamp-1">
+                              {entry.vendor_name_raw}
+                            </span>
+                          )}
                         </div>
                         {isInvoicePayment ? (
                           <div className="mt-1">

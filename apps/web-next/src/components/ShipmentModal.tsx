@@ -30,9 +30,22 @@ export function ShipmentModal({ isOpen, onClose, onSuccess }: ShipmentModalProps
     remarks: "UNPAID"
   });
 
-  // Fetch current saldo whenever modal opens
+  // Fetch current saldo and reset form whenever modal opens
   useEffect(() => {
     if (!isOpen) return;
+    setFormData({
+      date_of_entry: new Date().toISOString().split("T")[0],
+      vendor_name_raw: "",
+      act_information: "",
+      act_explaination: "",
+      grand_cost: "",
+      grand_selling: "",
+      debit: "",
+      top_days: "14",
+      due_date: "",
+      remarks: "UNPAID"
+    });
+    setError("");
     const fetchSaldo = async () => {
       try {
         const token = localStorage.getItem("token");

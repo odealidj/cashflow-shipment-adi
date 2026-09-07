@@ -317,6 +317,7 @@ func main() {
 				r.Use(middleware.RequirePermission("invoices.view"))
 				r.Get("/", invoiceHandler.List)
 				r.Get("/summary", invoiceHandler.GetSummary)
+				r.Get("/export", invoiceHandler.ExportExcel)
 				r.With(middleware.RequirePermission("invoices.create")).Post("/", invoiceHandler.Create)
 				r.Get("/{id}", invoiceHandler.GetByID)
 				r.Get("/{id}/history", invoiceHandler.GetHistory)

@@ -129,7 +129,7 @@ nextjs-portal,
 @media print {
   @page {
     size: A4 landscape;
-    margin: 8mm;
+    margin: 0;
   }
 
   *,
@@ -142,14 +142,24 @@ nextjs-portal,
   body {
     background: #ffffff !important;
     color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
 
-  /* Sembunyikan sidebar, navigasi, dan elemen non-cetak */
+  /* Sembunyikan sidebar, top header, navigasi, dan elemen non-cetak */
+  header,
   aside,
   nav,
   .print-hide,
   .print\:hidden {
     display: none !important;
+  }
+
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    max-height: none !important;
   }
 
   /* Hilangkan scrollbars & background container saat cetak */

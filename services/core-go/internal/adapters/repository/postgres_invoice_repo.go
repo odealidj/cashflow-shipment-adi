@@ -28,18 +28,25 @@ func (r *PostgresInvoiceRepo) Create(ctx context.Context, inv *domain.Invoice) (
 		telemetry.TrackQuery("invoice_repo", "Create", "INSERT INTO invoices ...", start, err)
 	}()
 
+	origDueDate := inv.DueDate
+	if inv.OriginalDueDate != nil && !inv.OriginalDueDate.IsZero() {
+		origDueDate = *inv.OriginalDueDate
+	} else {
+		inv.OriginalDueDate = &origDueDate
+	}
+
 	query := `
 		INSERT INTO invoices (
 			invoice_no, client_name, shipment_date, top_terms, top_days,
 			due_date, original_due_date, amount, status, paid_at, notes, cashflow_entry_id, created_by
 		) VALUES (
-			$1, $2, $3, $4, $5, $6, COALESCE($7, $6), $8, $9, $10, $11, $12, $13
+			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
 		) RETURNING id, created_at, updated_at;
 	`
 	return r.db.QueryRowContext(
 		ctx, query,
 		inv.InvoiceNo, inv.ClientName, inv.ShipmentDate, inv.TopTerms, inv.TopDays,
-		inv.DueDate, inv.OriginalDueDate, inv.Amount, inv.Status, inv.PaidAt, inv.Notes, inv.CashflowEntryID, inv.CreatedBy,
+		inv.DueDate, origDueDate, inv.Amount, inv.Status, inv.PaidAt, inv.Notes, inv.CashflowEntryID, inv.CreatedBy,
 	).Scan(&inv.ID, &inv.CreatedAt, &inv.UpdatedAt)
 }
 

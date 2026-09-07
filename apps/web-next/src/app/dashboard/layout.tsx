@@ -567,7 +567,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Main Content Area with Persistent Top Header */}
       <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
         {/* Top Header Navigation Bar */}
-        <header className="h-14 bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-6 lg:px-8 flex items-center justify-between shrink-0 shadow-2xs z-30">
+        <header className="h-14 bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-6 lg:px-8 flex items-center justify-between shrink-0 shadow-2xs z-30 print:hidden">
           <div className="flex items-center gap-3">
             <span className="text-xs font-black tracking-tight text-slate-800 uppercase hidden sm:inline">
               PT Adijayantara Logistics Indonesia
