@@ -28,6 +28,9 @@ export type TimeframePeriod =
   | "3m"
   | "6m"
   | "1y"
+  | "this_year_q"
+  | "last_year_q"
+  | "4q"
   | "2y"
   | "3y"
   | "5y"
@@ -55,9 +58,11 @@ export function BusinessGrowthChart({
   loading = false
 }: BusinessGrowthChartProps) {
   const [activeTab, setActiveTab] = useState<MetricTab>("financial");
-  const [timeframe, setTimeframe] = useState<TimeframePeriod>("6m");
+  const [timeframe, setTimeframe] = useState<TimeframePeriod>("this_year_q");
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
   const [showNarrative, setShowNarrative] = useState<boolean>(true);
+
+  const isQuarterly = timeframe === "this_year_q" || timeframe === "last_year_q" || timeframe === "4q" || timeframe === "2y";
 
   // Custom date range state (from month/year to month/year)
   const [customStartYear, setCustomStartYear] = useState<number>(() => {
@@ -182,6 +187,7 @@ export function BusinessGrowthChart({
         chartData: weeks.map((item) => ({
           key: item.key,
           label: item.label,
+          fullPeriodName: `${item.label} (${MONTH_NAMES[m]} ${y})`,
           revenue: Math.max(0, item.revenue),
           profit: Math.max(0, item.profit),
           marginPct: item.revenue > 0 ? (item.profit / item.revenue) * 100 : 0,
@@ -250,6 +256,7 @@ export function BusinessGrowthChart({
         chartData: weeks.map((item) => ({
           key: item.key,
           label: item.label,
+          fullPeriodName: `${item.label} (${MONTH_NAMES[m]} ${y})`,
           revenue: Math.max(0, item.revenue),
           profit: Math.max(0, item.profit),
           marginPct: item.revenue > 0 ? (item.profit / item.revenue) * 100 : 0,
@@ -317,6 +324,7 @@ export function BusinessGrowthChart({
         chartData: years.map((item) => ({
           key: item.key,
           label: item.label,
+          fullPeriodName: `Tahun ${item.label}`,
           revenue: Math.max(0, item.revenue),
           profit: Math.max(0, item.profit),
           marginPct: item.revenue > 0 ? (item.profit / item.revenue) * 100 : 0,
@@ -328,12 +336,86 @@ export function BusinessGrowthChart({
       };
     }
 
-    // 4. 2 TAHUN (8 Kuartal)
-    if (timeframe === "2y") {
-      // 8 Quarters back
+    // 4. ANALISIS KUARTALAN: Tahun Ini (Q1-Q4) & Tahun Lalu (Q1-Q4)
+    if (timeframe === "this_year_q" || timeframe === "last_year_q") {
+      const targetYear = timeframe === "this_year_q" ? currentYear : currentYear - 1;
+      const qNames = [
+        "Januari – Maret",
+        "April – Juni",
+        "Juli – September",
+        "Oktober – Desember"
+      ];
+
+      const quarters = [1, 2, 3, 4].map((qNum) => {
+        const startM = (qNum - 1) * 3;
+        const endM = startM + 2;
+        const lastDayOfQ = new Date(targetYear, endM + 1, 0).getDate();
+        return {
+          key: `${targetYear}-Q${qNum}`,
+          label: `Q${qNum} '${String(targetYear).slice(2)}`,
+          fullPeriodName: `Q${qNum} ${targetYear} (${qNames[qNum - 1]})`,
+          startStr: `${targetYear}-${String(startM + 1).padStart(2, "0")}-01`,
+          endStr: `${targetYear}-${String(endM + 1).padStart(2, "0")}-${String(lastDayOfQ).padStart(2, "0")}`,
+          revenue: 0,
+          profit: 0,
+          trips: 0,
+          clients: new Set<string>()
+        };
+      });
+
+      cashflowEntries.forEach((entry) => {
+        if (!entry.date_of_entry) return;
+        const dStr = entry.date_of_entry.substring(0, 10);
+        quarters.forEach((q) => {
+          if (dStr >= q.startStr && dStr <= q.endStr) {
+            if (entry.entry_type === "SHIPMENT") {
+              q.trips += 1;
+              q.profit += Number(entry.profit) || 0;
+              q.revenue += Number(entry.grand_selling) || 0;
+            }
+            if (entry.act_information) {
+              q.clients.add(entry.act_information);
+            }
+          }
+        });
+      });
+
+      invoices.forEach((inv) => {
+        if (!inv.invoice_date) return;
+        const dStr = inv.invoice_date.substring(0, 10);
+        quarters.forEach((q) => {
+          if (dStr >= q.startStr && dStr <= q.endStr) {
+            const invAmt = Number(inv.total_amount) || 0;
+            if (invAmt > q.revenue) q.revenue = invAmt;
+            if (inv.customer_name) q.clients.add(inv.customer_name);
+          }
+        });
+      });
+
+      return {
+        chartData: quarters.map((item) => ({
+          key: item.key,
+          label: item.label,
+          fullPeriodName: item.fullPeriodName,
+          revenue: Math.max(0, item.revenue),
+          profit: Math.max(0, item.profit),
+          marginPct: item.revenue > 0 ? (item.profit / item.revenue) * 100 : 0,
+          trips: item.trips,
+          clientCount: item.clients.size
+        })),
+        explicitRangeLabel: `1 Jan – 31 Des ${targetYear} (Q1 – Q4)`,
+        timeframeDisplayLabel: `Tahun ${targetYear} (4 Kuartal: Q1–Q4)`
+      };
+    }
+
+    // 5. ANALISIS KUARTALAN BERGULIR: 4 Kuartal (Rolling 1 Thn) & 8 Kuartal (2 Tahun)
+    if (timeframe === "4q" || timeframe === "2y") {
+      const quarterCount = timeframe === "4q" ? 4 : 8;
+      const qNames = ["Jan – Mar", "Apr – Jun", "Jul – Sep", "Okt – Des"];
       const quarters: {
         key: string;
         label: string;
+        fullPeriodName: string;
         startStr: string;
         endStr: string;
         revenue: number;
@@ -343,7 +425,7 @@ export function BusinessGrowthChart({
       }[] = [];
 
       const currentQ = Math.floor(currentMonth / 3) + 1;
-      for (let i = 7; i >= 0; i--) {
+      for (let i = quarterCount - 1; i >= 0; i--) {
         const totalQ = currentYear * 4 + currentQ - 1 - i;
         const qYear = Math.floor(totalQ / 4);
         const qNum = (totalQ % 4) + 1;
@@ -354,6 +436,7 @@ export function BusinessGrowthChart({
         quarters.push({
           key: `${qYear}-Q${qNum}`,
           label: `Q${qNum} '${String(qYear).slice(2)}`,
+          fullPeriodName: `Q${qNum} ${qYear} (${qNames[qNum - 1]})`,
           startStr: `${qYear}-${String(startM + 1).padStart(2, "0")}-01`,
           endStr: `${qYear}-${String(endM + 1).padStart(2, "0")}-${String(lastDayOfQ).padStart(2, "0")}`,
           revenue: 0,
@@ -399,14 +482,15 @@ export function BusinessGrowthChart({
         chartData: quarters.map((item) => ({
           key: item.key,
           label: item.label,
+          fullPeriodName: item.fullPeriodName,
           revenue: Math.max(0, item.revenue),
           profit: Math.max(0, item.profit),
           marginPct: item.revenue > 0 ? (item.profit / item.revenue) * 100 : 0,
           trips: item.trips,
           clientCount: item.clients.size
         })),
-        explicitRangeLabel: `${firstQ.label} – ${lastQ.label} (8 Kuartal)`,
-        timeframeDisplayLabel: `2 Tahun Terakhir (8 Kuartal)`
+        explicitRangeLabel: `${firstQ.label} – ${lastQ.label} (${quarterCount} Kuartal)`,
+        timeframeDisplayLabel: timeframe === "4q" ? "4 Kuartal Terakhir (Rolling 1 Thn)" : "8 Kuartal Terakhir (Tren 2 Tahun)"
       };
     }
 
@@ -494,6 +578,7 @@ export function BusinessGrowthChart({
         chartData: customMonths.map((item) => ({
           key: item.key,
           label: item.label,
+          fullPeriodName: `${MONTH_NAMES[item.month]} ${item.year}`,
           revenue: Math.max(0, item.revenue),
           profit: Math.max(0, item.profit),
           marginPct: item.revenue > 0 ? (item.profit / item.revenue) * 100 : 0,
@@ -620,8 +705,19 @@ export function BusinessGrowthChart({
       };
     }
 
-    const lastItem = chartData[chartData.length - 1];
-    const prevItem = chartData.length > 1 ? chartData[chartData.length - 2] : null;
+    // Cari titik fokus: jika titik terakhir masih kosong (misal kuartal masa depan), gunakan titik terkini yang memiliki aktivitas transaksi
+    let focusIdx = chartData.length - 1;
+    if (chartData[focusIdx].revenue === 0 && chartData[focusIdx].trips === 0) {
+      for (let i = chartData.length - 1; i >= 0; i--) {
+        if (chartData[i].revenue > 0 || chartData[i].trips > 0) {
+          focusIdx = i;
+          break;
+        }
+      }
+    }
+
+    const lastItem = chartData[focusIdx];
+    const prevItem = focusIdx > 0 ? chartData[focusIdx - 1] : null;
 
     if (activeTab === "financial") {
       const revGrowth = prevItem && prevItem.revenue > 0
@@ -629,28 +725,35 @@ export function BusinessGrowthChart({
         : 0;
       const marginDiff = prevItem ? lastItem.marginPct - prevItem.marginPct : 0;
 
-      let badgeText = "🟢 TREN EKSPANSI POSITIF";
+      let badgeText = isQuarterly ? "🟢 EKSPANSI KUARTAL POSITIF" : "🟢 TREN EKSPANSI POSITIF";
       let badgeColor = "bg-emerald-50 text-emerald-800 border-emerald-200";
 
       if (revGrowth < 0 && lastItem.marginPct < 10) {
-        badgeText = "🔴 PERLU EVALUASI BIAYA";
+        badgeText = isQuarterly ? "🔴 EVALUASI BIAYA KUARTAL" : "🔴 PERLU EVALUASI BIAYA";
         badgeColor = "bg-rose-50 text-rose-800 border-rose-200";
       } else if (revGrowth >= 0 && lastItem.marginPct < 10) {
-        badgeText = "🟡 MARGIN TERTEKAN";
+        badgeText = isQuarterly ? "🟡 MARGIN KUARTAL TERTEKAN" : "🟡 MARGIN TERTEKAN";
         badgeColor = "bg-amber-50 text-amber-800 border-amber-200";
       } else if (revGrowth < 0) {
-        badgeText = "📉 VOLUME TERKOREKSI";
+        badgeText = isQuarterly ? "📉 VOLUME KUARTAL TERKOREKSI" : "📉 VOLUME TERKOREKSI";
         badgeColor = "bg-slate-100 text-slate-800 border-slate-200";
       }
 
       const isPositiveGrowth = revGrowth >= 0;
       const growthSign = isPositiveGrowth ? "+" : "";
 
+      const comparisonText = prevItem 
+        ? isQuarterly 
+          ? ` (${growthSign}${revGrowth.toFixed(1)}% QoQ vs ${prevItem.label})` 
+          : ` (${growthSign}${revGrowth.toFixed(1)}% vs sebelumnya)` 
+        : "";
+
       const storyParagraph = (
         <>
-          Omset pada titik <strong className="text-slate-900">{lastItem.label}</strong> tercatat{" "}
+          Omset pada {isQuarterly ? "kuartal " : "titik "}
+          <strong className="text-slate-900">{lastItem.label}</strong> tercatat{" "}
           <strong className="text-sky-800">{formatCurrency(lastItem.revenue, true)}</strong>
-          {prevItem ? ` (${growthSign}${revGrowth.toFixed(1)}% vs sebelumnya)` : ""} dengan perolehan laba kotor{" "}
+          {comparisonText} dengan perolehan laba kotor{" "}
           <strong className="text-emerald-700">{formatCurrency(lastItem.profit, true)}</strong>.
           Tingkat margin kotor berada di level{" "}
           <strong className="text-slate-900">{lastItem.marginPct.toFixed(1)}%</strong>
@@ -666,12 +769,12 @@ export function BusinessGrowthChart({
         badgeColor,
         storyParagraph,
         metric1: {
-          label: "Pertumbuhan vs Sebelumnya",
+          label: isQuarterly ? "Pertumbuhan QoQ" : "Pertumbuhan vs Sebelumnya",
           val: prevItem ? `${growthSign}${revGrowth.toFixed(1)}%` : "Baseline",
           color: isPositiveGrowth ? "text-emerald-700" : "text-rose-700"
         },
         metric2: {
-          label: "Margin Periode Terpilih",
+          label: isQuarterly ? "Margin Kuartal Terpilih" : "Margin Periode Terpilih",
           val: `${lastItem.marginPct.toFixed(1)}%`,
           color: "text-slate-900"
         },
@@ -688,16 +791,18 @@ export function BusinessGrowthChart({
       const isTripUp = tripDiff >= 0;
       const tripSign = isTripUp ? "+" : "";
 
-      const badgeText = isTripUp ? "🚚 RITASE MENINGKAT" : "⏳ RITASE TERKOREKSI";
+      const badgeText = isTripUp 
+        ? (isQuarterly ? "🚚 RITASE KUARTAL NAIK" : "🚚 RITASE MENINGKAT") 
+        : (isQuarterly ? "⏳ RITASE KUARTAL TURUN" : "⏳ RITASE TERKOREKSI");
       const badgeColor = isTripUp 
         ? "bg-indigo-50 text-indigo-800 border-indigo-200" 
         : "bg-slate-100 text-slate-800 border-slate-200";
 
       const storyParagraph = (
         <>
-          Aktivitas pengiriman pada <strong className="text-slate-900">{lastItem.label}</strong> membukukan{" "}
+          Aktivitas pengiriman pada {isQuarterly ? "kuartal " : ""}<strong className="text-slate-900">{lastItem.label}</strong> membukukan{" "}
           <strong className="text-indigo-800">{lastItem.trips} ritase trip</strong>
-          {prevItem ? ` (${tripSign}${tripDiff} trip dibanding titik sebelumnya)` : ""}.
+          {prevItem ? ` (${tripSign}${tripDiff} trip dibanding ${isQuarterly ? prevItem.label : "titik sebelumnya"})` : ""}.
           Rerata nilai transaksi pengiriman mencapai{" "}
           <strong className="text-slate-900">
             {formatCurrency(lastItem.trips > 0 ? lastItem.revenue / lastItem.trips : 0, true)}
@@ -711,12 +816,12 @@ export function BusinessGrowthChart({
         badgeColor,
         storyParagraph,
         metric1: {
-          label: "Perubahan Ritase",
+          label: isQuarterly ? "Perubahan Ritase QoQ" : "Perubahan Ritase",
           val: prevItem ? `${tripSign}${tripDiff} Trip` : "Baseline",
           color: isTripUp ? "text-indigo-700" : "text-rose-700"
         },
         metric2: {
-          label: "Rata-rata Nilai / Trip",
+          label: isQuarterly ? "Rata-rata Nilai / Trip (Kuartal)" : "Rata-rata Nilai / Trip",
           val: formatCurrency(summaryTotals.avgTripVal, true),
           color: "text-slate-900"
         },
@@ -733,14 +838,16 @@ export function BusinessGrowthChart({
     const isClientUp = clientDiff >= 0;
     const clientSign = isClientUp ? "+" : "";
 
-    const badgeText = lastItem.clientCount >= 3 ? "👥 BASIS KLIEN KUAT" : "📈 PENETRASI KLIEN";
+    const badgeText = lastItem.clientCount >= 3 
+      ? (isQuarterly ? "👥 RETENSI KLIEN KUAT" : "👥 BASIS KLIEN KUAT") 
+      : "📈 PENETRASI KLIEN";
     const badgeColor = "bg-violet-50 text-violet-800 border-violet-200";
 
     const storyParagraph = (
       <>
         Tercatat <strong className="text-violet-800">{lastItem.clientCount} perusahaan klien aktif</strong> bertransaksi
-        pada rentang <strong className="text-slate-900">{lastItem.label}</strong>
-        {prevItem ? ` (${clientSign}${clientDiff} klien dibanding titik sebelumnya)` : ""}.
+        pada rentang {isQuarterly ? "kuartal " : ""}<strong className="text-slate-900">{lastItem.label}</strong>
+        {prevItem ? ` (${clientSign}${clientDiff} klien dibanding ${isQuarterly ? prevItem.label : "titik sebelumnya"})` : ""}.
         Pola order menunjukkan loyalitas pelanggan korporasi yang konsisten dengan pengiriman berulang (*repeat order*).
       </>
     );
@@ -750,22 +857,22 @@ export function BusinessGrowthChart({
       badgeColor,
       storyParagraph,
       metric1: {
-        label: "Dinamika Klien Aktif",
+        label: isQuarterly ? "Dinamika Klien QoQ" : "Dinamika Klien Aktif",
         val: prevItem ? `${clientSign}${clientDiff} Klien` : "Baseline",
         color: isClientUp ? "text-violet-700" : "text-rose-700"
       },
       metric2: {
-        label: "Rerata Klien / Titik",
+        label: isQuarterly ? "Rerata Klien / Kuartal" : "Rerata Klien / Titik",
         val: `${summaryTotals.avgClientsPerMonth.toFixed(1)} Klien`,
         color: "text-slate-900"
       },
       metric3: {
-        label: "Puncak Klien Aktif",
+        label: isQuarterly ? "Puncak Klien Kuartal" : "Puncak Klien Aktif",
         val: `${summaryTotals.maxClientInMonth} Perusahaan`,
         color: "text-violet-800"
       }
     };
-  }, [chartData, activeTab, summaryTotals]);
+  }, [chartData, activeTab, summaryTotals, isQuarterly]);
 
   // SVG Chart Dimensions & Scales
   // Dynamic width adapts when the narrative is collapsed or when more monthly bars are displayed
@@ -888,15 +995,20 @@ export function BusinessGrowthChart({
                 onChange={(e) => setTimeframe(e.target.value as TimeframePeriod)}
                 className="bg-transparent text-xs font-bold text-slate-800 focus:outline-none cursor-pointer pr-1"
               >
-                <optgroup label="Fokus Bulanan (Tren Mingguan)">
-                  <option value="this_month">Bulan Ini (Mingguan)</option>
-                  <option value="last_month">Bulan Lalu (Mingguan)</option>
+                <optgroup label="Analisis Kuartalan (Quarterly / QoQ)">
+                  <option value="this_year_q">Tahun Ini (4 Kuartal: Q1–Q4 {new Date().getFullYear()})</option>
+                  <option value="4q">4 Kuartal Terakhir (QoQ Rolling 1 Thn)</option>
+                  <option value="last_year_q">Tahun Lalu (4 Kuartal: Q1–Q4 {new Date().getFullYear() - 1})</option>
+                  <option value="2y">8 Kuartal Terakhir (Tren 2 Tahun)</option>
                 </optgroup>
-                <optgroup label="Tren Pertumbuhan">
+                <optgroup label="Tren Bulanan">
                   <option value="3m">3 Bulan Terakhir</option>
                   <option value="6m">6 Bulan Terakhir (Standar)</option>
                   <option value="1y">1 Tahun Terakhir (12 Bln)</option>
-                  <option value="2y">2 Tahun Terakhir (8 Kuartal)</option>
+                </optgroup>
+                <optgroup label="Fokus Bulanan (Tren Mingguan)">
+                  <option value="this_month">Bulan Ini (Mingguan)</option>
+                  <option value="last_month">Bulan Lalu (Mingguan)</option>
                 </optgroup>
                 <optgroup label="Tren Makro Tahunan">
                   <option value="3y">3 Tahun Terakhir (Tahunan)</option>
@@ -1275,9 +1387,9 @@ export function BusinessGrowthChart({
           {hoveredIdx !== null && chartData[hoveredIdx] && (
             <div className="absolute top-2 right-4 bg-slate-900 text-white rounded-xl px-3.5 py-2.5 shadow-lg border border-slate-800 text-xs pointer-events-none transition-all duration-200 z-20">
               <div className="font-extrabold text-slate-200 border-b border-slate-700 pb-1 mb-1.5 flex items-center justify-between gap-4">
-                <span>Titik: {chartData[hoveredIdx].label}</span>
+                <span>{(chartData[hoveredIdx] as any).fullPeriodName || `Titik: ${chartData[hoveredIdx].label}`}</span>
                 <span className="text-[10px] px-1.5 py-0.2 rounded bg-sky-900/60 text-sky-300 font-mono">
-                  {timeframe.toUpperCase()}
+                  {isQuarterly ? "KUARTAL" : timeframe.toUpperCase()}
                 </span>
               </div>
               {activeTab === "financial" && (
@@ -1491,14 +1603,18 @@ export function BusinessGrowthChart({
           {activeTab === "clients" && (
             <>
               <div className="text-right">
-                <div className="text-[10px] text-slate-400 font-bold uppercase">Rerata Klien / Titik</div>
+                <div className="text-[10px] text-slate-400 font-bold uppercase">
+                  {isQuarterly ? "Rerata Klien / Kuartal" : "Rerata Klien / Titik"}
+                </div>
                 <div className="text-xs font-black text-violet-900 font-mono">
                   {summaryTotals.avgClientsPerMonth.toFixed(1)} Klien
                 </div>
               </div>
               <div className="h-6 w-px bg-slate-200" />
               <div className="text-right">
-                <div className="text-[10px] text-slate-400 font-bold uppercase">Puncak Klien Aktif</div>
+                <div className="text-[10px] text-slate-400 font-bold uppercase">
+                  {isQuarterly ? "Puncak Klien Kuartal" : "Puncak Klien Aktif"}
+                </div>
                 <div className="text-xs font-black text-slate-800 font-mono">
                   {summaryTotals.maxClientInMonth} Klien
                 </div>
