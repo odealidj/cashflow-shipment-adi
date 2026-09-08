@@ -29,6 +29,7 @@ Selamat datang di direktori dokumentasi resmi sistem aplikasi **PT. Adijayantara
 | Dokumen | Deskripsi |
 | :--- | :--- |
 | 🔔 **[Analisis & Spesifikasi Fitur Notifikasi](./analisis_dan_spesifikasi_fitur_notifikasi.md)** | **Blueprint Sistem Notifikasi Proaktif (In-App, FCM Push, & Email)**: Pemetaan aktor penerima notifikasi, analisis pemicu per modul (Invoice jatuh tempo, saldo kas kritis, margin loss), arsitektur Firebase Cloud Messaging (Web & Mobile PWA `/m`), skema database `user_fcm_tokens`, dan 3 fase roadmap implementasi. |
+| 📈 **[Perencanaan Grafik Pertumbuhan Bisnis](./rencana_pengembangan_grafik_pertumbuhan_bisnis.md)** | **Executive Decision Support Roadmap**: Analisa mendalam & spesifikasi 6 grafik analitik strategis (Cashflow Runway 60 Hari, BCG Matrix Rute, Skor DSO Pelanggan, Efisiensi Vendor, Pareto 80/20, dan Cash Conversion Gap) beserta urutan prioritas implementasi (P1–P6) murni berbasis aset data transaksi riil. |
 
 ---
 
