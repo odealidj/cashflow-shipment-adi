@@ -192,6 +192,8 @@ func main() {
 	startTime := time.Now()
 	systemMetricsHandler := handler.NewSystemMetricsHandler(dbPool, redisClient, startTime)
 	benchmarkHandler := handler.NewBenchmarkHandler(redisClient, dbPool, "")
+	analyticsRepo := repository.NewPostgresAnalyticsRepo(dbPool)
+	analyticsHandler := handler.NewAnalyticsHandler(analyticsRepo)
 
 	r := chi.NewRouter()
 
@@ -335,6 +337,15 @@ func main() {
 				r.Post("/read-all", notificationHandler.MarkAllAsRead)
 				r.Delete("/{id}", notificationHandler.Delete)
 				r.Post("/check-invoices", notificationHandler.TriggerCheckInvoices)
+			})
+
+			// Analytics Routes (Intelijen Bisnis & Pertumbuhan Strategis)
+			r.Route("/analytics", func(r chi.Router) {
+				r.Use(middleware.RequirePermission("cashflow.view"))
+				r.Get("/cashflow-runway", analyticsHandler.GetCashflowRunway)
+				r.Get("/route-matrix", analyticsHandler.GetRouteMatrix)
+				r.Get("/customer-discipline-pareto", analyticsHandler.GetCustomerDisciplineAndPareto)
+				r.Get("/vendor-efficiency", analyticsHandler.GetVendorEfficiency)
 			})
 
 			// System Metrics & Telemetry (PBAC Protected)

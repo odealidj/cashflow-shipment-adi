@@ -18,12 +18,20 @@ import {
   SlidersHorizontal,
   RotateCcw,
   Building,
-  DollarSign
+  DollarSign,
+  Sparkles,
+  Layers
 } from "lucide-react";
 import { KPICards, SummaryData, InvoiceSummaryData } from "@/components/KPICards";
 import { BusinessGrowthChart } from "@/components/dashboard/BusinessGrowthChart";
 import { UrgentInvoicesPanel } from "@/components/dashboard/UrgentInvoicesPanel";
 import { TopRoutesAnalyticsPanel } from "@/components/dashboard/TopRoutesAnalyticsPanel";
+import { CashflowRunwayChart, CashflowRunwayData } from "@/components/dashboard/strategy/CashflowRunwayChart";
+import { CashConversionGapCard } from "@/components/dashboard/strategy/CashConversionGapCard";
+import { RouteBCGMatrixChart, RouteMatrixData } from "@/components/dashboard/strategy/RouteBCGMatrixChart";
+import { VendorEfficiencyChart, VendorEfficiencyData } from "@/components/dashboard/strategy/VendorEfficiencyChart";
+import { CustomerDsoDisciplineChart, CustomerDisciplineData } from "@/components/dashboard/strategy/CustomerDsoDisciplineChart";
+import { CustomerParetoChart } from "@/components/dashboard/strategy/CustomerParetoChart";
 import { TopUpModal } from "@/components/TopUpModal";
 import { ShipmentModal } from "@/components/ShipmentModal";
 import { CreateInvoiceModal } from "@/components/CreateInvoiceModal";
@@ -32,13 +40,23 @@ import {
   formatActivePeriod, 
   getCurrentMonthRange, 
   getMonthRange, 
-  formatYMD,
+  formatYMD, 
   MONTH_NAMES 
 } from "@/components/FilterBar";
 
 export default function Dashboard() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+
+  // Tab Switcher State (Alternatif A: Operasional vs Strategi)
+  const [activeMainTab, setActiveMainTab] = useState<"operations" | "strategy">("operations");
+
+  // Strategic Analytics States
+  const [runwayData, setRunwayData] = useState<CashflowRunwayData | null>(null);
+  const [routeMatrixData, setRouteMatrixData] = useState<RouteMatrixData | null>(null);
+  const [customerDisciplineData, setCustomerDisciplineData] = useState<CustomerDisciplineData | null>(null);
+  const [vendorEfficiencyData, setVendorEfficiencyData] = useState<VendorEfficiencyData | null>(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState<boolean>(false);
 
   // Period Filter States (Default: Current Month)
   const [dateFrom, setDateFrom] = useState<string>(() => getCurrentMonthRange().date_from);
@@ -197,6 +215,40 @@ export default function Dashboard() {
     }
   }, [dateFrom, dateTo]);
 
+  // Fetch Strategic Analytics Data (P1 - P6)
+  const fetchAnalyticsData = useCallback(async () => {
+    setAnalyticsLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (dateFrom) params.append("date_from", dateFrom);
+      if (dateTo) params.append("date_to", dateTo);
+      const qs = params.toString() ? `?${params.toString()}` : "";
+
+      const [resRunway, resRoute, resCust, resVend] = await Promise.all([
+        fetchWithAuth(`http://localhost:8080/api/v1/analytics/cashflow-runway`),
+        fetchWithAuth(`http://localhost:8080/api/v1/analytics/route-matrix${qs}`),
+        fetchWithAuth(`http://localhost:8080/api/v1/analytics/customer-discipline-pareto${qs}`),
+        fetchWithAuth(`http://localhost:8080/api/v1/analytics/vendor-efficiency${qs}`)
+      ]);
+
+      const [dataRunway, dataRoute, dataCust, dataVend] = await Promise.all([
+        resRunway.json(),
+        resRoute.json(),
+        resCust.json(),
+        resVend.json()
+      ]);
+
+      if (dataRunway.status && dataRunway.data) setRunwayData(dataRunway.data);
+      if (dataRoute.status && dataRoute.data) setRouteMatrixData(dataRoute.data);
+      if (dataCust.status && dataCust.data) setCustomerDisciplineData(dataCust.data);
+      if (dataVend.status && dataVend.data) setVendorEfficiencyData(dataVend.data);
+    } catch (err) {
+      console.error("Failed to fetch strategic analytics:", err);
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  }, [dateFrom, dateTo]);
+
   useEffect(() => {
     const userData = localStorage.getItem("user");
     if (userData) {
@@ -207,6 +259,12 @@ export default function Dashboard() {
   useEffect(() => {
     fetchDashboardData();
   }, [fetchDashboardData]);
+
+  useEffect(() => {
+    if (activeMainTab === "strategy") {
+      fetchAnalyticsData();
+    }
+  }, [activeMainTab, fetchAnalyticsData]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("id-ID", {
@@ -305,6 +363,44 @@ export default function Dashboard() {
           </Link>
         </div>
       </header>
+
+      {/* 2-Tab Executive Switcher (Alternatif A: Operasional vs Strategi) */}
+      <div className="flex items-center gap-2 p-1.5 bg-slate-100 rounded-2xl border border-slate-200/90 shadow-2xs">
+        <button
+          type="button"
+          onClick={() => setActiveMainTab("operations")}
+          className={`flex-1 flex items-center justify-center gap-2.5 py-2.5 px-4 rounded-xl text-xs font-black transition-all cursor-pointer ${
+            activeMainTab === "operations"
+              ? "bg-white text-slate-900 shadow-xs border border-slate-200/80"
+              : "text-slate-500 hover:text-slate-900 hover:bg-white/50"
+          }`}
+        >
+          <Receipt className="w-4 h-4 text-sky-600" />
+          <span>Operasional & Kas Berjalan</span>
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-sky-50 text-sky-700 border border-sky-200">
+            Daily Pulse
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            setActiveMainTab("strategy");
+            if (!runwayData) fetchAnalyticsData();
+          }}
+          className={`flex-1 flex items-center justify-center gap-2.5 py-2.5 px-4 rounded-xl text-xs font-black transition-all cursor-pointer ${
+            activeMainTab === "strategy"
+              ? "bg-slate-900 text-white shadow-xs border border-slate-800"
+              : "text-slate-500 hover:text-slate-900 hover:bg-white/50"
+          }`}
+        >
+          <Sparkles className="w-4 h-4 text-amber-400" />
+          <span>Intelijen Strategis & Pertumbuhan</span>
+          <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/30">
+            6 Grafik Eksekutif
+          </span>
+        </button>
+      </div>
 
       {/* Unified Period Toolbar */}
       <div className="bg-white px-4 py-3 rounded-2xl border border-slate-200/80 shadow-2xs flex flex-wrap items-center justify-between gap-3">
@@ -452,221 +548,280 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Tier 1: 5 Executive KPI Cards */}
-      <KPICards 
-        summary={cashflowSummary} 
-        invoiceSummary={invoiceSummary}
-        loading={loading}
-        periodLabel={activePeriodLabel}
-        isCurrentPeriod={isCurrentMonthActive}
-      />
+      {/* MAIN TAB CONTENT */}
+      {activeMainTab === "operations" ? (
+        <>
+          {/* Tier 1: 5 Executive KPI Cards */}
+          <KPICards 
+            summary={cashflowSummary} 
+            invoiceSummary={invoiceSummary}
+            loading={loading}
+            periodLabel={activePeriodLabel}
+            isCurrentPeriod={isCurrentMonthActive}
+          />
 
-      {/* Tier 2: Interactive Business Growth Chart (Finansial, Trip, Klien) */}
-      <BusinessGrowthChart
-        cashflowEntries={historicalCashflow}
-        invoices={historicalInvoices}
-        loading={loading}
-      />
+          {/* Tier 2: Interactive Business Growth Chart (Finansial, Trip, Klien) */}
+          <BusinessGrowthChart
+            cashflowEntries={historicalCashflow}
+            invoices={historicalInvoices}
+            loading={loading}
+          />
 
-      {/* Tier 3: Visual Analytics (Likuiditas Kas & Aging Piutang) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        {/* Card 1: Rasio Inflow vs Outflow & Status Likuiditas Kas */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 rounded-lg bg-blue-50 text-blue-600">
-                  <PieChart className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                    Likuiditas & Arus Kas Operasional
-                  </h3>
-                  <p className="text-[11px] text-slate-400 font-medium">
-                    Perbandingan perputaran modal masuk vs pengeluaran jalan
-                  </p>
-                </div>
-              </div>
-              <span className="text-[11px] text-slate-500 font-bold">
-                Volume: {formatCurrency(totalVolume)}
-              </span>
-            </div>
-
-            <div className="space-y-3.5 my-4">
-              {/* Inflow bar */}
+          {/* Tier 3: Visual Analytics (Likuiditas Kas & Aging Piutang) */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            {/* Card 1: Rasio Inflow vs Outflow & Status Likuiditas Kas */}
+            <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
               <div>
-                <div className="flex justify-between text-xs font-bold mb-1">
-                  <span className="text-emerald-700 flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
-                    Pemasukan Kas (Kredit)
-                  </span>
-                  <span className="text-emerald-700 font-mono">
-                    {formatCurrency(cashflowSummary.total_kredit)} ({inflowRatio.toFixed(0)}%)
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 rounded-lg bg-blue-50 text-blue-600">
+                      <PieChart className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                        Likuiditas & Arus Kas Operasional
+                      </h3>
+                      <p className="text-[11px] text-slate-400 font-medium">
+                        Perbandingan perputaran modal masuk vs pengeluaran jalan
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-[11px] text-slate-500 font-bold">
+                    Volume: {formatCurrency(totalVolume)}
                   </span>
                 </div>
-                <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-emerald-500 rounded-full transition-all duration-1000"
-                    style={{ width: `${inflowRatio}%` }}
-                  />
+
+                <div className="space-y-3.5 my-4">
+                  {/* Inflow bar */}
+                  <div>
+                    <div className="flex justify-between text-xs font-bold mb-1">
+                      <span className="text-emerald-700 flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
+                        Pemasukan Kas (Kredit)
+                      </span>
+                      <span className="text-emerald-700 font-mono">
+                        {formatCurrency(cashflowSummary.total_kredit)} ({inflowRatio.toFixed(0)}%)
+                      </span>
+                    </div>
+                    <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-emerald-500 rounded-full transition-all duration-1000"
+                        style={{ width: `${inflowRatio}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Outflow bar */}
+                  <div>
+                    <div className="flex justify-between text-xs font-bold mb-1">
+                      <span className="text-rose-700 flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-rose-500 inline-block"></span>
+                        Pengeluaran Kas (Debit)
+                      </span>
+                      <span className="text-rose-700 font-mono">
+                        {formatCurrency(cashflowSummary.total_debit)} ({outflowRatio.toFixed(0)}%)
+                      </span>
+                    </div>
+                    <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-rose-500 rounded-full transition-all duration-1000"
+                        style={{ width: `${outflowRatio}%` }}
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              {/* Outflow bar */}
+              <div className="pt-3 border-t border-slate-100 flex justify-between items-center text-xs text-slate-500">
+                <div className="flex items-center gap-2">
+                  <span>Status Likuiditas:</span>
+                  <span className={`font-bold px-2.5 py-0.5 rounded-full text-xs ${
+                    cashflowSummary.current_saldo >= 0 
+                      ? "bg-emerald-50 text-emerald-700 border border-emerald-200" 
+                      : "bg-rose-50 text-rose-700 border border-rose-200"
+                  }`}>
+                    {cashflowSummary.current_saldo >= 0 ? "Surplus Kas Riil" : "Defisit Kas Operasional"}
+                  </span>
+                </div>
+
+                <Link
+                  href="/dashboard/transactions"
+                  className="text-xs text-blue-600 hover:text-blue-800 font-bold flex items-center gap-1"
+                >
+                  <span>Jurnal Kas</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+            </div>
+
+            {/* Card 2: Kesehatan & Aging Piutang Customer */}
+            <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
               <div>
-                <div className="flex justify-between text-xs font-bold mb-1">
-                  <span className="text-rose-700 flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-rose-500 inline-block"></span>
-                    Pengeluaran Kas (Debit)
-                  </span>
-                  <span className="text-rose-700 font-mono">
-                    {formatCurrency(cashflowSummary.total_debit)} ({outflowRatio.toFixed(0)}%)
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 rounded-lg bg-amber-50 text-amber-600">
+                      <Clock className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                        Kesehatan & Aging Piutang Customer
+                      </h3>
+                      <p className="text-[11px] text-slate-400 font-medium">
+                        Tingkat ketepatan waktu penagihan invoice penjualan
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-[11px] text-slate-500 font-bold">
+                    Total Tagihan: {formatCurrency(totalBilled)}
                   </span>
                 </div>
-                <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-rose-500 rounded-full transition-all duration-1000"
-                    style={{ width: `${outflowRatio}%` }}
-                  />
+
+                {/* Multi-segment aging bar */}
+                <div className="my-4">
+                  <div className="flex justify-between text-xs font-bold mb-1.5">
+                    <span className="text-slate-600">Komposisi Piutang</span>
+                    <span className="font-mono text-slate-500">
+                      {((paidRatio)).toFixed(0)}% Terkumpul
+                    </span>
+                  </div>
+                  <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden flex">
+                    <div 
+                      className="h-full bg-emerald-500 transition-all duration-1000"
+                      style={{ width: `${paidRatio}%` }}
+                      title={`Lunas: ${formatCurrency(paidBilled)}`}
+                    />
+                    <div 
+                      className="h-full bg-amber-400 transition-all duration-1000"
+                      style={{ width: `${pendingRatio}%` }}
+                      title={`Menunggu TOP: ${formatCurrency(pendingBilled)}`}
+                    />
+                    <div 
+                      className="h-full bg-rose-500 transition-all duration-1000"
+                      style={{ width: `${overdueRatio}%` }}
+                      title={`Jatuh Tempo: ${formatCurrency(overdueBilled)}`}
+                    />
+                  </div>
+
+                  {/* 3 Status mini cards */}
+                  <div className="grid grid-cols-3 gap-2.5 mt-3">
+                    <div className="p-2.5 rounded-xl bg-emerald-50/70 border border-emerald-200/60">
+                      <div className="text-[10px] text-emerald-800 font-bold uppercase">Lunas</div>
+                      <div className="text-xs font-black text-emerald-700 font-mono mt-0.5 truncate">
+                        {formatCurrency(paidBilled)}
+                      </div>
+                      <div className="text-[10px] text-emerald-600 font-medium">
+                        {invoiceSummary?.paid_count || 0} Invoice
+                      </div>
+                    </div>
+
+                    <div className="p-2.5 rounded-xl bg-amber-50/70 border border-amber-200/60">
+                      <div className="text-[10px] text-amber-800 font-bold uppercase">Menunggu TOP</div>
+                      <div className="text-xs font-black text-amber-700 font-mono mt-0.5 truncate">
+                        {formatCurrency(pendingBilled)}
+                      </div>
+                      <div className="text-[10px] text-amber-600 font-medium">
+                        Dalam Tempo
+                      </div>
+                    </div>
+
+                    <div className="p-2.5 rounded-xl bg-rose-50/70 border border-rose-200/60">
+                      <div className="text-[10px] text-rose-800 font-bold uppercase">Jatuh Tempo</div>
+                      <div className="text-xs font-black text-rose-700 font-mono mt-0.5 truncate">
+                        {formatCurrency(overdueBilled)}
+                      </div>
+                      <div className="text-[10px] text-rose-600 font-medium">
+                        {invoiceSummary?.overdue_count || 0} Overdue
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
 
-          <div className="pt-3 border-t border-slate-100 flex justify-between items-center text-xs text-slate-500">
-            <div className="flex items-center gap-2">
-              <span>Status Likuiditas:</span>
-              <span className={`font-bold px-2.5 py-0.5 rounded-full text-xs ${
-                cashflowSummary.current_saldo >= 0 
-                  ? "bg-emerald-50 text-emerald-700 border border-emerald-200" 
-                  : "bg-rose-50 text-rose-700 border border-rose-200"
-              }`}>
-                {cashflowSummary.current_saldo >= 0 ? "Surplus Kas Riil" : "Defisit Kas Operasional"}
-              </span>
-            </div>
-
-            <Link
-              href="/dashboard/transactions"
-              className="text-xs text-blue-600 hover:text-blue-800 font-bold flex items-center gap-1"
-            >
-              <span>Jurnal Kas</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
-        </div>
-
-        {/* Card 2: Kesehatan & Aging Piutang Customer */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 rounded-lg bg-amber-50 text-amber-600">
-                  <Clock className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                    Kesehatan & Aging Piutang Customer
-                  </h3>
-                  <p className="text-[11px] text-slate-400 font-medium">
-                    Tingkat ketepatan waktu penagihan invoice penjualan
-                  </p>
-                </div>
-              </div>
-              <span className="text-[11px] text-slate-500 font-bold">
-                Total Tagihan: {formatCurrency(totalBilled)}
-              </span>
-            </div>
-
-            {/* Multi-segment aging bar */}
-            <div className="my-4">
-              <div className="flex justify-between text-xs font-bold mb-1.5">
-                <span className="text-slate-600">Komposisi Piutang</span>
-                <span className="font-mono text-slate-500">
-                  {((paidRatio)).toFixed(0)}% Terkumpul
+              <div className="pt-3 border-t border-slate-100 flex justify-between items-center text-xs">
+                <span className="text-slate-500">
+                  Collection Rate: <strong className="text-slate-800">{paidRatio.toFixed(1)}%</strong>
                 </span>
-              </div>
-              <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden flex">
-                <div 
-                  className="h-full bg-emerald-500 transition-all duration-1000"
-                  style={{ width: `${paidRatio}%` }}
-                  title={`Lunas: ${formatCurrency(paidBilled)}`}
-                />
-                <div 
-                  className="h-full bg-amber-400 transition-all duration-1000"
-                  style={{ width: `${pendingRatio}%` }}
-                  title={`Menunggu TOP: ${formatCurrency(pendingBilled)}`}
-                />
-                <div 
-                  className="h-full bg-rose-500 transition-all duration-1000"
-                  style={{ width: `${overdueRatio}%` }}
-                  title={`Jatuh Tempo: ${formatCurrency(overdueBilled)}`}
-                />
-              </div>
-
-              {/* 3 Status mini cards */}
-              <div className="grid grid-cols-3 gap-2.5 mt-3">
-                <div className="p-2.5 rounded-xl bg-emerald-50/70 border border-emerald-200/60">
-                  <div className="text-[10px] text-emerald-800 font-bold uppercase">Lunas</div>
-                  <div className="text-xs font-black text-emerald-700 font-mono mt-0.5 truncate">
-                    {formatCurrency(paidBilled)}
-                  </div>
-                  <div className="text-[10px] text-emerald-600 font-medium">
-                    {invoiceSummary?.paid_count || 0} Invoice
-                  </div>
-                </div>
-
-                <div className="p-2.5 rounded-xl bg-amber-50/70 border border-amber-200/60">
-                  <div className="text-[10px] text-amber-800 font-bold uppercase">Menunggu TOP</div>
-                  <div className="text-xs font-black text-amber-700 font-mono mt-0.5 truncate">
-                    {formatCurrency(pendingBilled)}
-                  </div>
-                  <div className="text-[10px] text-amber-600 font-medium">
-                    Dalam Tempo
-                  </div>
-                </div>
-
-                <div className="p-2.5 rounded-xl bg-rose-50/70 border border-rose-200/60">
-                  <div className="text-[10px] text-rose-800 font-bold uppercase">Jatuh Tempo</div>
-                  <div className="text-xs font-black text-rose-700 font-mono mt-0.5 truncate">
-                    {formatCurrency(overdueBilled)}
-                  </div>
-                  <div className="text-[10px] text-rose-600 font-medium">
-                    {invoiceSummary?.overdue_count || 0} Overdue
-                  </div>
-                </div>
+                <Link
+                  href="/dashboard/invoices"
+                  className="text-xs text-blue-600 hover:text-blue-800 font-bold flex items-center gap-1"
+                >
+                  <span>Kelola Invoices</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
               </div>
             </div>
           </div>
 
-          <div className="pt-3 border-t border-slate-100 flex justify-between items-center text-xs">
-            <span className="text-slate-500">
-              Collection Rate: <strong className="text-slate-800">{paidRatio.toFixed(1)}%</strong>
-            </span>
-            <Link
-              href="/dashboard/invoices"
-              className="text-xs text-blue-600 hover:text-blue-800 font-bold flex items-center gap-1"
-            >
-              <span>Kelola Invoices</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
+          {/* Tier 4: Actionable Decision Intelligence Panels */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            {/* Panel 1: Urgent Invoices (Overdue & Collection Alert) */}
+            <UrgentInvoicesPanel 
+              invoices={urgentInvoices} 
+              loading={loading} 
+            />
+
+            {/* Panel 2: Top Routes Profitability & Shipment Performance */}
+            <TopRoutesAnalyticsPanel 
+              cashflowEntries={filteredCashflowForRoutes} 
+              loading={loading} 
+            />
+          </div>
+        </>
+      ) : (
+        /* TAB 2: INTELIJEN STRATEGIS & PERTUMBUHAN BISNIS (6 Grafik Baru P1 - P6) */
+        <div className="space-y-6 animate-in fade-in duration-200">
+          {/* Zona 1: Likuiditas & Ketahanan Modal Kerja (P1 & P6) */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-4 bg-sky-600 rounded-full" />
+              <h2 className="text-xs font-black uppercase tracking-wider text-slate-800">
+                Zona 1: Likuiditas & Ketahanan Modal Kerja
+              </h2>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+              <div className="lg:col-span-2">
+                <CashflowRunwayChart data={runwayData} loading={analyticsLoading} />
+              </div>
+              <div className="lg:col-span-1">
+                <CashConversionGapCard
+                  avgCustomerDSO={runwayData?.avg_customer_dso || 0}
+                  avgVendorDPO={runwayData?.avg_vendor_dpo || 0}
+                  financingGapDays={runwayData?.financing_gap_days || 0}
+                  loading={analyticsLoading}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Zona 2: Profitabilitas Koridor & Armada Rekanan (P2 & P4) */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-4 bg-emerald-600 rounded-full" />
+              <h2 className="text-xs font-black uppercase tracking-wider text-slate-800">
+                Zona 2: Profitabilitas Koridor & Armada Rekanan
+              </h2>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              <RouteBCGMatrixChart data={routeMatrixData} loading={analyticsLoading} />
+              <VendorEfficiencyChart data={vendorEfficiencyData} loading={analyticsLoading} />
+            </div>
+          </div>
+
+          {/* Zona 3: Portofolio & Kualitas Pelanggan (P3 & P5) */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-4 bg-indigo-600 rounded-full" />
+              <h2 className="text-xs font-black uppercase tracking-wider text-slate-800">
+                Zona 3: Portofolio & Kualitas Pelanggan
+              </h2>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              <CustomerDsoDisciplineChart data={customerDisciplineData} loading={analyticsLoading} />
+              <CustomerParetoChart data={customerDisciplineData} loading={analyticsLoading} />
+            </div>
           </div>
         </div>
-      </div>
-
-      {/* Tier 4: Actionable Decision Intelligence Panels */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        {/* Panel 1: Urgent Invoices (Overdue & Collection Alert) */}
-        <UrgentInvoicesPanel 
-          invoices={urgentInvoices} 
-          loading={loading} 
-        />
-
-        {/* Panel 2: Top Routes Profitability & Shipment Performance */}
-        <TopRoutesAnalyticsPanel 
-          cashflowEntries={filteredCashflowForRoutes} 
-          loading={loading} 
-        />
-      </div>
+      )}
 
       {/* Quick Action Modals */}
       <TopUpModal 
