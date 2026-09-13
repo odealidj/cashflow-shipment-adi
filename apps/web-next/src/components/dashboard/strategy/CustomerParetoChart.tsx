@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { PieChart, TrendingDown, Users, AlertTriangle, ShieldCheck, Sparkles, ArrowDownRight } from "lucide-react";
+import { PieChart, TrendingDown, Users, AlertTriangle, ShieldCheck, Sparkles, ArrowDownRight, Maximize2 } from "lucide-react";
 import { ChartInfoPopover } from "@/components/shared/ChartInfoPopover";
 import { SmartNarrativeBox } from "@/components/shared/SmartNarrativeBox";
 import { CustomerDisciplineData, CustomerDisciplineItem } from "./CustomerDsoDisciplineChart";
@@ -9,9 +9,16 @@ import { CustomerDisciplineData, CustomerDisciplineItem } from "./CustomerDsoDis
 interface CustomerParetoChartProps {
   data: CustomerDisciplineData | null;
   loading?: boolean;
+  onMaximize?: () => void;
+  isPresentationMode?: boolean;
 }
 
-export function CustomerParetoChart({ data, loading = false }: CustomerParetoChartProps) {
+export function CustomerParetoChart({ 
+  data, 
+  loading = false,
+  onMaximize,
+  isPresentationMode = false 
+}: CustomerParetoChartProps) {
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
 
   const formatCurrency = (amount: number) => {
@@ -67,12 +74,12 @@ export function CustomerParetoChart({ data, loading = false }: CustomerParetoCha
     return padX + (idx / (customers.length - 1)) * (svgWidth - padX * 2);
   };
 
-  const getBarHeight = (amount: number) => {
-    return (amount / maxBilled) * (svgHeight - padY * 2);
+  const getYLine = (pct: number) => {
+    return svgHeight - padY - (pct / 100) * (svgHeight - padY * 2);
   };
 
-  const getYLine = (cumulativePct: number) => {
-    return svgHeight - padY - (cumulativePct / 100) * (svgHeight - padY * 2);
+  const getBarHeight = (billed: number) => {
+    return (billed / maxBilled) * (svgHeight - padY * 2);
   };
 
   const linePoints = customers.map((c, idx) => ({
@@ -84,40 +91,71 @@ export function CustomerParetoChart({ data, loading = false }: CustomerParetoCha
   const line80Y = getYLine(80);
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-4 sm:p-4.5 flex flex-col justify-between space-y-3.5">
+    <div className={`rounded-2xl border transition-all ${
+      isPresentationMode 
+        ? "bg-[#121c32] border-slate-700/80 shadow-2xl p-4 sm:p-5 text-slate-100" 
+        : "bg-white border-slate-200/80 shadow-xs p-4 sm:p-4.5 text-slate-900"
+    } space-y-3.5`}>
       {/* Header */}
-      <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-3">
+      <div className={`flex items-start justify-between gap-3 border-b pb-3 ${
+        isPresentationMode ? "border-slate-800" : "border-slate-100"
+      }`}>
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-purple-100 text-purple-800 border border-purple-200">
+            <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md border ${
+              isPresentationMode
+                ? "bg-purple-500/20 text-purple-300 border-purple-400/30"
+                : "bg-purple-100 text-purple-800 border-purple-200"
+            }`}>
               Prioritas 5 (P5)
             </span>
             <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border ${
               churnList.length > 0
-                ? "bg-amber-100 text-amber-800 border-amber-200"
-                : "bg-emerald-100 text-emerald-800 border-emerald-200"
+                ? isPresentationMode ? "bg-amber-500/20 text-amber-300 border-amber-500/40" : "bg-amber-100 text-amber-800 border-amber-200"
+                : isPresentationMode ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40" : "bg-emerald-100 text-emerald-800 border-emerald-200"
             }`}>
               {churnList.length > 0 ? `● ${churnList.length} Potensi Churn` : "● Retensi Klien Stabil"}
             </span>
           </div>
-          <h3 className="text-base font-black text-slate-900 tracking-tight mt-1 flex items-center gap-1.5">
+          <h3 className={`text-base font-black tracking-tight mt-1 flex items-center gap-1.5 ${
+            isPresentationMode ? "text-white" : "text-slate-900"
+          }`}>
             Konsentrasi Portofolio Pelanggan (Pareto 80/20 & Churn Warning)
           </h3>
-          <p className="text-slate-500 text-xs font-medium mt-0.5">
+          <p className={`text-xs font-medium mt-0.5 ${
+            isPresentationMode ? "text-slate-400" : "text-slate-500"
+          }`}>
             Sebaran akumulasi omset per customer dan deteksi dini penurunan frekuensi muatan
           </p>
         </div>
 
-        <ChartInfoPopover
-          title="Konsentrasi Portofolio Pelanggan (Pareto 80/20 & Churn Early Warning)"
-          purpose="Menunjukkan sebaran kontribusi pendapatan dari para pelanggan korporat dan mendeteksi apakah kelangsungan hidup perusahaan terlalu bertumpu pada segelintir pelanggan saja, sekaligus memantau keaktifan order mereka."
-          benefits={[
-            "Menyadarkan manajemen jika portofolio bisnis rapuh (ketergantungan berlebih pada 1-2 klien besar).",
-            "Mendorong diversifikasi penjualan ke sektor industri lain agar fondasi bisnis kokoh.",
-            "Memberikan peringatan dini bagi account manager sebelum klien berpindah ke ekspedisi kompetitor."
-          ]}
-          formula="Akumulasi % = (SUM Kumulatif Omset Klien / Total Omset) * 100% | Churn Alert = Trip Bulan Ini turun > 40% vs 30 hari sebelumnya"
-        />
+        <div className="flex items-center gap-1.5 shrink-0">
+          {onMaximize && (
+            <button
+              type="button"
+              onClick={onMaximize}
+              className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                isPresentationMode 
+                  ? "text-slate-400 hover:text-white hover:bg-slate-800" 
+                  : "text-slate-400 hover:text-purple-700 hover:bg-purple-50"
+              }`}
+              title="Perbesar Grafik & Lihat Rincian Tabel Angka"
+            >
+              <Maximize2 className="w-4 h-4" />
+            </button>
+          )}
+
+          <ChartInfoPopover
+            title="Konsentrasi Portofolio Pelanggan (Pareto 80/20 & Churn Early Warning)"
+            purpose="Menunjukkan sebaran kontribusi pendapatan dari para pelanggan korporat dan mendeteksi apakah kelangsungan hidup perusahaan terlalu bertumpu pada segelintir pelanggan saja, sekaligus memantau keaktifan order mereka."
+            benefits={[
+              "Menyadarkan manajemen jika portofolio bisnis rapuh (ketergantungan berlebih pada 1-2 klien besar).",
+              "Mendorong diversifikasi penjualan ke sektor industri lain agar fondasi bisnis kokoh.",
+              "Memberikan peringatan dini bagi account manager sebelum klien berpindah ke ekspedisi kompetitor."
+            ]}
+            formula="Akumulasi % = (SUM Kumulatif Omset Klien / Total Omset) * 100% | Churn Alert = Trip Bulan Ini turun > 40% vs 30 hari sebelumnya"
+          />
+        </div>
       </div>
 
       {/* 3 Summary Stat Badges */}

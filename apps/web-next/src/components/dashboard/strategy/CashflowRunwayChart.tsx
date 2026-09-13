@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { TrendingUp, TrendingDown, AlertCircle, ShieldCheck, Wallet, ArrowDownRight, ArrowUpRight, Calendar } from "lucide-react";
+import { TrendingUp, TrendingDown, AlertCircle, ShieldCheck, Wallet, ArrowDownRight, ArrowUpRight, Calendar, Maximize2 } from "lucide-react";
 import { ChartInfoPopover } from "@/components/shared/ChartInfoPopover";
 import { SmartNarrativeBox } from "@/components/shared/SmartNarrativeBox";
 
@@ -34,9 +34,16 @@ export interface CashflowRunwayData {
 interface CashflowRunwayChartProps {
   data: CashflowRunwayData | null;
   loading?: boolean;
+  onMaximize?: () => void;
+  isPresentationMode?: boolean;
 }
 
-export function CashflowRunwayChart({ data, loading = false }: CashflowRunwayChartProps) {
+export function CashflowRunwayChart({ 
+  data, 
+  loading = false,
+  onMaximize,
+  isPresentationMode = false 
+}: CashflowRunwayChartProps) {
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
 
   const formatCurrency = (amount: number) => {
@@ -118,40 +125,70 @@ export function CashflowRunwayChart({ data, loading = false }: CashflowRunwayCha
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-4 sm:p-4.5 flex flex-col justify-between space-y-3.5">
-      {/* Header with Title and Info Popover */}
-      <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-3">
+    <div className={`rounded-2xl border transition-all ${
+      isPresentationMode 
+        ? "bg-[#121c32] border-slate-700/80 shadow-2xl p-4 sm:p-5 text-slate-100" 
+        : "bg-white border-slate-200/80 shadow-xs p-4 sm:p-4.5 text-slate-900"
+    } space-y-3.5`}>
+      {/* Header with Title, Maximize button and Info Popover */}
+      <div className={`flex items-start justify-between gap-3 border-b pb-3 ${
+        isPresentationMode ? "border-slate-800" : "border-slate-100"
+      }`}>
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-sky-100 text-sky-800 border border-sky-200">
+            <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md border ${
+              isPresentationMode
+                ? "bg-sky-500/20 text-sky-300 border-sky-400/30"
+                : "bg-sky-100 text-sky-800 border-sky-200"
+            }`}>
               Prioritas 1 (P1)
             </span>
             <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border ${
               isDanger 
-                ? "bg-rose-100 text-rose-800 border-rose-200" 
-                : "bg-emerald-100 text-emerald-800 border-emerald-200"
+                ? isPresentationMode ? "bg-rose-500/20 text-rose-300 border-rose-500/40" : "bg-rose-100 text-rose-800 border-rose-200"
+                : isPresentationMode ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40" : "bg-emerald-100 text-emerald-800 border-emerald-200"
             }`}>
               {isDanger ? "● Resiko Defisit" : "● Kas Aman"}
             </span>
           </div>
-          <h3 className="text-base font-black text-slate-900 tracking-tight mt-1 flex items-center gap-1.5">
+          <h3 className={`text-base font-black tracking-tight mt-1 flex items-center gap-1.5 ${
+            isPresentationMode ? "text-white" : "text-slate-900"
+          }`}>
             Proyeksi Arus Kas 30–60 Hari ke Depan (Cashflow Runway)
           </h3>
-          <p className="text-slate-500 text-xs font-medium mt-0.5">
+          <p className={`text-xs font-medium mt-0.5 ${
+            isPresentationMode ? "text-slate-400" : "text-slate-500"
+          }`}>
             Peta perkiraan saldo kas dari piutang customer jatuh tempo dikurangi beban vendor rekanan
           </p>
         </div>
 
-        <ChartInfoPopover
-          title="Proyeksi Arus Kas 30–60 Hari ke Depan (Cashflow Runway)"
-          purpose="Memetakan perkiraan posisi saldo kas perusahaan setiap minggu selama 1-2 bulan ke depan berdasarkan jadwal jatuh tempo invoice yang akan cair dikurangi tagihan rekanan vendor yang harus dibayar."
-          benefits={[
-            "Memberikan peringatan dini (early warning) sebelum kas perusahaan jatuh ke zona defisit.",
-            "Menentukan tanggal aman untuk melunasi tagihan vendor besar tanpa mengganggu operasional.",
-            "Memberikan aba-aba bagi tim finance kapan harus menagih piutang secara agresif jika buffer kas menipis."
-          ]}
-          formula="Saldo Hari-t = Saldo Kas Riil + Akumulasi Piutang Jatuh Tempo (Inflow) - Akumulasi Hutang Vendor Jatuh Tempo (Outflow)"
-        />
+        <div className="flex items-center gap-1.5 shrink-0">
+          {onMaximize && (
+            <button
+              type="button"
+              onClick={onMaximize}
+              className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                isPresentationMode 
+                  ? "text-slate-400 hover:text-white hover:bg-slate-800" 
+                  : "text-slate-400 hover:text-sky-700 hover:bg-sky-50"
+              }`}
+              title="Perbesar Grafik & Lihat Rincian Tabel Angka"
+            >
+              <Maximize2 className="w-4 h-4" />
+            </button>
+          )}
+          <ChartInfoPopover
+            title="Proyeksi Arus Kas 30–60 Hari ke Depan (Cashflow Runway)"
+            purpose="Memetakan perkiraan posisi saldo kas perusahaan setiap minggu selama 1-2 bulan ke depan berdasarkan jadwal jatuh tempo invoice yang akan cair dikurangi tagihan rekanan vendor yang harus dibayar."
+            benefits={[
+              "Memberikan peringatan dini (early warning) sebelum kas perusahaan jatuh ke zona defisit.",
+              "Menentukan tanggal aman untuk melunasi tagihan vendor besar tanpa mengganggu operasional.",
+              "Memberikan aba-aba bagi tim finance kapan harus menagih piutang secara agresif jika buffer kas menipis."
+            ]}
+            formula="Saldo Hari-t = Saldo Kas Riil + Akumulasi Piutang Jatuh Tempo (Inflow) - Akumulasi Hutang Vendor Jatuh Tempo (Outflow)"
+          />
+        </div>
       </div>
 
       {/* 4 Summary Stat Pills */}

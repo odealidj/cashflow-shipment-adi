@@ -32,6 +32,7 @@ import { RouteBCGMatrixChart, RouteMatrixData } from "@/components/dashboard/str
 import { VendorEfficiencyChart, VendorEfficiencyData } from "@/components/dashboard/strategy/VendorEfficiencyChart";
 import { CustomerDsoDisciplineChart, CustomerDisciplineData } from "@/components/dashboard/strategy/CustomerDsoDisciplineChart";
 import { CustomerParetoChart } from "@/components/dashboard/strategy/CustomerParetoChart";
+import { StrategicIntelligenceDashboard } from "@/components/dashboard/strategy/StrategicIntelligenceDashboard";
 import { TopUpModal } from "@/components/TopUpModal";
 import { ShipmentModal } from "@/components/ShipmentModal";
 import { CreateInvoiceModal } from "@/components/CreateInvoiceModal";
@@ -804,57 +805,15 @@ export default function Dashboard() {
 
       {/* TAB 3: INTELIJEN STRATEGIS & PERTUMBUHAN BISNIS (6 Grafik Eksekutif) */}
       {activeMainTab === "strategy" && (
-        <div className="space-y-4 animate-in fade-in duration-200">
-          {/* Zona 1: Likuiditas & Ketahanan Modal Kerja (P1 & P6) */}
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-4 bg-sky-600 rounded-full" />
-              <h2 className="text-xs font-black uppercase tracking-wider text-slate-800">
-                Zona 1: Likuiditas & Ketahanan Modal Kerja
-              </h2>
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3.5">
-              <div className="lg:col-span-2">
-                <CashflowRunwayChart data={runwayData} loading={analyticsLoading} />
-              </div>
-              <div className="lg:col-span-1">
-                <CashConversionGapCard
-                  avgCustomerDSO={runwayData?.avg_customer_dso || 0}
-                  avgVendorDPO={runwayData?.avg_vendor_dpo || 0}
-                  financingGapDays={runwayData?.financing_gap_days || 0}
-                  loading={analyticsLoading}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Zona 2: Profitabilitas Koridor & Armada Rekanan (P2 & P4) */}
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-4 bg-emerald-600 rounded-full" />
-              <h2 className="text-xs font-black uppercase tracking-wider text-slate-800">
-                Zona 2: Profitabilitas Koridor & Armada Rekanan
-              </h2>
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3.5">
-              <RouteBCGMatrixChart data={routeMatrixData} loading={analyticsLoading} />
-              <VendorEfficiencyChart data={vendorEfficiencyData} loading={analyticsLoading} />
-            </div>
-          </div>
-
-          {/* Zona 3: Portofolio & Kualitas Pelanggan (P3 & P5) */}
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-4 bg-indigo-600 rounded-full" />
-              <h2 className="text-xs font-black uppercase tracking-wider text-slate-800">
-                Zona 3: Portofolio & Kualitas Pelanggan
-              </h2>
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3.5">
-              <CustomerDsoDisciplineChart data={customerDisciplineData} loading={analyticsLoading} />
-              <CustomerParetoChart data={customerDisciplineData} loading={analyticsLoading} />
-            </div>
-          </div>
+        <div className="animate-in fade-in duration-200">
+          <StrategicIntelligenceDashboard
+            runwayData={runwayData}
+            routeMatrixData={routeMatrixData}
+            vendorEfficiencyData={vendorEfficiencyData}
+            customerDisciplineData={customerDisciplineData}
+            loading={analyticsLoading}
+            onRefresh={fetchAnalyticsData}
+          />
         </div>
       )}
 

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Truck, ShieldAlert, Percent, DollarSign, Award, ArrowUpRight, TrendingUp } from "lucide-react";
+import { Truck, ShieldAlert, Percent, DollarSign, Award, ArrowUpRight, TrendingUp, Maximize2 } from "lucide-react";
 import { ChartInfoPopover } from "@/components/shared/ChartInfoPopover";
 import { SmartNarrativeBox } from "@/components/shared/SmartNarrativeBox";
 
@@ -30,9 +30,16 @@ export interface VendorEfficiencyData {
 interface VendorEfficiencyChartProps {
   data: VendorEfficiencyData | null;
   loading?: boolean;
+  onMaximize?: () => void;
+  isPresentationMode?: boolean;
 }
 
-export function VendorEfficiencyChart({ data, loading = false }: VendorEfficiencyChartProps) {
+export function VendorEfficiencyChart({ 
+  data, 
+  loading = false,
+  onMaximize,
+  isPresentationMode = false 
+}: VendorEfficiencyChartProps) {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("id-ID", {
       style: "currency",
@@ -61,14 +68,14 @@ export function VendorEfficiencyChart({ data, loading = false }: VendorEfficienc
   }
 
   const vendors = data.vendors;
-  const isConcentrationRisk = data.top_concentration_pct >= 40.0;
+  const isConcentrationRisk = data.top_concentration_pct > 35;
 
   // Narrative generation
-  let narrativeText = "";
+  let narrativeText = `Perusahaan bermitra dengan ${data.total_vendors} vendor ekspedisi dengan total biaya ${formatCurrency(data.total_cost_all)}. `;
   if (isConcentrationRisk) {
-    narrativeText = `Peringatan Ketergantungan: Vendor ${data.top_vendor_name} menyerap ${data.top_concentration_pct}% dari total seluruh ritase pengiriman. Disarankan mendistribusikan muatan ke vendor alternatif guna mengurangi risiko monopoli armada. `;
+    narrativeText += `Peringatan Ketergantungan: Vendor ${data.top_vendor_name} menyerap ${data.top_concentration_pct}% dari total seluruh ritase pengiriman. Disarankan mendistribusikan muatan ke vendor alternatif guna mengurangi risiko monopoli armada. `;
   } else {
-    narrativeText = `Distribusi rekanan armada berada pada batas sehat (konsentrasi vendor tertinggi ${data.top_concentration_pct}% oleh ${data.top_vendor_name}). `;
+    narrativeText += `Alokasi armada vendor terdistribusi sehat tanpa ada dominasi berlebih. `;
   }
 
   if (data.highest_margin_vendor) {
@@ -78,40 +85,71 @@ export function VendorEfficiencyChart({ data, loading = false }: VendorEfficienc
   const maxCost = Math.max(...vendors.map((v) => v.total_cost)) || 1;
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-4 sm:p-4.5 flex flex-col justify-between space-y-3.5">
+    <div className={`rounded-2xl border transition-all ${
+      isPresentationMode 
+        ? "bg-[#121c32] border-slate-700/80 shadow-2xl p-4 sm:p-5 text-slate-100" 
+        : "bg-white border-slate-200/80 shadow-xs p-4 sm:p-4.5 text-slate-900"
+    } space-y-3.5`}>
       {/* Header */}
-      <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-3">
+      <div className={`flex items-start justify-between gap-3 border-b pb-3 ${
+        isPresentationMode ? "border-slate-800" : "border-slate-100"
+      }`}>
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 border border-amber-200">
+            <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md border ${
+              isPresentationMode
+                ? "bg-amber-500/20 text-amber-300 border-amber-400/30"
+                : "bg-amber-100 text-amber-800 border-amber-200"
+            }`}>
               Prioritas 4 (P4)
             </span>
             <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border ${
               isConcentrationRisk
-                ? "bg-amber-100 text-amber-800 border-amber-200"
-                : "bg-emerald-100 text-emerald-800 border-emerald-200"
+                ? isPresentationMode ? "bg-amber-500/20 text-amber-300 border-amber-500/40" : "bg-amber-100 text-amber-800 border-amber-200"
+                : isPresentationMode ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40" : "bg-emerald-100 text-emerald-800 border-emerald-200"
             }`}>
               {isConcentrationRisk ? "● Konsentrasi Tinggi" : "● Vendor Terdiversifikasi"}
             </span>
           </div>
-          <h3 className="text-base font-black text-slate-900 tracking-tight mt-1 flex items-center gap-1.5">
+          <h3 className={`text-base font-black tracking-tight mt-1 flex items-center gap-1.5 ${
+            isPresentationMode ? "text-white" : "text-slate-900"
+          }`}>
             Analisis Efisiensi & Ketergantungan Rekanan Vendor
           </h3>
-          <p className="text-slate-500 text-xs font-medium mt-0.5">
+          <p className={`text-xs font-medium mt-0.5 ${
+            isPresentationMode ? "text-slate-400" : "text-slate-500"
+          }`}>
             Evaluasi beban pokok sewa armada rekanan vs kontribusi margin keuntungan dan rasio ketergantungan
           </p>
         </div>
 
-        <ChartInfoPopover
-          title="Analisis Efisiensi & Ketergantungan Rekanan Vendor"
-          purpose="Mengukur seberapa besar biaya pengeluaran yang kita bayarkan ke masing-masing rekanan vendor armada, berapa margin laba yang dihasilkan, serta mengukur risiko jika operasional terlalu bertumpu pada satu vendor tertentu."
-          benefits={[
-            "Menjadi alat tawar (bargaining power) kuat untuk negosiasi diskon harga sewa armada pada vendor bervolume tinggi.",
-            "Mengidentifikasi vendor 'emas' yang konsisten memberikan margin profit tinggi (>15%) sebagai rekanan prioritas.",
-            "Mencegah risiko kelumpuhan armada jika salah satu vendor monopoli (>35%) mendadak mengalami masalah internal."
-          ]}
-          formula="Rasio Ketergantungan = (Ritase Vendor / Total Ritase Perusahaan) * 100% | Rata-rata Margin = AVG(profit / grand_selling * 100%)"
-        />
+        <div className="flex items-center gap-1.5 shrink-0">
+          {onMaximize && (
+            <button
+              type="button"
+              onClick={onMaximize}
+              className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                isPresentationMode 
+                  ? "text-slate-400 hover:text-white hover:bg-slate-800" 
+                  : "text-slate-400 hover:text-amber-700 hover:bg-amber-50"
+              }`}
+              title="Perbesar Grafik & Lihat Rincian Tabel Angka"
+            >
+              <Maximize2 className="w-4 h-4" />
+            </button>
+          )}
+
+          <ChartInfoPopover
+            title="Analisis Efisiensi & Ketergantungan Rekanan Vendor"
+            purpose="Mengukur seberapa besar biaya pengeluaran yang kita bayarkan ke masing-masing rekanan vendor armada, berapa margin laba yang dihasilkan, serta mengukur risiko jika operasional terlalu bertumpu pada satu vendor tertentu."
+            benefits={[
+              "Menjadi alat tawar (bargaining power) kuat untuk negosiasi diskon harga sewa armada pada vendor bervolume tinggi.",
+              "Mengidentifikasi vendor 'emas' yang konsisten memberikan margin profit tinggi (>15%) sebagai rekanan prioritas.",
+              "Mencegah risiko kelumpuhan armada jika salah satu vendor monopoli (>35%) mendadak mengalami masalah internal."
+            ]}
+            formula="Rasio Ketergantungan = (Ritase Vendor / Total Ritase Perusahaan) * 100% | Rata-rata Margin = AVG(profit / grand_selling * 100%)"
+          />
+        </div>
       </div>
 
       {/* 3 Summary Stat Pills */}

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Users, Clock, AlertTriangle, ShieldCheck, CheckCircle2, RotateCcw } from "lucide-react";
+import { Users, Clock, AlertTriangle, ShieldCheck, CheckCircle2, RotateCcw, Maximize2 } from "lucide-react";
 import { ChartInfoPopover } from "@/components/shared/ChartInfoPopover";
 import { SmartNarrativeBox } from "@/components/shared/SmartNarrativeBox";
 
@@ -35,9 +35,16 @@ export interface CustomerDisciplineData {
 interface CustomerDsoDisciplineChartProps {
   data: CustomerDisciplineData | null;
   loading?: boolean;
+  onMaximize?: () => void;
+  isPresentationMode?: boolean;
 }
 
-export function CustomerDsoDisciplineChart({ data, loading = false }: CustomerDsoDisciplineChartProps) {
+export function CustomerDsoDisciplineChart({ 
+  data, 
+  loading = false,
+  onMaximize,
+  isPresentationMode = false 
+}: CustomerDsoDisciplineChartProps) {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("id-ID", {
       style: "currency",
@@ -60,12 +67,12 @@ export function CustomerDsoDisciplineChart({ data, loading = false }: CustomerDs
     return (
       <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs text-center py-12">
         <Users className="w-10 h-10 text-slate-300 mx-auto mb-2" />
-        <p className="text-xs font-bold text-slate-600">Belum ada data pelanggan tercatat.</p>
+        <p className="text-xs font-bold text-slate-600">Belum ada data kepatuhan pelanggan.</p>
       </div>
     );
   }
 
-  const customers = data.customers;
+  const customers = data.customers || [];
   const highRiskList = customers.filter((c) => c.discipline_status === "HIGH_RISK");
   const primeList = customers.filter((c) => c.discipline_status === "PRIME");
 
@@ -78,40 +85,71 @@ export function CustomerDsoDisciplineChart({ data, loading = false }: CustomerDs
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-4 sm:p-4.5 flex flex-col justify-between space-y-3.5">
+    <div className={`rounded-2xl border transition-all ${
+      isPresentationMode 
+        ? "bg-[#121c32] border-slate-700/80 shadow-2xl p-4 sm:p-5 text-slate-100" 
+        : "bg-white border-slate-200/80 shadow-xs p-4 sm:p-4.5 text-slate-900"
+    } space-y-3.5`}>
       {/* Header */}
-      <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-3">
+      <div className={`flex items-start justify-between gap-3 border-b pb-3 ${
+        isPresentationMode ? "border-slate-800" : "border-slate-100"
+      }`}>
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-blue-100 text-blue-800 border border-blue-200">
+            <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md border ${
+              isPresentationMode
+                ? "bg-blue-500/20 text-blue-300 border-blue-400/30"
+                : "bg-blue-100 text-blue-800 border-blue-200"
+            }`}>
               Prioritas 3 (P3)
             </span>
             <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border ${
               highRiskList.length > 0
-                ? "bg-rose-100 text-rose-800 border-rose-200"
-                : "bg-emerald-100 text-emerald-800 border-emerald-200"
+                ? isPresentationMode ? "bg-rose-500/20 text-rose-300 border-rose-500/40" : "bg-rose-100 text-rose-800 border-rose-200"
+                : isPresentationMode ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40" : "bg-emerald-100 text-emerald-800 border-emerald-200"
             }`}>
               {highRiskList.length > 0 ? `● ${highRiskList.length} Klien High Risk` : "● Pembayaran Disiplin"}
             </span>
           </div>
-          <h3 className="text-base font-black text-slate-900 tracking-tight mt-1 flex items-center gap-1.5">
+          <h3 className={`text-base font-black tracking-tight mt-1 flex items-center gap-1.5 ${
+            isPresentationMode ? "text-white" : "text-slate-900"
+          }`}>
             Skor Kepatuhan Tempo & DSO per Customer
           </h3>
-          <p className="text-slate-500 text-xs font-medium mt-0.5">
+          <p className={`text-xs font-medium mt-0.5 ${
+            isPresentationMode ? "text-slate-400" : "text-slate-500"
+          }`}>
             Evaluasi perbandingan janji tempo invoice (TOP) vs realisasi waktu pelunasan riil (DSO) dan frekuensi reschedule
           </p>
         </div>
 
-        <ChartInfoPopover
-          title="Skor Kepatuhan Tempo & DSO per Customer"
-          purpose="Membandingkan janji tempo pembayaran invoice (TOP) masing-masing pelanggan korporat dengan kenyataan berapa hari pelanggan tersebut benar-benar melunasi tagihannya (DSO)."
-          benefits={[
-            "Menentukan batas kredit (credit limit) dan kelayakan perpanjangan kontrak bagi tiap customer.",
-            "Memberikan syarat Cash Before Delivery (CBD) atau uang muka (DP) bagi pelanggan berstatus High Risk.",
-            "Mencegah akumulasi piutang macet yang membebani kas perusahaan."
-          ]}
-          formula="DSO Riil = paid_at - shipment_date | Kategori: Prime (DSO <= TOP), Moderate (DSO <= TOP+10), High Risk (DSO > TOP+10 atau Reschedule >= 2)"
-        />
+        <div className="flex items-center gap-1.5 shrink-0">
+          {onMaximize && (
+            <button
+              type="button"
+              onClick={onMaximize}
+              className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                isPresentationMode 
+                  ? "text-slate-400 hover:text-white hover:bg-slate-800" 
+                  : "text-slate-400 hover:text-blue-700 hover:bg-blue-50"
+              }`}
+              title="Perbesar Grafik & Lihat Rincian Tabel Angka"
+            >
+              <Maximize2 className="w-4 h-4" />
+            </button>
+          )}
+
+          <ChartInfoPopover
+            title="Skor Kepatuhan Tempo & DSO per Customer"
+            purpose="Membandingkan janji tempo pembayaran invoice (TOP) masing-masing pelanggan korporat dengan kenyataan berapa hari pelanggan tersebut benar-benar melunasi tagihannya (DSO)."
+            benefits={[
+              "Menentukan batas kredit (credit limit) dan kelayakan perpanjangan kontrak bagi tiap customer.",
+              "Memberikan syarat Cash Before Delivery (CBD) atau uang muka (DP) bagi pelanggan berstatus High Risk.",
+              "Mencegah akumulasi piutang macet yang membebani kas perusahaan."
+            ]}
+            formula="DSO Riil = paid_at - shipment_date | Kategori: Prime (DSO <= TOP), Moderate (DSO <= TOP+10), High Risk (DSO > TOP+10 atau Reschedule >= 2)"
+          />
+        </div>
       </div>
 
       {/* 3 Summary Pills */}

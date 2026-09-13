@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Award, Compass, Table, LayoutGrid, ArrowUpRight, TrendingUp, AlertCircle, Sparkles } from "lucide-react";
+import { Award, Compass, Table, LayoutGrid, ArrowUpRight, TrendingUp, AlertCircle, Sparkles, Maximize2 } from "lucide-react";
 import { ChartInfoPopover } from "@/components/shared/ChartInfoPopover";
 import { SmartNarrativeBox } from "@/components/shared/SmartNarrativeBox";
 
@@ -26,9 +26,16 @@ export interface RouteMatrixData {
 interface RouteBCGMatrixChartProps {
   data: RouteMatrixData | null;
   loading?: boolean;
+  onMaximize?: () => void;
+  isPresentationMode?: boolean;
 }
 
-export function RouteBCGMatrixChart({ data, loading = false }: RouteBCGMatrixChartProps) {
+export function RouteBCGMatrixChart({ 
+  data, 
+  loading = false,
+  onMaximize,
+  isPresentationMode = false 
+}: RouteBCGMatrixChartProps) {
   const [viewMode, setViewMode] = useState<"quadrant" | "table">("quadrant");
   const [hoveredRoute, setHoveredRoute] = useState<RouteMatrixItem | null>(null);
 
@@ -59,28 +66,24 @@ export function RouteBCGMatrixChart({ data, loading = false }: RouteBCGMatrixCha
     );
   }
 
-  const routes = data.routes;
+  const routes = data.routes || [];
   const stars = routes.filter((r) => r.quadrant === "STAR");
   const opportunities = routes.filter((r) => r.quadrant === "OPPORTUNITY");
   const cashCows = routes.filter((r) => r.quadrant === "CASH_COW");
   const evaluates = routes.filter((r) => r.quadrant === "EVALUATE");
 
   // Narrative generation
-  let narrativeText = "";
+  let narrativeText = `Dari ${data.total_routes} rute ekspedisi aktif, terdapat ${stars.length} rute Bintang ber-volume tinggi dengan margin tebal. `;
   if (stars.length > 0) {
-    const topStar = stars[0];
-    narrativeText = `Rute Bintang Unggulan: ${topStar.route_name} menyumbang laba tertinggi (${formatCurrency(topStar.total_profit)}) dengan margin prima (${topStar.avg_margin_pct}%). `;
-  } else {
-    narrativeText = `Belum ada rute di kuadran Bintang. `;
+    narrativeText += `Rute Bintang Unggulan: ${stars[0].route_name} menyumbang laba tertinggi (${formatCurrency(stars[0].total_profit)}) dengan margin prima (${stars[0].avg_margin_pct}%). `;
   }
-
   if (evaluates.length > 0) {
-    narrativeText += `Perhatian: Rute ${evaluates[0].route_name} berada di kuadran evaluasi kritis karena margin laba rendah (${evaluates[0].avg_margin_pct}%) dan volume belum menutup beban. Pertimbangkan evaluasi tarif.`;
-  } else if (cashCows.length > 0) {
-    narrativeText += `Rute ${cashCows[0].route_name} bertindak sebagai sapi perah penopang volume arus kas (menghasilkan ${cashCows[0].trip_count} ritase).`;
+    narrativeText += `Perhatian: Rute ${evaluates.map((r) => r.route_name).slice(0, 2).join(", ")} berada di kuadran Evaluasi Kritis karena ritase rendah dan margin tipis (<${data.avg_margin_threshold}%). Disarankan meninjau ulang tarif jual atau efisiensi vendor armada.`;
+  } else {
+    narrativeText += `Seluruh koridor rute berjalan sehat tanpa ada rute dalam zona evaluasi kritis.`;
   }
 
-  // SVG Chart Coordinate calculations
+  // BCG scatter scale dimensions
   const svgWidth = 600;
   const svgHeight = 280;
   const pad = 40;
@@ -95,35 +98,51 @@ export function RouteBCGMatrixChart({ data, loading = false }: RouteBCGMatrixCha
   const splitY = getY(data.avg_margin_threshold);
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-4 sm:p-4.5 flex flex-col justify-between space-y-3.5">
+    <div className={`rounded-2xl border transition-all ${
+      isPresentationMode 
+        ? "bg-[#121c32] border-slate-700/80 shadow-2xl p-4 sm:p-5 text-slate-100" 
+        : "bg-white border-slate-200/80 shadow-xs p-4 sm:p-4.5 text-slate-900"
+    } space-y-3.5`}>
       {/* Header */}
-      <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-3">
+      <div className={`flex items-start justify-between gap-3 border-b pb-3 ${
+        isPresentationMode ? "border-slate-800" : "border-slate-100"
+      }`}>
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 border border-emerald-200">
+            <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md border ${
+              isPresentationMode
+                ? "bg-emerald-500/20 text-emerald-300 border-emerald-400/30"
+                : "bg-emerald-100 text-emerald-800 border-emerald-200"
+            }`}>
               Prioritas 2 (P2)
             </span>
-            <span className="text-[10px] font-bold text-slate-500">
+            <span className={`text-[10px] font-bold ${isPresentationMode ? "text-slate-400" : "text-slate-500"}`}>
               {data.total_routes} Rute Terpetakan
             </span>
           </div>
-          <h3 className="text-base font-black text-slate-900 tracking-tight mt-1 flex items-center gap-1.5">
+          <h3 className={`text-base font-black tracking-tight mt-1 flex items-center gap-1.5 ${
+            isPresentationMode ? "text-white" : "text-slate-900"
+          }`}>
             Matriks Kuadran Profitabilitas Rute (Logistics BCG Matrix)
           </h3>
-          <p className="text-slate-500 text-xs font-medium mt-0.5">
+          <p className={`text-xs font-medium mt-0.5 ${
+            isPresentationMode ? "text-slate-400" : "text-slate-500"
+          }`}>
             Klasifikasi koridor ekspedisi berdasarkan volume ritase (Sumbu X) dan persentase margin keuntungan (Sumbu Y)
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           {/* Toggle View */}
-          <div className="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200">
+          <div className={`flex items-center p-0.5 rounded-xl border ${
+            isPresentationMode ? "bg-slate-800 border-slate-700" : "bg-slate-100 border-slate-200"
+          }`}>
             <button
               onClick={() => setViewMode("quadrant")}
               className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
                 viewMode === "quadrant"
-                  ? "bg-white text-slate-900 shadow-2xs"
-                  : "text-slate-500 hover:text-slate-800"
+                  ? isPresentationMode ? "bg-slate-700 text-white shadow-xs" : "bg-white text-slate-900 shadow-2xs"
+                  : isPresentationMode ? "text-slate-400 hover:text-white" : "text-slate-500 hover:text-slate-800"
               }`}
               title="Tampilan Matriks Kuadran"
             >
@@ -134,8 +153,8 @@ export function RouteBCGMatrixChart({ data, loading = false }: RouteBCGMatrixCha
               onClick={() => setViewMode("table")}
               className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
                 viewMode === "table"
-                  ? "bg-white text-slate-900 shadow-2xs"
-                  : "text-slate-500 hover:text-slate-800"
+                  ? isPresentationMode ? "bg-slate-700 text-white shadow-xs" : "bg-white text-slate-900 shadow-2xs"
+                  : isPresentationMode ? "text-slate-400 hover:text-white" : "text-slate-500 hover:text-slate-800"
               }`}
               title="Tampilan Tabel Rincian"
             >
@@ -143,6 +162,21 @@ export function RouteBCGMatrixChart({ data, loading = false }: RouteBCGMatrixCha
               <span>Tabel</span>
             </button>
           </div>
+
+          {onMaximize && (
+            <button
+              type="button"
+              onClick={onMaximize}
+              className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                isPresentationMode 
+                  ? "text-slate-400 hover:text-white hover:bg-slate-800" 
+                  : "text-slate-400 hover:text-emerald-700 hover:bg-emerald-50"
+              }`}
+              title="Perbesar Grafik & Lihat Rincian Tabel Angka"
+            >
+              <Maximize2 className="w-4 h-4" />
+            </button>
+          )}
 
           <ChartInfoPopover
             title="Matriks Kuadran Profitabilitas Rute (Logistics BCG Matrix)"
