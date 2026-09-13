@@ -13,7 +13,7 @@ export interface SmartNarrativeBadge {
 export interface SmartNarrativeBoxProps {
   status?: NarrativeStatus;
   title?: string;
-  narrative: string;
+  narrative: React.ReactNode;
   badges?: SmartNarrativeBadge[];
   className?: string;
 }

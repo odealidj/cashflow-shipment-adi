@@ -48,8 +48,8 @@ export default function Dashboard() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  // Tab Switcher State (Alternatif A: Operasional vs Strategi)
-  const [activeMainTab, setActiveMainTab] = useState<"operations" | "strategy">("operations");
+  // Tab Switcher State (3 Tab Eksekutif: Operasional, Tren Makro, Strategi)
+  const [activeMainTab, setActiveMainTab] = useState<"operations" | "macro_trends" | "strategy">("operations");
 
   // Strategic Analytics States
   const [runwayData, setRunwayData] = useState<CashflowRunwayData | null>(null);
@@ -302,27 +302,27 @@ export default function Dashboard() {
   }, [historicalCashflow, dateFrom, dateTo]);
 
   return (
-    <div className="space-y-6">
-      {/* Header & Executive Quick Action Buttons */}
-      <header className="flex flex-wrap justify-between items-center gap-4 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-sky-100 text-sky-800 border border-sky-200">
-              Executive Dashboard
+    <div className="space-y-3.5">
+      {/* Header: Executive Dashboard (Split Kiri Identitas - Kanan Aksi, Mengisi Ruang Kosong & Selaras Rolling Saldo Kas) */}
+      <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 bg-white px-4 py-3 sm:px-5 sm:py-3.5 rounded-2xl border border-slate-200/80 shadow-xs">
+        {/* Sisi Kiri: Identitas Dashboard */}
+        <div className="shrink-0">
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-sky-100 text-sky-800 border border-sky-200">
+              EXECUTIVE DASHBOARD
             </span>
-            <span className="text-xs text-slate-400 font-medium">PT Adijayantara Logistic</span>
           </div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Overview Keuangan & Bisnis</h1>
-          <p className="text-slate-500 text-xs font-medium mt-0.5">
-            Selamat datang kembali{user ? `, ${user.full_name}` : ""}. Ringkasan real-time arus kas, kinerja shipment, dan penagihan invoice.
-          </p>
+
+          <h1 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight mt-0.5 whitespace-nowrap">
+            Overview Keuangan & Bisnis
+          </h1>
         </div>
 
-        {/* Quick Action Buttons */}
-        <div className="flex flex-wrap items-center gap-2">
+        {/* Sisi Kanan: Action Buttons & Modul Shortcuts (Mengisi Sisi Kanan agar Tidak Kosong) */}
+        <div className="flex flex-wrap items-center gap-2 lg:justify-end">
           <button
             onClick={() => setIsTopUpOpen(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs transition-all shadow-xs cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs transition-all shadow-2xs cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5 stroke-[3]" />
             <span>Top Up Modal</span>
@@ -330,7 +330,7 @@ export default function Dashboard() {
           
           <button
             onClick={() => setIsShipmentOpen(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-bold text-xs transition-all shadow-xs cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-bold text-xs transition-all shadow-2xs cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5 stroke-[3]" />
             <span>Catat Pengiriman</span>
@@ -338,17 +338,17 @@ export default function Dashboard() {
 
           <button
             onClick={() => setIsInvoiceOpen(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-bold text-xs transition-all shadow-xs cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-bold text-xs transition-all shadow-2xs cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5 stroke-[3]" />
             <span>Buat Invoice</span>
           </button>
 
-          <div className="h-6 w-px bg-slate-200 mx-1 hidden sm:block" />
+          <div className="h-5 w-px bg-slate-200 mx-0.5 hidden sm:block" />
 
           <Link
             href="/dashboard/transactions"
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-all cursor-pointer"
           >
             <Receipt className="w-3.5 h-3.5 text-slate-600" />
             <span>Buku Kas</span>
@@ -356,7 +356,7 @@ export default function Dashboard() {
 
           <Link
             href="/dashboard/invoices"
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-all cursor-pointer"
           >
             <FileText className="w-3.5 h-3.5 text-slate-600" />
             <span>Invoices</span>
@@ -364,160 +364,188 @@ export default function Dashboard() {
         </div>
       </header>
 
-      {/* 2-Tab Executive Switcher (Alternatif A: Operasional vs Strategi) */}
-      <div className="flex items-center gap-2 p-1.5 bg-slate-100 rounded-2xl border border-slate-200/90 shadow-2xs">
-        <button
-          type="button"
-          onClick={() => setActiveMainTab("operations")}
-          className={`flex-1 flex items-center justify-center gap-2.5 py-2.5 px-4 rounded-xl text-xs font-black transition-all cursor-pointer ${
-            activeMainTab === "operations"
-              ? "bg-white text-slate-900 shadow-xs border border-slate-200/80"
-              : "text-slate-500 hover:text-slate-900 hover:bg-white/50"
-          }`}
-        >
-          <Receipt className="w-4 h-4 text-sky-600" />
-          <span>Operasional & Kas Berjalan</span>
-          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-sky-50 text-sky-700 border border-sky-200">
-            Daily Pulse
-          </span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => {
-            setActiveMainTab("strategy");
-            if (!runwayData) fetchAnalyticsData();
-          }}
-          className={`flex-1 flex items-center justify-center gap-2.5 py-2.5 px-4 rounded-xl text-xs font-black transition-all cursor-pointer ${
-            activeMainTab === "strategy"
-              ? "bg-slate-900 text-white shadow-xs border border-slate-800"
-              : "text-slate-500 hover:text-slate-900 hover:bg-white/50"
-          }`}
-        >
-          <Sparkles className="w-4 h-4 text-amber-400" />
-          <span>Intelijen Strategis & Pertumbuhan</span>
-          <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/30">
-            6 Grafik Eksekutif
-          </span>
-        </button>
-      </div>
-
-      {/* Unified Period Toolbar */}
-      <div className="bg-white px-4 py-3 rounded-2xl border border-slate-200/80 shadow-2xs flex flex-wrap items-center justify-between gap-3">
-        {/* Left: Stepper & Dropdown */}
-        <div className="flex items-center gap-2">
-          {/* Stepper Prev */}
+      {/* UNIFIED SMART BAR: Navigation Tabs on Left + Contextual Controls on Right */}
+      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs px-3.5 py-2 sm:px-4 sm:py-2 flex flex-col xl:flex-row xl:items-center justify-between gap-3">
+        {/* Sisi Kiri: 3-Tab Segmented Control Modern, Ramping & Bersih */}
+        <div className="flex items-center gap-1 bg-slate-100/90 p-1 rounded-xl border border-slate-200/70 shrink-0 self-start xl:self-auto">
           <button
-            onClick={handlePrevMonth}
-            className="w-8 h-8 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 flex items-center justify-center text-slate-600 active:scale-95 transition-all cursor-pointer"
-            title="Bulan Sebelumnya"
+            type="button"
+            onClick={() => setActiveMainTab("operations")}
+            className={`flex items-center gap-2 py-1.5 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              activeMainTab === "operations"
+                ? "bg-white text-slate-900 shadow-2xs border border-slate-200/80 font-black"
+                : "text-slate-500 hover:text-slate-900 hover:bg-white/50"
+            }`}
           >
-            <ChevronLeft className="w-4 h-4" />
+            <Receipt className="w-3.5 h-3.5 text-sky-600 shrink-0" />
+            <span>Operasional & Kas</span>
           </button>
 
-          {/* Month Dropdown */}
-          <select
-            value={dateFrom && dateTo ? `${dateFrom}_${dateTo}` : "ALL"}
-            onChange={(e) => {
-              if (e.target.value === "ALL") {
-                setAllPeriod();
-              } else {
-                const [start, end] = e.target.value.split("_");
-                setMonthByRange(start, end);
-              }
-            }}
-            className="text-xs font-bold text-slate-800 bg-white border border-slate-200 rounded-xl px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-sky-500/20 cursor-pointer shadow-2xs"
-          >
-            {monthOptions.map((opt) => (
-              <option key={opt.monthKey} value={`${opt.date_from}_${opt.date_to}`}>
-                {opt.displayLabel}
-              </option>
-            ))}
-            <option value="ALL">Semua Periode (All-Time)</option>
-          </select>
-
-          {/* Stepper Next */}
           <button
-            onClick={handleNextMonth}
-            className="w-8 h-8 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 flex items-center justify-center text-slate-600 active:scale-95 transition-all cursor-pointer"
-            title="Bulan Berikutnya"
+            type="button"
+            onClick={() => setActiveMainTab("macro_trends")}
+            className={`flex items-center gap-2 py-1.5 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              activeMainTab === "macro_trends"
+                ? "bg-white text-slate-900 shadow-2xs border border-slate-200/80 font-black"
+                : "text-slate-500 hover:text-slate-900 hover:bg-white/50"
+            }`}
           >
-            <ChevronRight className="w-4 h-4" />
+            <TrendingUp className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+            <span>Tren Makro</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setActiveMainTab("strategy");
+              if (!runwayData) fetchAnalyticsData();
+            }}
+            className={`flex items-center gap-2 py-1.5 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              activeMainTab === "strategy"
+                ? "bg-slate-900 text-white shadow-2xs font-black"
+                : "text-slate-500 hover:text-slate-900 hover:bg-white/50"
+            }`}
+          >
+            <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+            <span>Intelijen Strategis</span>
           </button>
         </div>
 
-        {/* Center: Active Period Indicator */}
-        <div className="flex items-center gap-2 text-xs font-black text-slate-700">
-          <div className="w-6 h-6 rounded-lg bg-sky-100 text-sky-800 flex items-center justify-center">
-            <Calendar className="w-3.5 h-3.5" />
+        {/* Sisi Kanan: Kontrol Kontekstual Sesuai Tab Aktif */}
+        {activeMainTab === "operations" && (
+          <div className="flex flex-wrap items-center justify-between xl:justify-end gap-2 min-w-0">
+            {/* Stepper & Month Dropdown */}
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={handlePrevMonth}
+                className="w-7 h-7 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 flex items-center justify-center text-slate-600 active:scale-95 transition-all cursor-pointer"
+                title="Bulan Sebelumnya"
+              >
+                <ChevronLeft className="w-3.5 h-3.5" />
+              </button>
+
+              <select
+                value={dateFrom && dateTo ? `${dateFrom}_${dateTo}` : "ALL"}
+                onChange={(e) => {
+                  if (e.target.value === "ALL") {
+                    setAllPeriod();
+                  } else {
+                    const [start, end] = e.target.value.split("_");
+                    setMonthByRange(start, end);
+                  }
+                }}
+                className="text-xs font-bold text-slate-800 bg-white border border-slate-200 rounded-lg px-2.5 py-1 focus:outline-none focus:ring-2 focus:ring-sky-500/20 cursor-pointer shadow-2xs"
+              >
+                {monthOptions.map((opt) => (
+                  <option key={opt.monthKey} value={`${opt.date_from}_${opt.date_to}`}>
+                    {opt.displayLabel}
+                  </option>
+                ))}
+                <option value="ALL">Semua Periode (All-Time)</option>
+              </select>
+
+              <button
+                onClick={handleNextMonth}
+                className="w-7 h-7 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 flex items-center justify-center text-slate-600 active:scale-95 transition-all cursor-pointer"
+                title="Bulan Berikutnya"
+              >
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            {/* Center: Active Period Indicator */}
+            <div className="hidden sm:flex items-center gap-1.5 text-xs font-bold text-slate-700">
+              <div className="w-5 h-5 rounded-md bg-sky-100 text-sky-800 flex items-center justify-center">
+                <Calendar className="w-3 h-3" />
+              </div>
+              <span>
+                <span className="text-sky-800 underline decoration-sky-300 underline-offset-2">
+                  {activePeriodLabel}
+                </span>
+              </span>
+              {isCurrentMonthActive && (
+                <span className="text-[10px] font-bold bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded-full border border-emerald-200">
+                  ● Bulan Ini
+                </span>
+              )}
+            </div>
+
+            <div className="h-4 w-px bg-slate-200 hidden sm:block" />
+
+            {/* Right: Quick Presets & Custom Range */}
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => {
+                  const cur = getCurrentMonthRange();
+                  setMonthByRange(cur.date_from, cur.date_to);
+                }}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  isCurrentMonthActive
+                    ? "bg-sky-800 text-white shadow-2xs"
+                    : "bg-slate-100 hover:bg-slate-200 text-slate-700"
+                }`}
+              >
+                Bulan Ini
+              </button>
+
+              <button
+                onClick={() => {
+                  const now = new Date();
+                  const prev = getMonthRange(now.getFullYear(), now.getMonth() - 1);
+                  setMonthByRange(prev.date_from, prev.date_to);
+                }}
+                className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all cursor-pointer"
+              >
+                Bulan Lalu
+              </button>
+
+              <button
+                onClick={setAllPeriod}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  !dateFrom && !dateTo
+                    ? "bg-sky-800 text-white shadow-2xs"
+                    : "bg-slate-100 hover:bg-slate-200 text-slate-700"
+                }`}
+              >
+                Semua
+              </button>
+
+              <button
+                onClick={() => setIsCustomRangeOpen(!isCustomRangeOpen)}
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
+                  isCustomRangeOpen
+                    ? "bg-sky-50 border-sky-300 text-sky-800"
+                    : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
+                }`}
+              >
+                <SlidersHorizontal className="w-3 h-3" />
+                <span>Kustom</span>
+              </button>
+            </div>
           </div>
-          <span>
-            Periode Aktif:{" "}
-            <span className="text-sky-800 underline decoration-sky-300 underline-offset-2">
-              {activePeriodLabel}
+        )}
+
+        {activeMainTab === "macro_trends" && (
+          <div className="flex items-center gap-2 text-xs font-bold text-slate-500">
+            <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-200/60 text-[11px] font-bold">
+              <TrendingUp className="w-3.5 h-3.5" />
+              Multi-Periode & Analisis Kapasitas Bisnis
             </span>
-          </span>
-          {isCurrentMonthActive && (
-            <span className="text-[10px] font-bold bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full border border-emerald-200">
-              ● Bulan Berjalan
+          </div>
+        )}
+
+        {activeMainTab === "strategy" && (
+          <div className="flex items-center gap-2 text-xs font-bold text-slate-500">
+            <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-50 text-amber-800 border border-amber-200/60 text-[11px] font-bold">
+              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+              6 Grafik Intelijen Prediktif & Portofolio
             </span>
-          )}
-        </div>
-
-        {/* Right: Quick Presets & Custom Range */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => {
-              const cur = getCurrentMonthRange();
-              setMonthByRange(cur.date_from, cur.date_to);
-            }}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              isCurrentMonthActive
-                ? "bg-sky-800 text-white shadow-2xs"
-                : "bg-slate-100 hover:bg-slate-200 text-slate-700"
-            }`}
-          >
-            Bulan Ini
-          </button>
-
-          <button
-            onClick={() => {
-              const now = new Date();
-              const prev = getMonthRange(now.getFullYear(), now.getMonth() - 1);
-              setMonthByRange(prev.date_from, prev.date_to);
-            }}
-            className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all cursor-pointer"
-          >
-            Bulan Lalu
-          </button>
-
-          <button
-            onClick={setAllPeriod}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              !dateFrom && !dateTo
-                ? "bg-sky-800 text-white shadow-2xs"
-                : "bg-slate-100 hover:bg-slate-200 text-slate-700"
-            }`}
-          >
-            Semua
-          </button>
-
-          <button
-            onClick={() => setIsCustomRangeOpen(!isCustomRangeOpen)}
-            className={`flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
-              isCustomRangeOpen
-                ? "bg-sky-50 border-sky-300 text-sky-800"
-                : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
-            }`}
-          >
-            <SlidersHorizontal className="w-3 h-3" />
-            <span>Kustom</span>
-          </button>
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Custom Date Range Popover */}
-      {isCustomRangeOpen && (
+      {activeMainTab === "operations" && isCustomRangeOpen && (
         <div className="bg-white p-4 rounded-2xl border border-sky-200 shadow-sm flex flex-wrap items-center gap-4 animate-in fade-in duration-200">
           <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
             <span>Dari:</span>
@@ -549,8 +577,9 @@ export default function Dashboard() {
       )}
 
       {/* MAIN TAB CONTENT */}
-      {activeMainTab === "operations" ? (
-        <>
+      {/* TAB 1: OPERASIONAL & KAS BERJALAN (DAILY PULSE) */}
+      {activeMainTab === "operations" && (
+        <div className="space-y-3.5 animate-in fade-in duration-200">
           {/* Tier 1: 5 Executive KPI Cards */}
           <KPICards 
             summary={cashflowSummary} 
@@ -560,17 +589,10 @@ export default function Dashboard() {
             isCurrentPeriod={isCurrentMonthActive}
           />
 
-          {/* Tier 2: Interactive Business Growth Chart (Finansial, Trip, Klien) */}
-          <BusinessGrowthChart
-            cashflowEntries={historicalCashflow}
-            invoices={historicalInvoices}
-            loading={loading}
-          />
-
-          {/* Tier 3: Visual Analytics (Likuiditas Kas & Aging Piutang) */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          {/* Tier 2: Visual Analytics (Likuiditas Kas & Aging Piutang) */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3.5">
             {/* Card 1: Rasio Inflow vs Outflow & Status Likuiditas Kas */}
-            <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
+            <div className="bg-white p-4 sm:p-4.5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
@@ -655,7 +677,7 @@ export default function Dashboard() {
             </div>
 
             {/* Card 2: Kesehatan & Aging Piutang Customer */}
-            <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
+            <div className="bg-white p-4 sm:p-4.5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
@@ -753,7 +775,7 @@ export default function Dashboard() {
           </div>
 
           {/* Tier 4: Actionable Decision Intelligence Panels */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3.5">
             {/* Panel 1: Urgent Invoices (Overdue & Collection Alert) */}
             <UrgentInvoicesPanel 
               invoices={urgentInvoices} 
@@ -766,19 +788,32 @@ export default function Dashboard() {
               loading={loading} 
             />
           </div>
-        </>
-      ) : (
-        /* TAB 2: INTELIJEN STRATEGIS & PERTUMBUHAN BISNIS (6 Grafik Baru P1 - P6) */
-        <div className="space-y-6 animate-in fade-in duration-200">
+        </div>
+      )}
+
+      {/* TAB 2: TREN PERTUMBUHAN MAKRO (MULTI-PERIODE & QoQ) */}
+      {activeMainTab === "macro_trends" && (
+        <div className="space-y-3.5 animate-in fade-in duration-200">
+          <BusinessGrowthChart
+            cashflowEntries={historicalCashflow}
+            invoices={historicalInvoices}
+            loading={loading}
+          />
+        </div>
+      )}
+
+      {/* TAB 3: INTELIJEN STRATEGIS & PERTUMBUHAN BISNIS (6 Grafik Eksekutif) */}
+      {activeMainTab === "strategy" && (
+        <div className="space-y-4 animate-in fade-in duration-200">
           {/* Zona 1: Likuiditas & Ketahanan Modal Kerja (P1 & P6) */}
-          <div className="space-y-3">
+          <div className="space-y-2">
             <div className="flex items-center gap-2">
               <div className="w-2 h-4 bg-sky-600 rounded-full" />
               <h2 className="text-xs font-black uppercase tracking-wider text-slate-800">
                 Zona 1: Likuiditas & Ketahanan Modal Kerja
               </h2>
             </div>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3.5">
               <div className="lg:col-span-2">
                 <CashflowRunwayChart data={runwayData} loading={analyticsLoading} />
               </div>
@@ -794,28 +829,28 @@ export default function Dashboard() {
           </div>
 
           {/* Zona 2: Profitabilitas Koridor & Armada Rekanan (P2 & P4) */}
-          <div className="space-y-3">
+          <div className="space-y-2">
             <div className="flex items-center gap-2">
               <div className="w-2 h-4 bg-emerald-600 rounded-full" />
               <h2 className="text-xs font-black uppercase tracking-wider text-slate-800">
                 Zona 2: Profitabilitas Koridor & Armada Rekanan
               </h2>
             </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3.5">
               <RouteBCGMatrixChart data={routeMatrixData} loading={analyticsLoading} />
               <VendorEfficiencyChart data={vendorEfficiencyData} loading={analyticsLoading} />
             </div>
           </div>
 
           {/* Zona 3: Portofolio & Kualitas Pelanggan (P3 & P5) */}
-          <div className="space-y-3">
+          <div className="space-y-2">
             <div className="flex items-center gap-2">
               <div className="w-2 h-4 bg-indigo-600 rounded-full" />
               <h2 className="text-xs font-black uppercase tracking-wider text-slate-800">
                 Zona 3: Portofolio & Kualitas Pelanggan
               </h2>
             </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3.5">
               <CustomerDsoDisciplineChart data={customerDisciplineData} loading={analyticsLoading} />
               <CustomerParetoChart data={customerDisciplineData} loading={analyticsLoading} />
             </div>

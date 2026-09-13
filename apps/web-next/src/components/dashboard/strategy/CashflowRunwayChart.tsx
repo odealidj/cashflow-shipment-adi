@@ -118,7 +118,7 @@ export function CashflowRunwayChart({ data, loading = false }: CashflowRunwayCha
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-5 flex flex-col justify-between space-y-4">
+    <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-4 sm:p-4.5 flex flex-col justify-between space-y-3.5">
       {/* Header with Title and Info Popover */}
       <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-3">
         <div>

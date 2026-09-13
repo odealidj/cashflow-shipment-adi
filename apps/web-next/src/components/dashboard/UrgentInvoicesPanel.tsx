@@ -54,7 +54,7 @@ export function UrgentInvoicesPanel({
     .slice(0, 5);
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-5 flex flex-col justify-between">
+    <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-4 sm:p-4.5 flex flex-col justify-between">
       <div>
         {/* Header */}
         <div className="flex items-center justify-between gap-3 border-b border-slate-100 pb-3.5 mb-3.5">
