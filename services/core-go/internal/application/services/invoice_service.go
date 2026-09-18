@@ -18,6 +18,7 @@ import (
 type InvoiceService struct {
 	repo        ports.InvoiceRepository
 	notifSvc    *NotificationService
+	auditSvc    *AuditService
 	cache       repository.CacheService
 	cashflowSvc *CashflowService
 }
@@ -28,6 +29,10 @@ func NewInvoiceService(repo ports.InvoiceRepository) *InvoiceService {
 
 func (s *InvoiceService) SetNotificationService(notifSvc *NotificationService) {
 	s.notifSvc = notifSvc
+}
+
+func (s *InvoiceService) SetAuditService(auditSvc *AuditService) {
+	s.auditSvc = auditSvc
 }
 
 func (s *InvoiceService) SetCacheService(cache repository.CacheService) {
@@ -136,6 +141,17 @@ func (s *InvoiceService) CreateInvoice(ctx context.Context, input CreateInvoiceI
 	}
 	s.invalidateCache(ctx)
 	telemetry.RecordInvoiceCreated()
+
+	if s.auditSvc != nil {
+		var actorID *uuid.UUID
+		var actorName, actorRole string
+		if session := domain.GetUserSessionFromContext(ctx); session != nil {
+			actorID = &session.UserID
+			actorName = session.FullName
+			actorRole = string(session.Role)
+		}
+		s.auditSvc.LogInvoiceCreate(ctx, invoice, actorID, actorName, actorRole)
+	}
 
 	return invoice, nil
 }
@@ -331,6 +347,18 @@ func (s *InvoiceService) SettleInvoice(ctx context.Context, id int, input Settle
 	}
 
 	s.invalidateCache(ctx)
+
+	if s.auditSvc != nil {
+		var actorID *uuid.UUID
+		var actorName, actorRole string
+		if session := domain.GetUserSessionFromContext(ctx); session != nil {
+			actorID = &session.UserID
+			actorName = session.FullName
+			actorRole = string(session.Role)
+		}
+		s.auditSvc.LogInvoiceSettle(ctx, inv, payment.Amount, payment.ReferenceNo, actorID, actorName, actorRole)
+	}
+
 	return s.repo.GetByID(ctx, id)
 }
 
@@ -403,6 +431,18 @@ func (s *InvoiceService) RescheduleDueDate(ctx context.Context, id int, input Re
 	}
 
 	s.invalidateCache(ctx)
+
+	if s.auditSvc != nil {
+		var actorID *uuid.UUID
+		var actorName, actorRole string
+		if session := domain.GetUserSessionFromContext(ctx); session != nil {
+			actorID = &session.UserID
+			actorName = session.FullName
+			actorRole = string(session.Role)
+		}
+		s.auditSvc.LogInvoiceReschedule(ctx, inv, inv.DueDate, newDueDate, input.Reason, actorID, actorName, actorRole)
+	}
+
 	return s.repo.GetByID(ctx, id)
 }
 
@@ -411,10 +451,23 @@ func (s *InvoiceService) GetInvoiceHistory(ctx context.Context, id int) (*domain
 }
 
 func (s *InvoiceService) DeleteInvoice(ctx context.Context, id int) error {
+	inv, _ := s.repo.GetByID(ctx, id)
 	if err := s.repo.Delete(ctx, id); err != nil {
 		return err
 	}
 	s.invalidateCache(ctx)
+
+	if s.auditSvc != nil && inv != nil {
+		var actorID *uuid.UUID
+		var actorName, actorRole string
+		if session := domain.GetUserSessionFromContext(ctx); session != nil {
+			actorID = &session.UserID
+			actorName = session.FullName
+			actorRole = string(session.Role)
+		}
+		s.auditSvc.LogInvoiceDelete(ctx, inv, actorID, actorName, actorRole)
+	}
+
 	return nil
 }
 

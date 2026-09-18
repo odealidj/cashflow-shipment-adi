@@ -1,10 +1,27 @@
 package domain
 
 import (
+	"context"
 	"time"
 
 	"github.com/google/uuid"
 )
+
+type SessionContextKeyType string
+
+const SessionContextKey SessionContextKeyType = "user_session"
+
+func GetUserSessionFromContext(ctx context.Context) *UserSession {
+	if ctx == nil {
+		return nil
+	}
+	if val := ctx.Value(SessionContextKey); val != nil {
+		if session, ok := val.(*UserSession); ok {
+			return session
+		}
+	}
+	return nil
+}
 
 type UserRole string
 

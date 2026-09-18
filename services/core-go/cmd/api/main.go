@@ -149,6 +149,12 @@ func main() {
 	invoiceService.SetNotificationService(notificationService)
 	invoiceService.SetCacheService(cacheService)
 
+	// Initialize Executive Audit & SLA Monitoring Service
+	auditRepo := repository.NewPostgresAuditRepo(dbPool)
+	auditService := services.NewAuditService(auditRepo, notificationService)
+	cashflowService.SetAuditService(auditService)
+	invoiceService.SetAuditService(auditService)
+
 	// 1. Auto-bootstrap System Roles and Permissions (Idempotent Zero-Config Seeding)
 	if err := roleService.BootstrapSystemRolesAndPermissions(ctx); err != nil {
 		log.Printf("[Warning] Gagal auto-bootstrap peran dan hak akses sistem: %v\n", err)
@@ -194,6 +200,7 @@ func main() {
 	benchmarkHandler := handler.NewBenchmarkHandler(redisClient, dbPool, "")
 	analyticsRepo := repository.NewPostgresAnalyticsRepo(dbPool)
 	analyticsHandler := handler.NewAnalyticsHandler(analyticsRepo)
+	auditHandler := handler.NewAuditHandler(auditService)
 
 	r := chi.NewRouter()
 
@@ -346,6 +353,17 @@ func main() {
 				r.Get("/route-matrix", analyticsHandler.GetRouteMatrix)
 				r.Get("/customer-discipline-pareto", analyticsHandler.GetCustomerDisciplineAndPareto)
 				r.Get("/vendor-efficiency", analyticsHandler.GetVendorEfficiency)
+			})
+
+			// Executive Audit & Staff SLA Monitoring (PBAC Protected: owner, direktur, super_admin)
+			r.Route("/audit", func(r chi.Router) {
+				r.Use(middleware.RequirePermission("audit.view"))
+				r.Get("/summary", auditHandler.GetSummary)
+				r.Get("/staff-scorecard", auditHandler.GetStaffScorecard)
+				r.Get("/anomalies", auditHandler.GetAnomalies)
+				r.Get("/input-lag", auditHandler.GetInputLag)
+				r.Get("/logs", auditHandler.ListLogs)
+				r.Get("/logs/{id}", auditHandler.GetLogDetail)
 			})
 
 			// System Metrics & Telemetry (PBAC Protected)

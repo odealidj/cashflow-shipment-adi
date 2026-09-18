@@ -21,6 +21,7 @@ type CashflowService struct {
 	cashflowRepo ports.CashflowRepository
 	vendorSvc    *VendorService
 	notifSvc     *NotificationService
+	auditSvc     *AuditService
 	cache        repository.CacheService
 }
 
@@ -33,6 +34,10 @@ func NewCashflowService(cashflowRepo ports.CashflowRepository, vendorSvc *Vendor
 
 func (s *CashflowService) SetNotificationService(notifSvc *NotificationService) {
 	s.notifSvc = notifSvc
+}
+
+func (s *CashflowService) SetAuditService(auditSvc *AuditService) {
+	s.auditSvc = auditSvc
 }
 
 func (s *CashflowService) SetCacheService(cache repository.CacheService) {
@@ -64,6 +69,16 @@ func (s *CashflowService) RecordTopUp(ctx context.Context, entry *domain.Cashflo
 	telemetry.RecordCashflowEntryCreated("TOP_UP")
 	if s.notifSvc != nil {
 		s.notifSvc.NotifyLowCashBalance(ctx, entry.Saldo, 15000000.0)
+	}
+	if s.auditSvc != nil {
+		var actorID *uuid.UUID
+		var actorName, actorRole string
+		if session := domain.GetUserSessionFromContext(ctx); session != nil {
+			actorID = &session.UserID
+			actorName = session.FullName
+			actorRole = string(session.Role)
+		}
+		s.auditSvc.LogCashflowCreate(ctx, entry, actorID, actorName, actorRole)
 	}
 	return nil
 }
@@ -132,6 +147,16 @@ func (s *CashflowService) RecordShipment(ctx context.Context, entry *domain.Cash
 			s.notifSvc.NotifyNegativeMargin(ctx, entry.ActInformation, entry.ActExplaination, entry.GrandCost, entry.GrandSelling, entry.Profit, entry.MarginPct)
 		}
 	}
+	if s.auditSvc != nil {
+		var actorID *uuid.UUID
+		var actorName, actorRole string
+		if session := domain.GetUserSessionFromContext(ctx); session != nil {
+			actorID = &session.UserID
+			actorName = session.FullName
+			actorRole = string(session.Role)
+		}
+		s.auditSvc.LogCashflowCreate(ctx, entry, actorID, actorName, actorRole)
+	}
 	return nil
 }
 
@@ -193,6 +218,17 @@ func (s *CashflowService) UpdateEntry(ctx context.Context, entry *domain.Cashflo
 		}
 	}
 
+	if s.auditSvc != nil {
+		var actorID *uuid.UUID
+		var actorName, actorRole string
+		if session := domain.GetUserSessionFromContext(ctx); session != nil {
+			actorID = &session.UserID
+			actorName = session.FullName
+			actorRole = string(session.Role)
+		}
+		s.auditSvc.LogCashflowUpdate(ctx, oldEntry, entry, actorID, actorName, actorRole)
+	}
+
 	return nil
 }
 
@@ -218,6 +254,18 @@ func (s *CashflowService) DeleteEntry(ctx context.Context, id int, userID uuid.U
 	}
 
 	s.invalidateCache(ctx)
+
+	if s.auditSvc != nil {
+		var actorID *uuid.UUID
+		var actorName, actorRole string
+		if session := domain.GetUserSessionFromContext(ctx); session != nil {
+			actorID = &session.UserID
+			actorName = session.FullName
+			actorRole = string(session.Role)
+		}
+		s.auditSvc.LogCashflowDelete(ctx, oldEntry, actorID, actorName, actorRole)
+	}
+
 	return nil
 }
 

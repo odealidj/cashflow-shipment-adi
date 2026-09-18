@@ -147,6 +147,11 @@ func (h *InvoiceHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	session := middleware.GetUserSessionFromContext(r.Context())
+	if session != nil {
+		input.CreatedBy = &session.UserID
+	}
+
 	inv, err := h.invoiceService.CreateInvoice(r.Context(), input)
 	if err != nil {
 		response.HandleError(w, err)

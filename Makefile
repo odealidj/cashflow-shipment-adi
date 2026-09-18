@@ -1,4 +1,4 @@
-.PHONY: help infra-up infra-down infra-logs run-local-core-go run-core-go run-local-api-gateway-go run-api-gateway-go run-local-all-go run-all-go run-local-web-next generate-ui-assets swagger-gen
+.PHONY: help infra-up infra-down infra-logs run-local-core-go run-core-go run-local-api-gateway-go run-api-gateway-go run-local-all-go run-all-go run-local-web-next generate-ui-assets swagger-gen db-migrate db-seed db-seed-2026 db-clean db-reset db-fresh db-fresh-2026 db-status redis-flush
 
 # Default command
 help:
@@ -7,6 +7,17 @@ help:
 	@echo "  make infra-up                - Start PostgreSQL 15, Redis 7, Prometheus & k6 containers"
 	@echo "  make infra-down              - Stop infrastructure containers"
 	@echo "  make infra-logs              - View infrastructure container logs"
+	@echo ""
+	@echo "  --- Database & Demo Data Management ---"
+	@echo "  make db-fresh                - Full fresh restart: drop schema + migrate + seed demo data + flush redis"
+	@echo "  make db-fresh-2026           - Full fresh restart with 9-month demo data (Januari - September 2026)"
+	@echo "  make db-seed                 - Populate standard executive demo data (August-September)"
+	@echo "  make db-seed-2026            - Populate comprehensive 9-month demo data (Januari - September 2026)"
+	@echo "  make db-clean                - Wipe transactional data (Cashflow, Invoices, Notifs) keeping master data"
+	@echo "  make db-reset                - Drop schema, recreate & re-run all migrations (clean empty DB)"
+	@echo "  make db-migrate              - Run all database SQL migrations (000001 to 000013)"
+	@echo "  make db-status               - Check database connection and table row count statistics"
+	@echo "  make redis-flush             - Flush all cached queries, metrics and sessions in Redis"
 	@echo ""
 	@echo "  --- Go Backend Services Orchestration ---"
 	@echo "  make run-local-core-go       - Run Core Go API locally on host (http://localhost:8080)"
@@ -30,6 +41,34 @@ infra-down:
 
 infra-logs:
 	docker-compose logs -f
+
+# Database & Demo Data Management
+db-migrate:
+	@bash scripts/database/db_manager.sh migrate
+
+db-seed:
+	@bash scripts/database/db_manager.sh seed
+
+db-seed-2026:
+	@bash scripts/database/db_manager.sh seed-2026
+
+db-clean:
+	@bash scripts/database/db_manager.sh clean
+
+db-reset:
+	@bash scripts/database/db_manager.sh reset
+
+db-fresh:
+	@bash scripts/database/db_manager.sh fresh
+
+db-fresh-2026:
+	@bash scripts/database/db_manager.sh fresh-2026
+
+db-status:
+	@bash scripts/database/db_manager.sh status
+
+redis-flush:
+	@bash scripts/database/db_manager.sh redis-flush
 
 # 1. Run Core Go on Host (Standalone on port 8080)
 run-local-core-go:

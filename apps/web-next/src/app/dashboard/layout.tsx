@@ -15,6 +15,7 @@ import {
   ChevronDown,
   Users,
   ShieldCheck,
+  ShieldAlert,
   Activity,
   Bell
 } from "lucide-react";
@@ -62,10 +63,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const isRolesActive = pathname.startsWith("/dashboard/roles");
   const isMetricsActive = pathname.startsWith("/dashboard/system-metrics");
   const isNotificationsActive = pathname.startsWith("/dashboard/notifications");
+  const isAuditActive = pathname.startsWith("/dashboard/audit");
 
   // Auto expand parent group when active child route is selected
   useEffect(() => {
-    if (isDashboardActive || isTransactionsActive || isInvoicesActive || isNotificationsActive) {
+    if (isDashboardActive || isTransactionsActive || isInvoicesActive || isNotificationsActive || isAuditActive) {
       setIsUtamaOpen(true);
     }
     if (isCustomersActive || isVendorsActive) {
@@ -88,7 +90,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     isActRoutesActive,
     isUsersActive,
     isRolesActive,
-    isMetricsActive
+    isMetricsActive,
+    isAuditActive
   ]);
 
   const getRoleLabel = (role?: string) => {
@@ -296,6 +299,31 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                             {unreadCount > 99 ? "99+" : unreadCount}
                           </span>
                         )}
+                      </div>
+                    )}
+                  </Link>
+                )}
+
+                {/* 5. Audit & Pengawasan Eksekutif (Anti-Fraud & SLA) */}
+                {(can("audit.view") || user?.role === "owner" || user?.role === "direktur" || user?.role === "super_admin") && (
+                  <Link 
+                    href="/dashboard/audit" 
+                    title="Audit Forensik & Pemantauan SLA Staf"
+                    className={`flex items-center gap-3 rounded-xl transition-all text-xs font-bold ${
+                      isCollapsed ? "justify-center p-3" : "px-3.5 py-2.5"
+                    } ${
+                      isAuditActive 
+                      ? "bg-amber-600 text-white shadow-xs" 
+                      : "text-amber-200/90 hover:text-white hover:bg-amber-500/20"
+                    }`}
+                  >
+                    <ShieldAlert className="w-5 h-5 shrink-0 text-amber-400" />
+                    {!isCollapsed && (
+                      <div className="flex items-center justify-between flex-1 min-w-0">
+                        <span className="truncate">Audit & Anti-Fraud</span>
+                        <span className="px-1.5 py-0.5 text-[9px] font-black rounded-md bg-amber-400/20 text-amber-300 border border-amber-400/40">
+                          SLA
+                        </span>
                       </div>
                     )}
                   </Link>

@@ -11,11 +11,9 @@ import (
 	"github.com/google/uuid"
 )
 
-type contextKey string
-
 const (
-	SessionKey contextKey = "user_session"
-	CookieAuthName        = "auth_session"
+	SessionKey     = domain.SessionContextKey
+	CookieAuthName = "auth_session"
 )
 
 // RequireAuth extracts session from HttpOnly cookie or Authorization Bearer header
