@@ -19,6 +19,17 @@ SEED_SQL_2026="${SCRIPT_DIR}/seed_demo_2026_jan_sep.sql"
 DB_USER="${POSTGRES_USER:-cashflow_user}"
 DB_NAME="${POSTGRES_DB:-cashflow_db}"
 
+# Auto-detect container compose CLI (Docker Compose v2 plugin vs docker-compose standalone vs podman-compose)
+if docker compose version >/dev/null 2>&1; then
+    COMPOSE_CMD=(docker compose)
+elif command -v docker-compose >/dev/null 2>&1 && docker-compose --version >/dev/null 2>&1; then
+    COMPOSE_CMD=(docker-compose)
+elif command -v podman-compose >/dev/null 2>&1; then
+    COMPOSE_CMD=(podman-compose)
+else
+    COMPOSE_CMD=(docker compose)
+fi
+
 # Visual colors
 C_RESET='\033[0m'
 C_BOLD='\033[1m'
@@ -53,14 +64,14 @@ log_step() {
 # -----------------------------------------------------------------------------
 ensure_db_ready() {
     log_info "Memeriksa kesiapan PostgreSQL..."
-    if ! docker-compose exec -T postgres pg_isready -U "${DB_USER}" -d "${DB_NAME}" > /dev/null 2>&1; then
+    if ! "${COMPOSE_CMD[@]}" exec -T postgres pg_isready -U "${DB_USER}" -d "${DB_NAME}" > /dev/null 2>&1; then
         log_warn "PostgreSQL belum siap. Menjalankan infrastruktur database..."
-        docker-compose up -d postgres redis
+        "${COMPOSE_CMD[@]}" up -d postgres redis
     fi
 
     local retries=15
     local count=0
-    until docker-compose exec -T postgres pg_isready -U "${DB_USER}" -d "${DB_NAME}" > /dev/null 2>&1; do
+    until "${COMPOSE_CMD[@]}" exec -T postgres pg_isready -U "${DB_USER}" -d "${DB_NAME}" > /dev/null 2>&1; do
         count=$((count + 1))
         if [ "$count" -ge "$retries" ]; then
             log_error "PostgreSQL tidak siap menerima koneksi setelah ${retries} detik."
@@ -91,7 +102,7 @@ run_migrations() {
     for file in "${migration_files[@]}"; do
         local filename="$(basename "${file}")"
         echo -e "  [${idx}/${total}] Menjalankan ${C_BOLD}${filename}${C_RESET}..."
-        docker-compose exec -T postgres psql -U "${DB_USER}" -d "${DB_NAME}" -v ON_ERROR_STOP=1 < "${file}" > /dev/null
+        "${COMPOSE_CMD[@]}" exec -T postgres psql -U "${DB_USER}" -d "${DB_NAME}" -v ON_ERROR_STOP=1 < "${file}" > /dev/null
         idx=$((idx + 1))
     done
 
@@ -110,7 +121,7 @@ run_seed() {
         exit 1
     fi
 
-    docker-compose exec -T postgres psql -U "${DB_USER}" -d "${DB_NAME}" -v ON_ERROR_STOP=1 < "${SEED_SQL}" > /dev/null
+    "${COMPOSE_CMD[@]}" exec -T postgres psql -U "${DB_USER}" -d "${DB_NAME}" -v ON_ERROR_STOP=1 < "${SEED_SQL}" > /dev/null
     flush_redis
     log_success "Data demo eksekutif berhasil dimuat secara penuh!"
     show_status
@@ -128,7 +139,7 @@ run_seed_2026() {
         exit 1
     fi
 
-    docker-compose exec -T postgres psql -U "${DB_USER}" -d "${DB_NAME}" -v ON_ERROR_STOP=1 < "${SEED_SQL_2026}" > /dev/null
+    "${COMPOSE_CMD[@]}" exec -T postgres psql -U "${DB_USER}" -d "${DB_NAME}" -v ON_ERROR_STOP=1 < "${SEED_SQL_2026}" > /dev/null
     flush_redis
     log_success "Data demo eksekutif 9 bulan (Jan - Sep 2026) berhasil dimuat!"
     show_status
@@ -159,7 +170,7 @@ run_clean() {
     END \$\$;
     "
 
-    docker-compose exec -T postgres psql -U "${DB_USER}" -d "${DB_NAME}" -c "${truncate_sql}" > /dev/null
+    "${COMPOSE_CMD[@]}" exec -T postgres psql -U "${DB_USER}" -d "${DB_NAME}" -c "${truncate_sql}" > /dev/null
     flush_redis
     log_success "Seluruh data transaksi dan history berhasil dikosongkan!"
     show_status
@@ -179,7 +190,7 @@ run_reset() {
     GRANT ALL ON SCHEMA public TO public;
     "
 
-    docker-compose exec -T postgres psql -U "${DB_USER}" -d "${DB_NAME}" -c "${reset_sql}" > /dev/null
+    "${COMPOSE_CMD[@]}" exec -T postgres psql -U "${DB_USER}" -d "${DB_NAME}" -c "${reset_sql}" > /dev/null
     log_info "Skema public berhasil di-drop dan dibuat baru."
     
     run_migrations
@@ -200,7 +211,7 @@ run_fresh() {
     GRANT ALL ON SCHEMA public TO ${DB_USER};
     GRANT ALL ON SCHEMA public TO public;
     "
-    docker-compose exec -T postgres psql -U "${DB_USER}" -d "${DB_NAME}" -c "${reset_sql}" > /dev/null
+    "${COMPOSE_CMD[@]}" exec -T postgres psql -U "${DB_USER}" -d "${DB_NAME}" -c "${reset_sql}" > /dev/null
     log_info "1/4 Skema public berhasil diinisialisasi ulang."
     
     # 2. Migrasi
@@ -208,7 +219,7 @@ run_fresh() {
     
     # 3. Seed
     log_step "3/4 Memuat data demo eksekutif..."
-    docker-compose exec -T postgres psql -U "${DB_USER}" -d "${DB_NAME}" -v ON_ERROR_STOP=1 < "${SEED_SQL}" > /dev/null
+    "${COMPOSE_CMD[@]}" exec -T postgres psql -U "${DB_USER}" -d "${DB_NAME}" -v ON_ERROR_STOP=1 < "${SEED_SQL}" > /dev/null
     log_success "Data demo eksekutif berhasil dimuat!"
     
     # 4. Flush Redis
@@ -232,7 +243,7 @@ run_fresh_2026() {
     GRANT ALL ON SCHEMA public TO ${DB_USER};
     GRANT ALL ON SCHEMA public TO public;
     "
-    docker-compose exec -T postgres psql -U "${DB_USER}" -d "${DB_NAME}" -c "${reset_sql}" > /dev/null
+    "${COMPOSE_CMD[@]}" exec -T postgres psql -U "${DB_USER}" -d "${DB_NAME}" -c "${reset_sql}" > /dev/null
     log_info "1/4 Skema public berhasil diinisialisasi ulang."
     
     # 2. Migrasi
@@ -240,7 +251,7 @@ run_fresh_2026() {
     
     # 3. Seed 2026
     log_step "3/4 Memuat data demo eksekutif 9 bulan (Januari - September 2026)..."
-    docker-compose exec -T postgres psql -U "${DB_USER}" -d "${DB_NAME}" -v ON_ERROR_STOP=1 < "${SEED_SQL_2026}" > /dev/null
+    "${COMPOSE_CMD[@]}" exec -T postgres psql -U "${DB_USER}" -d "${DB_NAME}" -v ON_ERROR_STOP=1 < "${SEED_SQL_2026}" > /dev/null
     log_success "Data demo eksekutif 9 bulan berhasil dimuat!"
     
     # 4. Flush Redis
@@ -279,15 +290,16 @@ show_status() {
         UNION ALL SELECT 'invoice_due_date_history', count(*)::text, 'Histori Reschedule' FROM invoice_due_date_history
         UNION ALL SELECT 'cashflow_entries', count(*)::text, 'Transaksi Kas & Shipment' FROM cashflow_entries
         UNION ALL SELECT 'notifications', count(*)::text, 'Pusat Notifikasi' FROM notifications
+        UNION ALL SELECT 'audit_logs', count(*)::text, 'Audit Forensik & SLA' FROM audit_logs
     ) r
     ORDER BY r.category, r.tablename;
     "
 
-    docker-compose exec -T postgres psql -U "${DB_USER}" -d "${DB_NAME}" -c "${query}"
+    "${COMPOSE_CMD[@]}" exec -T postgres psql -U "${DB_USER}" -d "${DB_NAME}" -c "${query}"
     
     # Saldo kas riil saat ini
     local saldo_query="SELECT concat('Rp ', to_char(saldo, 'FM999,999,999,999')) FROM cashflow_entries ORDER BY sequence_no DESC LIMIT 1;"
-    local latest_saldo=$(docker-compose exec -T postgres psql -U "${DB_USER}" -d "${DB_NAME}" -t -A -c "${saldo_query}" 2>/dev/null || echo "")
+    local latest_saldo=$("${COMPOSE_CMD[@]}" exec -T postgres psql -U "${DB_USER}" -d "${DB_NAME}" -t -A -c "${saldo_query}" 2>/dev/null || echo "")
     if [ -z "$latest_saldo" ]; then
         latest_saldo="Rp 0 (Belum ada transaksi)"
     fi
@@ -301,8 +313,8 @@ show_status() {
 # -----------------------------------------------------------------------------
 flush_redis() {
     log_step "Mengosongkan cache Redis (Session, Cache Query & Metrik)..."
-    if docker-compose exec -T redis redis-cli ping > /dev/null 2>&1; then
-        docker-compose exec -T redis redis-cli flushall > /dev/null 2>&1 || true
+    if "${COMPOSE_CMD[@]}" exec -T redis redis-cli ping > /dev/null 2>&1; then
+        "${COMPOSE_CMD[@]}" exec -T redis redis-cli flushall > /dev/null 2>&1 || true
         log_success "Cache Redis berhasil dikosongkan (FLUSHALL OK)."
     else
         log_warn "Container Redis tidak aktif atau belum siap. Melewati flush Redis."

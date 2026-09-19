@@ -32,15 +32,18 @@ help:
 	@echo "  make swagger-gen             - Generate Swagger OpenAPI documentation"
 	@echo "  make generate-ui-assets      - Generate stitched full-page composite assets"
 
+# Container Compose Command Detection (Docker Compose v2 CLI plugin vs docker-compose standalone)
+DOCKER_COMPOSE ?= $(shell if docker compose version >/dev/null 2>&1; then echo "docker compose"; else echo "docker-compose"; fi)
+
 # Infrastructure
 infra-up:
-	docker-compose up -d postgres redis prometheus k6
+	$(DOCKER_COMPOSE) up -d postgres redis prometheus k6
 
 infra-down:
-	docker-compose down
+	$(DOCKER_COMPOSE) down
 
 infra-logs:
-	docker-compose logs -f
+	$(DOCKER_COMPOSE) logs -f
 
 # Database & Demo Data Management
 db-migrate:
@@ -78,7 +81,7 @@ run-local-core-go:
 # 2. Run Core Go in Container (Port 8081)
 run-core-go:
 	@echo "Starting Core Go container (http://localhost:8081)..."
-	docker-compose up -d --build core-go
+	$(DOCKER_COMPOSE) up -d --build core-go
 
 # 3. Run API Gateway on Host (Port 8080 -> proxies to localhost:8081)
 run-local-api-gateway-go:
@@ -88,7 +91,7 @@ run-local-api-gateway-go:
 # 4. Run API Gateway in Container (Port 8080)
 run-api-gateway-go:
 	@echo "Starting API Gateway container (http://localhost:8080)..."
-	docker-compose up -d --build gateway-go
+	$(DOCKER_COMPOSE) up -d --build gateway-go
 
 # 5. Run All Go Services on Host (Core Go :8081 + Gateway :8080)
 run-local-all-go:
@@ -103,7 +106,7 @@ run-local-all-go:
 # 6. Run All Services in Container
 run-all-go:
 	@echo "Starting all services in Docker containers..."
-	docker-compose up -d --build
+	$(DOCKER_COMPOSE) up -d --build
 
 # Frontend
 run-local-web-next:

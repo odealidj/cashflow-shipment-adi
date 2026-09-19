@@ -82,7 +82,7 @@ func fetchPostgresContainerStats() PostgresContainerMetrics {
 	ctx, cancel := context.WithTimeout(context.Background(), 1500*time.Millisecond)
 	defer cancel()
 
-	tools := []string{"podman", "docker"}
+	tools := []string{"docker", "podman"}
 	var rawOutput []byte
 	var err error
 
@@ -98,20 +98,20 @@ func fetchPostgresContainerStats() PostgresContainerMetrics {
 		return pgStatsCache
 	}
 
-	var entries []struct {
+	type rawContainerStats struct {
 		CPUPercent string `json:"cpu_percent"`
 		AvgCPU     string `json:"avg_cpu"`
+		CPUPerc    string `json:"CPUPerc"`
 		MemUsage   string `json:"mem_usage"`
+		MemUsage2  string `json:"MemUsage"`
 		PIDs       string `json:"pids"`
+		PIDs2      string `json:"PIDs"`
 	}
 
+	var entries []rawContainerStats
+
 	if unmarshalErr := json.Unmarshal(rawOutput, &entries); unmarshalErr != nil {
-		var single struct {
-			CPUPercent string `json:"cpu_percent"`
-			AvgCPU     string `json:"avg_cpu"`
-			MemUsage   string `json:"mem_usage"`
-			PIDs       string `json:"pids"`
-		}
+		var single rawContainerStats
 		if err2 := json.Unmarshal(rawOutput, &single); err2 == nil {
 			entries = append(entries, single)
 		}
@@ -123,10 +123,18 @@ func fetchPostgresContainerStats() PostgresContainerMetrics {
 		if cpuStr == "" {
 			cpuStr = strings.TrimSuffix(strings.TrimSpace(e.AvgCPU), "%")
 		}
+		if cpuStr == "" {
+			cpuStr = strings.TrimSuffix(strings.TrimSpace(e.CPUPerc), "%")
+		}
 		cpuVal, _ := strconv.ParseFloat(cpuStr, 64)
 
+		memRaw := e.MemUsage
+		if memRaw == "" {
+			memRaw = e.MemUsage2
+		}
+
 		memVal := 0.0
-		if parts := strings.Split(e.MemUsage, "/"); len(parts) > 0 {
+		if parts := strings.Split(memRaw, "/"); len(parts) > 0 {
 			rawMem := strings.TrimSpace(parts[0])
 			if strings.HasSuffix(rawMem, "MB") || strings.HasSuffix(rawMem, "MiB") {
 				rawMem = strings.TrimSuffix(strings.TrimSuffix(rawMem, "MB"), "MiB")
@@ -142,7 +150,11 @@ func fetchPostgresContainerStats() PostgresContainerMetrics {
 			}
 		}
 
-		pidsVal, _ := strconv.Atoi(strings.TrimSpace(e.PIDs))
+		pidsRaw := e.PIDs
+		if pidsRaw == "" {
+			pidsRaw = e.PIDs2
+		}
+		pidsVal, _ := strconv.Atoi(strings.TrimSpace(pidsRaw))
 
 		pgStatsCache = PostgresContainerMetrics{
 			CPUPercent: cpuVal,

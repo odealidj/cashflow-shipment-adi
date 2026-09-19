@@ -433,19 +433,29 @@ func (h *BenchmarkHandler) executeBenchmarkAsync(ctx context.Context, jobID, sce
 		args = append(args, "-e", "AUTH_TOKEN="+authHeader)
 	}
 
-	// Check if k6 is in PATH, otherwise use docker-compose exec
+	// Check if k6 is in PATH, otherwise use docker compose / docker-compose exec
 	k6Binary := "k6"
 	if _, err := exec.LookPath("k6"); err != nil {
-		// Try docker-compose exec k6
-		k6Binary = "docker-compose"
 		containerScriptPath := "/scripts/scenarios/" + filepath.Base(meta.scriptPath)
 		containerExportPath := "/scripts/reports/" + filepath.Base(summaryExportPath)
-		args = []string{
-			"exec", "-T", "k6", "k6", "run", containerScriptPath,
-			"--summary-export=" + containerExportPath,
-			"-e", "TARGET_URL=http://host.docker.internal:8080",
-			"-e", fmt.Sprintf("VUS=%d", meta.defaultVUs),
-			"-e", fmt.Sprintf("DURATION=%ds", meta.durationSec),
+		if _, err := exec.LookPath("docker"); err == nil {
+			k6Binary = "docker"
+			args = []string{
+				"compose", "exec", "-T", "k6", "k6", "run", containerScriptPath,
+				"--summary-export=" + containerExportPath,
+				"-e", "TARGET_URL=http://host.docker.internal:8080",
+				"-e", fmt.Sprintf("VUS=%d", meta.defaultVUs),
+				"-e", fmt.Sprintf("DURATION=%ds", meta.durationSec),
+			}
+		} else {
+			k6Binary = "docker-compose"
+			args = []string{
+				"exec", "-T", "k6", "k6", "run", containerScriptPath,
+				"--summary-export=" + containerExportPath,
+				"-e", "TARGET_URL=http://host.docker.internal:8080",
+				"-e", fmt.Sprintf("VUS=%d", meta.defaultVUs),
+				"-e", fmt.Sprintf("DURATION=%ds", meta.durationSec),
+			}
 		}
 		if authHeader != "" {
 			args = append(args, "-e", "AUTH_TOKEN="+authHeader)
