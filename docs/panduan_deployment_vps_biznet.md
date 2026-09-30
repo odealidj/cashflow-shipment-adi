@@ -172,13 +172,16 @@ docker compose version
 systemctl enable --now docker
 ```
 
-#### 2. Pasang Golang 1.22+
+#### 2. Pasang Golang 1.26+ (Sesuai go.mod Proyek)
+> [!IMPORTANT]
+> Proyek Core Go API kita menggunakan deklarasi `go 1.26.3` pada file `services/core-go/go.mod`. Oleh karena itu, kita wajib memasang Golang versi 1.26.3 agar proses kompilasi binary berjalan lancar tanpa konflik versi toolchain.
+
 ```bash
-# Unduh binary resmi Golang 1.22.7 (atau versi stabil terbaru)
-wget https://go.dev/dl/go1.22.7.linux-amd64.tar.gz
+# Unduh binary resmi Golang 1.26.3
+wget https://go.dev/dl/go1.26.3.linux-amd64.tar.gz
 
 # Hapus instalasi lama jika ada, lalu ekstrak ke /usr/local
-rm -rf /usr/local/go && tar -C /usr/local -xzf go1.22.7.linux-amd64.tar.gz
+rm -rf /usr/local/go && tar -C /usr/local -xzf go1.26.3.linux-amd64.tar.gz
 
 # Tambahkan Go ke Environment PATH sistem
 echo 'export PATH=$PATH:/usr/local/go/bin' >> /etc/profile
@@ -186,9 +189,10 @@ echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.bashrc
 source ~/.bashrc
 
 # Bersihkan installer & verifikasi
-rm -f go1.22.7.linux-amd64.tar.gz
+rm -f go1.26.3.linux-amd64.tar.gz
 go version
 ```
+*(Pastikan terminal menampilkan `go version go1.26.3 linux/amd64`).*
 
 #### 3. Pasang Node.js 20 LTS & PM2
 ```bash
@@ -216,17 +220,14 @@ nginx -v
 
 ### FASE 3: Unduh Repositori Proyek ke VPS
 
-Kita letakkan source code aplikasi di direktori standar `/var/www/`:
+Kita letakkan source code aplikasi di direktori standar `/var/www/cashflow-shipment-app`:
 
 ```bash
 # 1. Masuk ke direktori web
 cd /var/www
 
-# 2. Clone repositori aplikasi dari Git (gunakan URL repo GitHub/GitLab Anda)
-git clone https://github.com/<organisasi-atau-user>/cashflow-shipment-app.git
-
-# ATAU jika menggunakan SSH Key:
-# git clone git@github.com:<organisasi-atau-user>/cashflow-shipment-app.git
+# 2. Clone repositori aplikasi dari GitHub langsung ke folder /var/www/cashflow-shipment-app:
+git clone -b feature/swagger-openapi-update https://github.com/odealidj/cashflow-shipment-adi.git /var/www/cashflow-shipment-app
 
 # 3. Masuk ke direktori project
 cd /var/www/cashflow-shipment-app
