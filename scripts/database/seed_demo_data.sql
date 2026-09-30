@@ -17,9 +17,9 @@ BEGIN;
 INSERT INTO roles (code, name, description, is_system) VALUES
   ('super_admin', 'IT Super Admin', 'Akses root teknis sistem (Fail-safe all-access bypass)', true),
   ('admin', 'Administrator Bisnis', 'Pengelolaan operasional, transaksi, data rekanan, dan manajemen staf kantor', true),
-  ('finance', 'Finance & Akuntansi', 'Input kas, pencatatan shipment, invoice, dan pembayaran', false),
-  ('direktur', 'Direktur Perusahaan', 'Monitoring operasional, margin laba, dan supervisi pimpinan', false),
-  ('owner', 'Pemilik Perusahaan (Owner)', 'Monitoring keuangan tingkat tinggi, saldo kas, dan kepemilikan modal', false)
+  ('finance', 'Finance & Akuntansi', 'Input kas, pencatatan shipment, invoice, dan pembayaran', true),
+  ('direktur', 'Direktur Perusahaan', 'Monitoring operasional, margin laba, dan supervisi pimpinan', true),
+  ('owner', 'Pemilik Perusahaan (Owner)', 'Monitoring keuangan tingkat tinggi, saldo kas, dan kepemilikan modal', true)
 ON CONFLICT (code) DO UPDATE SET
   name = EXCLUDED.name,
   description = EXCLUDED.description,
@@ -54,40 +54,72 @@ INSERT INTO permissions (module, code, name, description) VALUES
   ('USERS', 'users.create', 'Tambah Pengguna Baru', 'Menambahkan akun pengguna baru ke dalam sistem'),
   ('USERS', 'users.edit', 'Edit Profil Pengguna', 'Mengubah data akun, peran, nomor kontak, dan password'),
   ('USERS', 'users.delete', 'Hapus / Nonaktifkan Pengguna', 'Menonaktifkan akun pengguna dari akses sistem'),
+  ('USERS', 'users.reset_password', 'Reset Password Pengguna', 'Mereset kata sandi akun pengguna'),
   -- ROLES
   ('ROLES', 'roles.view', 'Menu & Peran / Hak Akses', 'Membuka menu manajemen peran dan matriks izin hak akses'),
   ('ROLES', 'roles.manage', 'Kelola Peran & Izin', 'Membuat peran baru, mengedit izin per modul, dan menghapus peran kustom'),
   -- NOTIFICATIONS
   ('NOTIFICATIONS', 'notifications.view', 'Pusat Notifikasi', 'Melihat lonceng notifikasi dan membaca pengingat invoice jatuh tempo'),
+  -- AUDIT
+  ('AUDIT', 'audit.view', 'Menu & Pengawasan Audit Eksekutif', 'Membuka menu Audit di sidebar, memantau radar anomali kas, dan keterlambatan input SLA'),
+  ('AUDIT', 'audit.manage', 'Kelola & Ekspor Laporan Forensik', 'Mengunduh laporan forensik audit dan mengatur parameter deteksi anomali'),
   -- SYSTEM
-  ('SYSTEM', 'metrics.view', 'Dashboard Metrik & Telemetri', 'Membuka halaman pemantauan performa server, memori, dan latency')
+  ('SYSTEM', 'metrics.view', 'Dashboard Metrik & Telemetri', 'Membuka halaman pemantauan performa server, memori, dan latency'),
+  ('SYSTEM', 'system.view', 'Menu & Metrik Sistem Telemetri', 'Menampilkan menu Metrik Sistem dan performa infrastruktur real-time')
 ON CONFLICT (code) DO NOTHING;
 
--- Sambungkan permissions ke role (All access for super_admin & admin, operational for finance, read-only/oversight for direktur & owner)
+-- Sambungkan permissions ke role (Bersihkan pemetaan lama untuk peran bawaan agar matriks sinkron)
+DELETE FROM role_permissions WHERE role_id IN (SELECT id FROM roles WHERE code IN ('super_admin', 'admin', 'finance', 'direktur', 'owner'));
+
+-- 1. Super Admin & Admin (Akses Penuh Seluruh Modul)
 INSERT INTO role_permissions (role_id, permission_id)
-SELECT r.id, p.id FROM roles r, permissions p WHERE r.code IN ('super_admin', 'admin')
+SELECT r.id, p.id FROM roles r, permissions p 
+WHERE r.code IN ('super_admin', 'admin') AND p.code != 'system.view'
 ON CONFLICT DO NOTHING;
 
+-- 2. Finance (Operasional Keuangan, Kas, Invoice, Rekanan & Presets)
 INSERT INTO role_permissions (role_id, permission_id)
 SELECT r.id, p.id FROM roles r, permissions p 
 WHERE r.code = 'finance' AND p.module IN ('CASHFLOW', 'INVOICES', 'CUSTOMERS', 'VENDORS', 'PRESETS', 'NOTIFICATIONS')
 ON CONFLICT DO NOTHING;
 
+-- 3. Direktur (Supervisi Bisnis, Klien, Vendor, Pengguna, Audit Forensik & Metrik)
 INSERT INTO role_permissions (role_id, permission_id)
 SELECT r.id, p.id FROM roles r, permissions p 
-WHERE r.code IN ('direktur', 'owner') AND p.code IN ('cashflow.view', 'cashflow.export', 'invoices.view', 'invoices.print', 'customers.view', 'vendors.view', 'presets.view', 'notifications.view', 'metrics.view')
+WHERE r.code = 'direktur' AND p.code IN (
+  'cashflow.view', 'cashflow.export', 
+  'invoices.view', 'invoices.print', 
+  'customers.view', 'vendors.view', 'presets.view', 
+  'notifications.view', 'metrics.view', 
+  'audit.view', 'audit.manage',
+  'roles.view', 'users.view', 'users.edit', 'users.delete', 'users.reset_password'
+)
+ON CONFLICT DO NOTHING;
+
+-- 4. Owner (Pemilik Perusahaan - 7 Hak Akses Default: Kas Operasional, Invoice Piutang, Notifikasi, dan Audit Eksekutif)
+INSERT INTO role_permissions (role_id, permission_id)
+SELECT r.id, p.id FROM roles r, permissions p 
+WHERE r.code = 'owner' AND p.code IN (
+  'audit.manage',
+  'audit.view',
+  'cashflow.export',
+  'cashflow.view',
+  'invoices.print',
+  'invoices.view',
+  'notifications.view'
+)
 ON CONFLICT DO NOTHING;
 
 -- -----------------------------------------------------------------------------
 -- 2. AKUN PENGGUNA DEMO
 -- -----------------------------------------------------------------------------
--- Password default untuk seluruh user demo: password123 ($2a$10$kAHgxfaIKq2smgKPa0fxquPjdoZRT68.XjdhPf9DRuUWm/DNUeL7.)
+-- Password default untuk seluruh user demo: password123 ($2a$14$4jy/s63YXdDzVJCEBe4V6eTJyl.pLO.6ite2o0OeITIpuoeW7RfPi)
 INSERT INTO users (id, email, password_hash, full_name, role, phone, status, role_id)
 VALUES
   (
     'c0000000-0000-0000-0000-000000000001',
     'odealidj.go@gmail.com',
-    '$2a$10$kAHgxfaIKq2smgKPa0fxquPjdoZRT68.XjdhPf9DRuUWm/DNUeL7.',
+    '$2a$14$4jy/s63YXdDzVJCEBe4V6eTJyl.pLO.6ite2o0OeITIpuoeW7RfPi',
     'IT Super Admin',
     'super_admin',
     '082111391380',
@@ -96,9 +128,9 @@ VALUES
   ),
   (
     'c0000000-0000-0000-0000-000000000002',
-    'admin.budi@adijayantara.co.id',
-    '$2a$10$kAHgxfaIKq2smgKPa0fxquPjdoZRT68.XjdhPf9DRuUWm/DNUeL7.',
-    'Budi Santoso',
+    'admin.bisnis@adijayantara.co.id',
+    '$2a$14$4jy/s63YXdDzVJCEBe4V6eTJyl.pLO.6ite2o0OeITIpuoeW7RfPi',
+    'Admin Bisnis',
     'admin',
     '0812-3456-7890',
     'ACTIVE',
@@ -106,9 +138,9 @@ VALUES
   ),
   (
     'c0000000-0000-0000-0000-000000000003',
-    'finance.siti@adijayantara.co.id',
-    '$2a$10$kAHgxfaIKq2smgKPa0fxquPjdoZRT68.XjdhPf9DRuUWm/DNUeL7.',
-    'Siti Rahma',
+    'finance.ayu@adijayantara.co.id',
+    '$2a$14$4jy/s63YXdDzVJCEBe4V6eTJyl.pLO.6ite2o0OeITIpuoeW7RfPi',
+    'Ayu',
     'finance',
     '0813-9876-5432',
     'ACTIVE',
@@ -116,9 +148,9 @@ VALUES
   ),
   (
     'c0000000-0000-0000-0000-000000000004',
-    'direktur.hendra@adijayantara.co.id',
-    '$2a$10$kAHgxfaIKq2smgKPa0fxquPjdoZRT68.XjdhPf9DRuUWm/DNUeL7.',
-    'Hendra Wijaya',
+    'direktur.wildan@adijayantara.co.id',
+    '$2a$14$4jy/s63YXdDzVJCEBe4V6eTJyl.pLO.6ite2o0OeITIpuoeW7RfPi',
+    'Wildan',
     'direktur',
     '0818-8899-0011',
     'ACTIVE',
@@ -127,7 +159,7 @@ VALUES
   (
     'c0000000-0000-0000-0000-000000000005',
     'owner.adi@adijayantara.co.id',
-    '$2a$10$kAHgxfaIKq2smgKPa0fxquPjdoZRT68.XjdhPf9DRuUWm/DNUeL7.',
+    '$2a$14$4jy/s63YXdDzVJCEBe4V6eTJyl.pLO.6ite2o0OeITIpuoeW7RfPi',
     'Adi Jayantara',
     'owner',
     '0811-2233-4455',
@@ -247,18 +279,18 @@ SELECT setval('invoices_id_seq', (SELECT COALESCE(MAX(id), 1) FROM invoices));
 -- -----------------------------------------------------------------------------
 INSERT INTO invoice_due_date_history (invoice_id, previous_due_date, new_due_date, days_added, reason, changed_by_name)
 VALUES
-  (4, '2026-08-24', '2026-09-25', 32, 'Permohonan perpanjangan tempo pelunasan kargo impor Marunda Center', 'Budi Santoso (Admin)')
+  (4, '2026-08-24', '2026-09-25', 32, 'Permohonan perpanjangan tempo pelunasan kargo impor Marunda Center', 'Admin Bisnis')
 ON CONFLICT DO NOTHING;
 
 INSERT INTO invoice_payment_history (invoice_id, action, amount, payment_date, reference_no, notes, created_by_name)
 VALUES
-  (1, 'SETTLED', 45000000.00, '2026-08-31 11:00:00', 'BCA-889123', 'Pelunasan tagihan spareparts ekspedisi Agustus', 'Siti Rahma (Finance)'),
-  (2, 'SETTLED', 18500000.00, '2026-08-19 10:30:00', 'MDR-445120', 'Pelunasan distribusi consumer goods', 'Siti Rahma (Finance)'),
-  (4, 'SETTLED', 12800000.00, '2026-09-25 14:15:00', 'BCA-771239', 'Pelunasan kargo Marunda Center', 'Siti Rahma (Finance)'),
-  (6, 'SETTLED',  8750000.00, '2026-08-18 15:00:00', 'CASH-0818', 'Muatan material konstruksi COD', 'Siti Rahma (Finance)'),
-  (10, 'SETTLED', 20000000.00, '2026-09-06 09:30:00', 'BCA-TRX-887192', 'Pelunasan cepat via transfer BCA', 'Siti Rahma (Finance)'),
-  (11, 'SETTLED', 45000000.00, '2026-09-04 16:00:00', 'BNI-991204', 'Pelunasan ekspedisi Narogong', 'Siti Rahma (Finance)'),
-  (12, 'SETTLED', 50000000.00, '2026-09-07 14:00:00', 'BCA-TRX-990142', 'Pelunasan peralatan otomasi Simatupang', 'Siti Rahma (Finance)')
+  (1, 'SETTLED', 45000000.00, '2026-08-31 11:00:00', 'BCA-889123', 'Pelunasan tagihan spareparts ekspedisi Agustus', 'Ayu (Finance)'),
+  (2, 'SETTLED', 18500000.00, '2026-08-19 10:30:00', 'MDR-445120', 'Pelunasan distribusi consumer goods', 'Ayu (Finance)'),
+  (4, 'SETTLED', 12800000.00, '2026-09-25 14:15:00', 'BCA-771239', 'Pelunasan kargo Marunda Center', 'Ayu (Finance)'),
+  (6, 'SETTLED',  8750000.00, '2026-08-18 15:00:00', 'CASH-0818', 'Muatan material konstruksi COD', 'Ayu (Finance)'),
+  (10, 'SETTLED', 20000000.00, '2026-09-06 09:30:00', 'BCA-TRX-887192', 'Pelunasan cepat via transfer BCA', 'Ayu (Finance)'),
+  (11, 'SETTLED', 45000000.00, '2026-09-04 16:00:00', 'BNI-991204', 'Pelunasan ekspedisi Narogong', 'Ayu (Finance)'),
+  (12, 'SETTLED', 50000000.00, '2026-09-07 14:00:00', 'BCA-TRX-990142', 'Pelunasan peralatan otomasi Simatupang', 'Ayu (Finance)')
 ON CONFLICT DO NOTHING;
 
 -- -----------------------------------------------------------------------------

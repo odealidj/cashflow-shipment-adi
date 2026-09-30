@@ -249,16 +249,16 @@ Seluruh akun demo telah dienkripsi menggunakan algoritma **Bcrypt** (*cost facto
 > [!IMPORTANT]
 > **Password Default untuk Seluruh Akun Demo adalah:**  
 > **`password123`**  
-> *Hash Bcrypt*: `$2a$10$kAHgxfaIKq2smgKPa0fxquPjdoZRT68.XjdhPf9DRuUWm/DNUeL7.`
+> *Hash Bcrypt*: `$2a$14$4jy/s63YXdDzVJCEBe4V6eTJyl.pLO.6ite2o0OeITIpuoeW7RfPi`
 
 ### Tabel Kredensial Pengguna Demo
 
 | Nama Lengkap | Email Login | Password | Kode Peran (*Role*) | Nama Peran | No. Telepon | Status Akun |
 | :--- | :--- | :--- | :---: | :--- | :--- | :---: |
 | **IT Super Admin** | `odealidj.go@gmail.com` | `password123` | `super_admin` | IT Super Admin | `082111391380` | `ACTIVE` |
-| **Budi Santoso** | `admin.budi@adijayantara.co.id` | `password123` | `admin` | Administrator Bisnis | `0812-3456-7890` | `ACTIVE` |
-| **Siti Rahma** | `finance.siti@adijayantara.co.id` | `password123` | `finance` | Finance & Akuntansi | `0813-9876-5432` | `ACTIVE` |
-| **Hendra Wijaya** | `direktur.hendra@adijayantara.co.id` | `password123` | `direktur` | Direktur Perusahaan | `0818-8899-0011` | `ACTIVE` |
+| **Admin Bisnis** | `admin.bisnis@adijayantara.co.id` | `password123` | `admin` | Administrator Bisnis | `0812-3456-7890` | `ACTIVE` |
+| **Ayu** | `finance.ayu@adijayantara.co.id` | `password123` | `finance` | Finance & Akuntansi | `0813-9876-5432` | `ACTIVE` |
+| **Wildan** | `direktur.wildan@adijayantara.co.id` | `password123` | `direktur` | Direktur Perusahaan | `0818-8899-0011` | `ACTIVE` |
 | **Adi Jayantara** | `owner.adi@adijayantara.co.id` | `password123` | `owner` | Pemilik Perusahaan (Owner) | `0811-2233-4455` | `ACTIVE` |
 
 ---
@@ -312,11 +312,16 @@ Seluruh akun demo telah dienkripsi menggunakan algoritma **Bcrypt** (*cost facto
   * **Batasan**: Tidak memiliki izin mutasi data (*create/edit/delete*) untuk menjaga independensi pengawasan operasional.
 
 #### 5. Pemilik Perusahaan / Owner (`owner`)
-* **Karakteristik**: Pemilik modal (*Shareholder/Owner*).
-* **Hak Akses**:
-  * Monitoring tingkat tinggi terhadap posisi likuiditas kas, runway keuangan, dan rasio laba kotor ekspedisi.
-  * Akses penuh ke seluruh tab dashboard (Ringkasan, Trend Makro, dan Intelijen Strategis).
-  * Akses export laporan dan pemantauan telemetri bisnis.
+* **Karakteristik**: Pemilik modal (*Shareholder/Owner*). Fokus pengawasan keuangan tingkat tinggi, likuiditas, piutang, dan audit forensik anomali.
+* **Hak Akses Default (7 Hak Akses Terpilih)**:
+  1. `cashflow.view` — Menu Kas & monitoring buku kas berjalan serta transaksi shipment armada.
+  2. `cashflow.export` — Unduh laporan transaksi kas ke format Excel/CSV.
+  3. `invoices.view` — Menu Invoice & monitoring daftar tagihan piutang customer.
+  4. `invoices.print` — Cetak dokumen invoice penagihan resmi & PDF rekapitulasi.
+  5. `notifications.view` — Pusat notifikasi pengingat jatuh tempo piutang dan radar anomali kas.
+  6. `audit.view` — Menu Audit forensik eksekutif & pemantauan radar anomali kas / keterlambatan input SLA.
+  7. `audit.manage` — Unduh dan ekspor laporan forensik audit keuangan.
+* **Batasan**: Tidak dibebani modul teknis operasional harian (Master Klien, Master Vendor Armada, Preset Rute, Metrik Server/Telemetri, maupun Manajemen Staf Kantor).
 
 ---
 

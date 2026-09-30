@@ -37,6 +37,7 @@ import { TopUpModal } from "@/components/TopUpModal";
 import { ShipmentModal } from "@/components/ShipmentModal";
 import { CreateInvoiceModal } from "@/components/CreateInvoiceModal";
 import { fetchWithAuth } from "@/lib/apiClient";
+import { useAuth } from "@/hooks/useAuth";
 import { 
   formatActivePeriod, 
   getCurrentMonthRange, 
@@ -46,7 +47,7 @@ import {
 } from "@/components/FilterBar";
 
 export default function Dashboard() {
-  const [user, setUser] = useState<any>(null);
+  const { user, can } = useAuth();
   const [loading, setLoading] = useState(true);
 
   // Tab Switcher State (3 Tab Eksekutif: Operasional, Tren Makro, Strategi)
@@ -251,13 +252,6 @@ export default function Dashboard() {
   }, [dateFrom, dateTo]);
 
   useEffect(() => {
-    const userData = localStorage.getItem("user");
-    if (userData) {
-      setUser(JSON.parse(userData));
-    }
-  }, []);
-
-  useEffect(() => {
     fetchDashboardData();
   }, [fetchDashboardData]);
 
@@ -319,49 +313,61 @@ export default function Dashboard() {
           </h1>
         </div>
 
-        {/* Sisi Kanan: Action Buttons & Modul Shortcuts (Mengisi Sisi Kanan agar Tidak Kosong) */}
+        {/* Sisi Kanan: Action Buttons & Modul Shortcuts (Dibatasi Berdasarkan Hak Akses PBAC) */}
         <div className="flex flex-wrap items-center gap-2 lg:justify-end">
-          <button
-            onClick={() => setIsTopUpOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs transition-all shadow-2xs cursor-pointer"
-          >
-            <Plus className="w-3.5 h-3.5 stroke-[3]" />
-            <span>Top Up Modal</span>
-          </button>
+          {can("cashflow.create") && (
+            <button
+              onClick={() => setIsTopUpOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs transition-all shadow-2xs cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5 stroke-[3]" />
+              <span>Top Up Modal</span>
+            </button>
+          )}
           
-          <button
-            onClick={() => setIsShipmentOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-bold text-xs transition-all shadow-2xs cursor-pointer"
-          >
-            <Plus className="w-3.5 h-3.5 stroke-[3]" />
-            <span>Catat Pengiriman</span>
-          </button>
+          {can("cashflow.create") && (
+            <button
+              onClick={() => setIsShipmentOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-bold text-xs transition-all shadow-2xs cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5 stroke-[3]" />
+              <span>Catat Pengiriman</span>
+            </button>
+          )}
 
-          <button
-            onClick={() => setIsInvoiceOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-bold text-xs transition-all shadow-2xs cursor-pointer"
-          >
-            <Plus className="w-3.5 h-3.5 stroke-[3]" />
-            <span>Buat Invoice</span>
-          </button>
+          {can("invoices.create") && (
+            <button
+              onClick={() => setIsInvoiceOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-bold text-xs transition-all shadow-2xs cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5 stroke-[3]" />
+              <span>Buat Invoice</span>
+            </button>
+          )}
 
-          <div className="h-5 w-px bg-slate-200 mx-0.5 hidden sm:block" />
+          {(can("cashflow.create") || can("invoices.create")) && (can("cashflow.view") || can("invoices.view")) && (
+            <div className="h-5 w-px bg-slate-200 mx-0.5 hidden sm:block" />
+          )}
 
-          <Link
-            href="/dashboard/transactions"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-all cursor-pointer"
-          >
-            <Receipt className="w-3.5 h-3.5 text-slate-600" />
-            <span>Buku Kas</span>
-          </Link>
+          {can("cashflow.view") && (
+            <Link
+              href="/dashboard/transactions"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-all cursor-pointer"
+            >
+              <Receipt className="w-3.5 h-3.5 text-slate-600" />
+              <span>Buku Kas</span>
+            </Link>
+          )}
 
-          <Link
-            href="/dashboard/invoices"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-all cursor-pointer"
-          >
-            <FileText className="w-3.5 h-3.5 text-slate-600" />
-            <span>Invoices</span>
-          </Link>
+          {can("invoices.view") && (
+            <Link
+              href="/dashboard/invoices"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-all cursor-pointer"
+            >
+              <FileText className="w-3.5 h-3.5 text-slate-600" />
+              <span>Invoices</span>
+            </Link>
+          )}
         </div>
       </header>
 
@@ -817,33 +823,39 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Quick Action Modals */}
-      <TopUpModal 
-        isOpen={isTopUpOpen} 
-        onClose={() => setIsTopUpOpen(false)} 
-        onSuccess={() => {
-          setIsTopUpOpen(false);
-          fetchDashboardData();
-        }} 
-      />
+      {/* Quick Action Modals (Hanya dirender jika pengguna memiliki izin) */}
+      {can("cashflow.create") && (
+        <TopUpModal 
+          isOpen={isTopUpOpen} 
+          onClose={() => setIsTopUpOpen(false)} 
+          onSuccess={() => {
+            setIsTopUpOpen(false);
+            fetchDashboardData();
+          }} 
+        />
+      )}
 
-      <ShipmentModal 
-        isOpen={isShipmentOpen} 
-        onClose={() => setIsShipmentOpen(false)} 
-        onSuccess={() => {
-          setIsShipmentOpen(false);
-          fetchDashboardData();
-        }} 
-      />
+      {can("cashflow.create") && (
+        <ShipmentModal 
+          isOpen={isShipmentOpen} 
+          onClose={() => setIsShipmentOpen(false)} 
+          onSuccess={() => {
+            setIsShipmentOpen(false);
+            fetchDashboardData();
+          }} 
+        />
+      )}
 
-      <CreateInvoiceModal
-        isOpen={isInvoiceOpen}
-        onClose={() => setIsInvoiceOpen(false)}
-        onSuccess={() => {
-          setIsInvoiceOpen(false);
-          fetchDashboardData();
-        }}
-      />
+      {can("invoices.create") && (
+        <CreateInvoiceModal
+          isOpen={isInvoiceOpen}
+          onClose={() => setIsInvoiceOpen(false)}
+          onSuccess={() => {
+            setIsInvoiceOpen(false);
+            fetchDashboardData();
+          }}
+        />
+      )}
     </div>
   );
 }

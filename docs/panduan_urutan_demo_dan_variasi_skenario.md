@@ -204,10 +204,10 @@ Seluruh akun demo telah dienkripsi dengan algoritma Bcrypt yang aman.
 | Role Pengguna | Email Login Akun | Fokus Demonstrasi & Karakteristik Wewenang |
 | :--- | :--- | :--- |
 | **IT Super Admin** | `odealidj.go@gmail.com` | **Root All-Access Bypass.** Mengakses seluruh modul, manajemen pengguna, konfigurasi PBAC, audit log forensik, dan metrik server. |
-| **Direktur** | `direktur.hendra@adijayantara.co.id` | **Eksekutif Read-Only.** Cocok untuk demo Rapat Direksi, Tab 2 (Tren Makro), Tab 3 (Intelijen Strategis), serta pengaktifan Mode Rapat. |
-| **Pemilik (Owner)** | `owner.adi@adijayantara.co.id` | **Eksekutif Monitoring.** Pemantauan likuiditas kas, mitigasi defisit, analisis margin rute, dan ekspor laporan Excel/PDF. |
-| **Finance & Kasir** | `finance.siti@adijayantara.co.id` | **Operasional Kas & Invoice.** Demo pencatatan kas harian, input pengeluaran, cetak invoice piutang, pelunasan parsial, dan reschedule jatuh tempo. |
-| **Admin Bisnis** | `admin.budi@adijayantara.co.id` | **Operasional Ekspedisi.** Demo pengelolaan rekanan vendor armada, data klien, preset rute, dan pengelolaan akun staf. |
+| **Direktur** | `direktur.wildan@adijayantara.co.id` | **Eksekutif Read-Only.** Cocok untuk demo Rapat Direksi, Tab 2 (Tren Makro), Tab 3 (Intelijen Strategis), serta pengaktifan Mode Rapat. |
+| **Pemilik (Owner)** | `owner.adi@adijayantara.co.id` | **Eksekutif Monitoring & Audit Forensik.** Pemantauan likuiditas kas, pengawasan invoice piutang, radar anomali kas (Audit), dan ekspor laporan Excel/PDF. |
+| **Finance & Kasir** | `finance.ayu@adijayantara.co.id` | **Operasional Kas & Invoice.** Demo pencatatan kas harian, input pengeluaran, cetak invoice piutang, pelunasan parsial, dan reschedule jatuh tempo. |
+| **Admin Bisnis** | `admin.bisnis@adijayantara.co.id` | **Operasional Ekspedisi.** Demo pengelolaan rekanan vendor armada, data klien, preset rute, dan pengelolaan akun staf. |
 
 ---
 
@@ -216,7 +216,7 @@ Seluruh akun demo telah dienkripsi dengan algoritma Bcrypt yang aman.
 Gunakan alur narasi berikut untuk memandu presentasi di depan audiens:
 
 ```
-[Login: direktur.hendra] 
+[Login: direktur.wildan] 
        │
        ▼
 ┌─────────────────────────┐

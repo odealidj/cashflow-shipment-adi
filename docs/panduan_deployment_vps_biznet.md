@@ -466,7 +466,7 @@ Buka browser dari laptop atau smartphone Anda:
 1. **Desktop Dashboard**: `https://domainanda.com/dashboard` (atau `http://<IP_PUBLIK_VPS>/dashboard`)
 2. **Mobile PWA**: `https://domainanda.com/m`
 3. **Login dengan Akun Demo**:
-   - Email: `direktur.hendra@adijayantara.co.id` (Direktur)
+   - Email: `direktur.wildan@adijayantara.co.id` (Direktur)
    - Password: `password123`
 4. **Verifikasi Fitur**:
    - Tab 1: Ringkasan Saldo Kas Berjalan & Kas Fisik vs Bank.

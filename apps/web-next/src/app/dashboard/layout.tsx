@@ -525,40 +525,42 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </div>
           )}
 
-          {/* GRUP 5: AKSES MOBILE PWA (Expandable / Collapsible) */}
-          <div className="pt-2 border-t border-white/10">
-            {!isCollapsed ? (
-              <button
-                type="button"
-                onClick={() => setIsAplikasiMobileOpen(prev => !prev)}
-                className="w-full px-3 pb-1.5 flex items-center justify-between text-[10px] font-black text-slate-400/90 uppercase tracking-widest hover:text-white transition-colors cursor-pointer select-none group"
-                title={isAplikasiMobileOpen ? "Tutup grup Aplikasi Mobile" : "Buka grup Aplikasi Mobile"}
-              >
-                <div className="flex items-center gap-1.5">
-                  <span>Aplikasi Mobile</span>
-                  <span className="px-1.5 py-0.5 text-[9px] font-black rounded-md bg-sky-950/70 text-sky-300 border border-sky-400/30 group-hover:border-sky-400/60 leading-none">
-                    1
-                  </span>
-                </div>
-                <ChevronDown className={`w-3.5 h-3.5 text-slate-400 group-hover:text-white transition-transform duration-200 ${isAplikasiMobileOpen ? "rotate-0" : "-rotate-90"}`} />
-              </button>
-            ) : null}
-
-            {((!isCollapsed && isAplikasiMobileOpen) || isCollapsed) && (
-              <div className="space-y-1 animate-fade-in">
-                <Link 
-                  href="/m" 
-                  title="Buka Mobile PWA"
-                  className={`flex items-center gap-3 rounded-xl text-xs font-bold text-sky-200 hover:bg-white/10 hover:text-white transition-all ${
-                    isCollapsed ? "justify-center p-3" : "px-3.5 py-2.5"
-                  }`}
+          {/* GRUP 5: AKSES MOBILE PWA (Expandable / Collapsible) - Disembunyikan sementara */}
+          {false && (
+            <div className="pt-2 border-t border-white/10">
+              {!isCollapsed ? (
+                <button
+                  type="button"
+                  onClick={() => setIsAplikasiMobileOpen(prev => !prev)}
+                  className="w-full px-3 pb-1.5 flex items-center justify-between text-[10px] font-black text-slate-400/90 uppercase tracking-widest hover:text-white transition-colors cursor-pointer select-none group"
+                  title={isAplikasiMobileOpen ? "Tutup grup Aplikasi Mobile" : "Buka grup Aplikasi Mobile"}
                 >
-                  <Smartphone className="w-5 h-5 text-sky-300 shrink-0" />
-                  {!isCollapsed && <span className="truncate">Buka Mobile PWA</span>}
-                </Link>
-              </div>
-            )}
-          </div>
+                  <div className="flex items-center gap-1.5">
+                    <span>Aplikasi Mobile</span>
+                    <span className="px-1.5 py-0.5 text-[9px] font-black rounded-md bg-sky-950/70 text-sky-300 border border-sky-400/30 group-hover:border-sky-400/60 leading-none">
+                      1
+                    </span>
+                  </div>
+                  <ChevronDown className={`w-3.5 h-3.5 text-slate-400 group-hover:text-white transition-transform duration-200 ${isAplikasiMobileOpen ? "rotate-0" : "-rotate-90"}`} />
+                </button>
+              ) : null}
+
+              {((!isCollapsed && isAplikasiMobileOpen) || isCollapsed) && (
+                <div className="space-y-1 animate-fade-in">
+                  <Link 
+                    href="/m" 
+                    title="Buka Mobile PWA"
+                    className={`flex items-center gap-3 rounded-xl text-xs font-bold text-sky-200 hover:bg-white/10 hover:text-white transition-all ${
+                      isCollapsed ? "justify-center p-3" : "px-3.5 py-2.5"
+                    }`}
+                  >
+                    <Smartphone className="w-5 h-5 text-sky-300 shrink-0" />
+                    {!isCollapsed && <span className="truncate">Buka Mobile PWA</span>}
+                  </Link>
+                </div>
+              )}
+            </div>
+          )}
         </nav>
 
         {/* ZONA 3: User Info & Logout (Fixed at Bottom) */}
