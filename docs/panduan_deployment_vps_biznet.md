@@ -14,7 +14,7 @@ Dokumen ini merupakan panduan komprehensif (*step-by-step production runbook*) u
 | **Processor** | **2 vCPU** | Cukup untuk kompilasi Go & pemrosesan kueri database |
 | **Memori (RAM)** | **4 GB RAM Fisik** | Ideal (Konsumsi sistem operasional ~800 MB – 1.2 GB) |
 | **Penyimpanan** | **60 GB SSD / NVMe Storage** | Sangat Luas (Aplikasi + DB ~3–5 GB, sisa >50 GB) |
-| **Alamat IP** | **1 Alamat IP Publik Statis** | Siap untuk Domain / A-Record DNS & SSL Let's Encrypt |
+| **Alamat IP** | **103.94.238.109 (IP Publik Statis)** | Siap untuk Domain / A-Record DNS & SSL Let's Encrypt |
 
 ### Estimasi Alokasi Konsumsi RAM (Budget 4 GB):
 ```
@@ -75,10 +75,22 @@ Berikut adalah ringkasan seluruh perangkat lunak yang wajib dipasang di VPS bese
 
 #### 1. Login ke VPS via SSH
 Gunakan terminal komputer Anda (Terminal Linux/macOS atau PowerShell/Git Bash di Windows):
+
+Pastikan berkas kunci privat SSH (`adijayantara-ssh.pem`) memiliki hak akses aman (hanya dapat dibaca oleh pemilik):
 ```bash
-ssh root@<IP_PUBLIK_VPS_BIZNET>
+chmod 400 adijayantara-ssh.pem
 ```
-*(Masukkan kata sandi root yang dikirimkan oleh Biznet Cloud).*
+
+Jalankan perintah koneksi SSH:
+```bash
+ssh -i adijayantara-ssh.pem adminadi@103.94.238.109
+```
+
+> [!TIP]
+> Karena login menggunakan pengguna administrator non-root (`adminadi`), Anda dapat beralih langsung ke sesi root penuh agar tidak perlu mengetikkan `sudo` pada setiap instruksi instalasi selanjutnya:
+> ```bash
+> sudo -i
+> ```
 
 #### 2. Update Paket Sistem Operasi
 ```bash
@@ -393,7 +405,7 @@ Salin konfigurasi berikut (ganti `domainanda.com` dengan domain Anda, atau gunak
 ```nginx
 server {
     listen 80;
-    server_name domainanda.com www.domainanda.com; # Atau isi dengan: <IP_PUBLIK_VPS>;
+    server_name domainanda.com www.domainanda.com 103.94.238.109; # Atau isi dengan: 103.94.238.109;
 
     # Ukuran maksimum upload file (Excel Import s.d. 50MB)
     client_max_body_size 50M;
@@ -463,8 +475,8 @@ Certbot akan otomatis memperbarui konfigurasi Nginx dan menjadwalkan perpanjanga
 ## ✅ FASE 8: Verifikasi & Uji Kelayakan Sistem Live
 
 Buka browser dari laptop atau smartphone Anda:
-1. **Desktop Dashboard**: `https://domainanda.com/dashboard` (atau `http://<IP_PUBLIK_VPS>/dashboard`)
-2. **Mobile PWA**: `https://domainanda.com/m`
+1. **Desktop Dashboard**: `https://domainanda.com/dashboard` (atau `http://103.94.238.109/dashboard`)
+2. **Mobile PWA**: `https://domainanda.com/m` (atau `http://103.94.238.109/m`)
 3. **Login dengan Akun Demo**:
    - Email: `direktur.wildan@adijayantara.co.id` (Direktur)
    - Password: `password123`
