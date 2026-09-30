@@ -1,8 +1,16 @@
-.PHONY: help infra-up infra-down infra-logs run-local-core-go run-core-go run-local-api-gateway-go run-api-gateway-go run-local-all-go run-all-go run-local-web-next generate-ui-assets swagger-gen db-migrate db-seed db-seed-2026 db-clean db-reset db-fresh db-fresh-2026 db-status redis-flush
+.PHONY: help up down up-local down-local status-local logs-local infra-up infra-down infra-logs run-local-core-go run-core-go run-local-api-gateway-go run-api-gateway-go run-local-all-go run-all-go run-local-web-next generate-ui-assets swagger-gen db-migrate db-seed db-seed-2026 db-clean db-reset db-fresh db-fresh-2026 db-status redis-flush
 
 # Default command
 help:
 	@echo "Available commands:"
+	@echo "  --- Quick Full-Stack Orchestration (Services + Infra) ---"
+	@echo "  make up-local                - Start Go services on local host (:8081/:8080) + infra containers"
+	@echo "  make down-local              - Stop Go services on local host + stop infra containers"
+	@echo "  make status-local            - Check health status of local Go services and infra"
+	@echo "  make logs-local              - Stream logs of local Go services"
+	@echo "  make up                      - Start all services & infra in Docker containers (:8080)"
+	@echo "  make down                    - Stop all Docker containers (services + infra)"
+	@echo ""
 	@echo "  --- Infrastructure (Database, Cache & Observability) ---"
 	@echo "  make infra-up                - Start PostgreSQL 15, Redis 7, Prometheus & k6 containers"
 	@echo "  make infra-down              - Stop infrastructure containers"
@@ -34,6 +42,30 @@ help:
 
 # Container Compose Command Detection (Docker Compose v2 CLI plugin vs docker-compose standalone)
 DOCKER_COMPOSE ?= $(shell if docker compose version >/dev/null 2>&1; then echo "docker compose"; else echo "docker-compose"; fi)
+
+# --- Quick Full-Stack Orchestration (Services + Infra) ---
+
+# 1. Local Host Services + Docker Infrastructure
+up-local:
+	@bash scripts/local_services.sh up
+
+down-local:
+	@bash scripts/local_services.sh down
+
+status-local:
+	@bash scripts/local_services.sh status
+
+logs-local:
+	@bash scripts/local_services.sh logs
+
+# 2. Docker Host Services + Docker Infrastructure
+up:
+	@echo "Starting all services and infrastructure in Docker containers..."
+	$(DOCKER_COMPOSE) up -d --build
+
+down:
+	@echo "Stopping all services and infrastructure in Docker containers..."
+	$(DOCKER_COMPOSE) down
 
 # Infrastructure
 infra-up:
@@ -81,7 +113,7 @@ run-local-core-go:
 # 2. Run Core Go in Container (Port 8081)
 run-core-go:
 	@echo "Starting Core Go container (http://localhost:8081)..."
-	$(DOCKER_COMPOSE) up -d --build core-go
+	$(DOCKER_COMPOSE) up -d --no-deps --build core-go
 
 # 3. Run API Gateway on Host (Port 8080 -> proxies to localhost:8081)
 run-local-api-gateway-go:
@@ -91,7 +123,7 @@ run-local-api-gateway-go:
 # 4. Run API Gateway in Container (Port 8080)
 run-api-gateway-go:
 	@echo "Starting API Gateway container (http://localhost:8080)..."
-	$(DOCKER_COMPOSE) up -d --build gateway-go
+	$(DOCKER_COMPOSE) up -d --no-deps --build gateway-go
 
 # 5. Run All Go Services on Host (Core Go :8081 + Gateway :8080)
 run-local-all-go:

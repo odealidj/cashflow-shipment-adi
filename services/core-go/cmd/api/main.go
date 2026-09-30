@@ -228,6 +228,11 @@ func main() {
 		httpSwagger.URL("/swagger/doc.json"),
 	))
 
+	// Top-level Healthcheck
+	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("OK"))
+	})
+
 	// API Routes
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
