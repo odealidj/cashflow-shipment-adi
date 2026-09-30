@@ -68,9 +68,15 @@ func extractAuditFilter(r *http.Request) domain.AuditLogFilter {
 
 // GetSummary godoc
 // @Summary      Get Executive Audit Summary KPI
-// @Tags         audit
+// @Description  Ringkasan metrik audit eksekutif mencakup fraud risk index, delayed entries, dan integritas finansial
+// @Tags         Audit
 // @Produce      json
 // @Security     BearerAuth
+// @Param        start_date query string false "Filter tanggal mulai (YYYY-MM-DD)"
+// @Param        end_date query string false "Filter tanggal akhir (YYYY-MM-DD)"
+// @Param        actor_id query string false "Filter ID pengguna (UUID)"
+// @Param        severity query string false "Filter tingkat keparahan (INFO, LOW, MEDIUM, HIGH, CRITICAL)"
+// @Success      200 {object} response.APIResponse
 // @Router       /audit/summary [get]
 func (h *AuditHandler) GetSummary(w http.ResponseWriter, r *http.Request) {
 	filter := extractAuditFilter(r)
@@ -84,9 +90,13 @@ func (h *AuditHandler) GetSummary(w http.ResponseWriter, r *http.Request) {
 
 // GetStaffScorecard godoc
 // @Summary      Get Staff SLA & Input Discipline Scorecard
-// @Tags         audit
+// @Description  Kartu skor kepatuhan SLA input data kasir/admin, rata-rata lag penginputan, dan deteksi anomali per staf
+// @Tags         Audit
 // @Produce      json
 // @Security     BearerAuth
+// @Param        start_date query string false "Filter tanggal mulai (YYYY-MM-DD)"
+// @Param        end_date query string false "Filter tanggal akhir (YYYY-MM-DD)"
+// @Success      200 {object} response.APIResponse
 // @Router       /audit/staff-scorecard [get]
 func (h *AuditHandler) GetStaffScorecard(w http.ResponseWriter, r *http.Request) {
 	filter := extractAuditFilter(r)
@@ -100,9 +110,16 @@ func (h *AuditHandler) GetStaffScorecard(w http.ResponseWriter, r *http.Request)
 
 // GetAnomalies godoc
 // @Summary      Get Fraud & Margin Anomalies
-// @Tags         audit
+// @Description  Daftar anomali selisih margin negatif, biaya janggal, dan transaksi terindikasi fraud
+// @Tags         Audit
 // @Produce      json
 // @Security     BearerAuth
+// @Param        page query int false "Nomor halaman (default 1)"
+// @Param        limit query int false "Jumlah data per halaman (default 50)"
+// @Param        severity query string false "Filter severity (LOW, MEDIUM, HIGH, CRITICAL)"
+// @Param        start_date query string false "Filter tanggal mulai (YYYY-MM-DD)"
+// @Param        end_date query string false "Filter tanggal akhir (YYYY-MM-DD)"
+// @Success      200 {object} response.APIResponse
 // @Router       /audit/anomalies [get]
 func (h *AuditHandler) GetAnomalies(w http.ResponseWriter, r *http.Request) {
 	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
@@ -126,9 +143,16 @@ func (h *AuditHandler) GetAnomalies(w http.ResponseWriter, r *http.Request) {
 
 // GetInputLag godoc
 // @Summary      Get Input Lag and Delay Records
-// @Tags         audit
+// @Description  Daftar transaksi yang diinput terlambat melewati batas SLA toleransi (input lag backlog)
+// @Tags         Audit
 // @Produce      json
 // @Security     BearerAuth
+// @Param        page query int false "Nomor halaman (default 1)"
+// @Param        limit query int false "Jumlah data per halaman (default 50)"
+// @Param        min_lag_days query int false "Minimal hari keterlambatan input"
+// @Param        start_date query string false "Filter tanggal mulai (YYYY-MM-DD)"
+// @Param        end_date query string false "Filter tanggal akhir (YYYY-MM-DD)"
+// @Success      200 {object} response.APIResponse
 // @Router       /audit/input-lag [get]
 func (h *AuditHandler) GetInputLag(w http.ResponseWriter, r *http.Request) {
 	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
@@ -152,9 +176,20 @@ func (h *AuditHandler) GetInputLag(w http.ResponseWriter, r *http.Request) {
 
 // ListLogs godoc
 // @Summary      Get Full Forensic Audit Logs List
-// @Tags         audit
+// @Description  Daftar rekaman log audit forensik lengkap (append-only ledger) dengan filter multivariat
+// @Tags         Audit
 // @Produce      json
 // @Security     BearerAuth
+// @Param        page query int false "Nomor halaman (default 1)"
+// @Param        limit query int false "Jumlah data per halaman (default 50)"
+// @Param        actor_name query string false "Pencarian nama staf pembuat perubahan"
+// @Param        action query string false "Aksi audit (CREATE, UPDATE, DELETE, SETTLE, RESCHEDULE)"
+// @Param        entity_type query string false "Entitas terdampak (cashflow, invoice, vendor, customer, user)"
+// @Param        severity query string false "Tingkat keparahan (INFO, LOW, MEDIUM, HIGH, CRITICAL)"
+// @Param        search query string false "Kata kunci pencarian deskripsi / diff"
+// @Param        start_date query string false "Filter tanggal mulai (YYYY-MM-DD)"
+// @Param        end_date query string false "Filter tanggal akhir (YYYY-MM-DD)"
+// @Success      200 {object} response.APIResponse
 // @Router       /audit/logs [get]
 func (h *AuditHandler) ListLogs(w http.ResponseWriter, r *http.Request) {
 	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
@@ -178,9 +213,12 @@ func (h *AuditHandler) ListLogs(w http.ResponseWriter, r *http.Request) {
 
 // GetLogDetail godoc
 // @Summary      Get Audit Log Detail by ID
-// @Tags         audit
+// @Description  Detail spesifik satu entri rekaman audit forensik termasuk snapshot sebelum dan sesudah perubahan
+// @Tags         Audit
 // @Produce      json
 // @Security     BearerAuth
+// @Param        id path int true "ID entri audit log"
+// @Success      200 {object} response.APIResponse
 // @Router       /audit/logs/{id} [get]
 func (h *AuditHandler) GetLogDetail(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")

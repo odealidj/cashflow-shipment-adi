@@ -65,10 +65,18 @@ func extractInvoiceFilter(r *http.Request) ports.InvoiceFilter {
 
 // List Invoices godoc
 // @Summary      Get invoices list
-// @Tags         invoices
+// @Tags         Invoices
 // @Produce      json
 // @Security     BearerAuth
+// @Param        page query int false "Nomor halaman (default 1)"
+// @Param        limit query int false "Jumlah item per halaman (default 50)"
+// @Param        customer_id query int false "Filter berdasarkan ID Klien"
+// @Param        status query string false "Filter status invoice (UNPAID, PAID, OVERDUE)"
+// @Param        invoice_no query string false "Filter nomor invoice"
+// @Param        date_from query string false "Filter tanggal jatuh tempo awal (YYYY-MM-DD)"
+// @Param        date_to query string false "Filter tanggal jatuh tempo akhir (YYYY-MM-DD)"
 // @Param        X-API-Version header string false "API Version (default: v1)"
+// @Success      200 {object} response.APIResponse
 // @Router       /invoices [get]
 func (h *InvoiceHandler) List(w http.ResponseWriter, r *http.Request) {
 	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
@@ -92,10 +100,15 @@ func (h *InvoiceHandler) List(w http.ResponseWriter, r *http.Request) {
 
 // Get Invoice Summary godoc
 // @Summary      Get invoice summary KPI
-// @Tags         invoices
+// @Tags         Invoices
 // @Produce      json
 // @Security     BearerAuth
+// @Param        customer_id query int false "Filter berdasarkan ID Klien"
+// @Param        status query string false "Filter status invoice"
+// @Param        date_from query string false "Filter tanggal jatuh tempo awal (YYYY-MM-DD)"
+// @Param        date_to query string false "Filter tanggal jatuh tempo akhir (YYYY-MM-DD)"
 // @Param        X-API-Version header string false "API Version (default: v1)"
+// @Success      200 {object} response.APIResponse
 // @Router       /invoices/summary [get]
 func (h *InvoiceHandler) GetSummary(w http.ResponseWriter, r *http.Request) {
 	filter := extractInvoiceFilter(r)
@@ -109,10 +122,12 @@ func (h *InvoiceHandler) GetSummary(w http.ResponseWriter, r *http.Request) {
 
 // Get Invoice Detail godoc
 // @Summary      Get invoice by ID
-// @Tags         invoices
+// @Tags         Invoices
 // @Produce      json
 // @Security     BearerAuth
+// @Param        id path int true "ID Invoice"
 // @Param        X-API-Version header string false "API Version (default: v1)"
+// @Success      200 {object} response.APIResponse
 // @Router       /invoices/{id} [get]
 func (h *InvoiceHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
@@ -133,12 +148,14 @@ func (h *InvoiceHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 
 // Create Invoice godoc
 // @Summary      Create new invoice
-// @Tags         invoices
+// @Tags         Invoices
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
 // @Param        X-Idempotency-Key header string false "Idempotency Key (UUID unik pencegah duplikasi transaksi)" default(a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11)
 // @Param        X-API-Version     header string false "API Version (default: v1)"
+// @Param        request body services.CreateInvoiceInput true "Invoice Data"
+// @Success      201 {object} response.APIResponse
 // @Router       /invoices [post]
 func (h *InvoiceHandler) Create(w http.ResponseWriter, r *http.Request) {
 	var input services.CreateInvoiceInput
@@ -163,12 +180,15 @@ func (h *InvoiceHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 // Update Invoice godoc
 // @Summary      Update invoice
-// @Tags         invoices
+// @Tags         Invoices
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
+// @Param        id path int true "ID Invoice"
 // @Param        X-Idempotency-Key header string false "Idempotency Key (UUID unik pencegah duplikasi transaksi)" default(a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11)
 // @Param        X-API-Version     header string false "API Version (default: v1)"
+// @Param        request body services.CreateInvoiceInput true "Updated Invoice Data"
+// @Success      200 {object} response.APIResponse
 // @Router       /invoices/{id} [put]
 func (h *InvoiceHandler) Update(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
@@ -195,12 +215,15 @@ func (h *InvoiceHandler) Update(w http.ResponseWriter, r *http.Request) {
 
 // Mark Paid godoc
 // @Summary      Mark invoice as paid / Settle invoice
-// @Tags         invoices
+// @Tags         Invoices
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
+// @Param        id path int true "ID Invoice"
 // @Param        X-Idempotency-Key header string false "Idempotency Key (UUID unik pencegah duplikasi transaksi)" default(a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11)
 // @Param        X-API-Version     header string false "API Version (default: v1)"
+// @Param        body body services.SettleInvoiceInput false "Detail pelunasan"
+// @Success      200 {object} response.APIResponse
 // @Router       /invoices/{id}/pay [patch]
 func (h *InvoiceHandler) MarkPaid(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
@@ -234,12 +257,15 @@ func (h *InvoiceHandler) MarkPaid(w http.ResponseWriter, r *http.Request) {
 
 // Reschedule Due Date godoc
 // @Summary      Reschedule invoice due date with audit reason
-// @Tags         invoices
+// @Tags         Invoices
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
+// @Param        id path int true "ID Invoice"
 // @Param        X-Idempotency-Key header string false "Idempotency Key (UUID unik pencegah duplikasi transaksi)" default(a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11)
 // @Param        X-API-Version     header string false "API Version (default: v1)"
+// @Param        body body services.RescheduleDueDateInput true "Payload perpanjangan jatuh tempo"
+// @Success      200 {object} response.APIResponse
 // @Router       /invoices/{id}/reschedule [post]
 func (h *InvoiceHandler) RescheduleDueDate(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
@@ -274,9 +300,11 @@ func (h *InvoiceHandler) RescheduleDueDate(w http.ResponseWriter, r *http.Reques
 
 // Get Invoice History godoc
 // @Summary      Get full audit trail history of an invoice
-// @Tags         invoices
+// @Tags         Invoices
 // @Produce      json
 // @Security     BearerAuth
+// @Param        id path int true "ID Invoice"
+// @Success      200 {object} response.APIResponse
 // @Router       /invoices/{id}/history [get]
 func (h *InvoiceHandler) GetHistory(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
@@ -297,11 +325,13 @@ func (h *InvoiceHandler) GetHistory(w http.ResponseWriter, r *http.Request) {
 
 // Delete Invoice (Soft Delete) godoc
 // @Summary      Soft delete invoice
-// @Tags         invoices
+// @Tags         Invoices
 // @Produce      json
 // @Security     BearerAuth
+// @Param        id path int true "ID Invoice"
 // @Param        X-Idempotency-Key header string false "Idempotency Key (UUID unik pencegah duplikasi transaksi)" default(a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11)
 // @Param        X-API-Version     header string false "API Version (default: v1)"
+// @Success      200 {object} response.APIResponse
 // @Router       /invoices/{id} [delete]
 func (h *InvoiceHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
@@ -377,9 +407,14 @@ func formatStatusLabel(st *domain.InvoiceStatus) string {
 
 // ExportExcel godoc
 // @Summary      Export invoice recap data to Excel
-// @Tags         invoices
+// @Tags         Invoices
 // @Produce      application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
 // @Security     BearerAuth
+// @Param        customer_id query int false "Filter berdasarkan ID Klien"
+// @Param        status query string false "Filter status invoice"
+// @Param        date_from query string false "Filter tanggal jatuh tempo awal (YYYY-MM-DD)"
+// @Param        date_to query string false "Filter tanggal jatuh tempo akhir (YYYY-MM-DD)"
+// @Success      200 {file} binary
 // @Router       /invoices/export [get]
 func (h *InvoiceHandler) ExportExcel(w http.ResponseWriter, r *http.Request) {
 	filter := extractInvoiceFilter(r)

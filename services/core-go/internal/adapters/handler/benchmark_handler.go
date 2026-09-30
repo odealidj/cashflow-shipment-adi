@@ -183,7 +183,7 @@ func getScenarioMeta(scenario string) (scenarioMeta, bool) {
 // @Produce json
 // @Param request body BenchmarkStartRequest true "Pilihan Skenario Uji Beban"
 // @Success 202 {object} response.APIResponse{data=BenchmarkJobStatus}
-// @Router /api/v1/system/benchmark/start [post]
+// @Router /system/benchmark/start [post]
 func (h *BenchmarkHandler) StartBenchmark(w http.ResponseWriter, r *http.Request) {
 	var req BenchmarkStartRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -244,7 +244,7 @@ func (h *BenchmarkHandler) StartBenchmark(w http.ResponseWriter, r *http.Request
 // @Tags System
 // @Produce json
 // @Success 200 {object} response.APIResponse{data=BenchmarkJobStatus}
-// @Router /api/v1/system/benchmark/status [get]
+// @Router /system/benchmark/status [get]
 func (h *BenchmarkHandler) GetBenchmarkStatus(w http.ResponseWriter, r *http.Request) {
 	val, err := h.redisClient.Get(r.Context(), redisBenchmarkStatusKey).Result()
 	if err != nil || val == "" {
@@ -268,7 +268,7 @@ func (h *BenchmarkHandler) GetBenchmarkStatus(w http.ResponseWriter, r *http.Req
 // @Tags System
 // @Produce json
 // @Success 200 {object} response.APIResponse
-// @Router /api/v1/system/benchmark/abort [post]
+// @Router /system/benchmark/abort [post]
 func (h *BenchmarkHandler) AbortBenchmark(w http.ResponseWriter, r *http.Request) {
 	h.cancelsMutex.Lock()
 	defer h.cancelsMutex.Unlock()
@@ -301,7 +301,7 @@ func (h *BenchmarkHandler) AbortBenchmark(w http.ResponseWriter, r *http.Request
 // @Tags System
 // @Produce json
 // @Success 200 {object} response.APIResponse{data=[]BenchmarkReport}
-// @Router /api/v1/system/benchmark/history [get]
+// @Router /system/benchmark/history [get]
 func (h *BenchmarkHandler) GetBenchmarkHistory(w http.ResponseWriter, r *http.Request) {
 	val, err := h.redisClient.Get(r.Context(), redisBenchmarkHistoryKey).Result()
 	if err != nil || val == "" {
@@ -323,7 +323,8 @@ func (h *BenchmarkHandler) GetBenchmarkHistory(w http.ResponseWriter, r *http.Re
 // @Tags System
 // @Produce octet-stream
 // @Param id query string false "Job ID pengujian (default: hasil terakhir)"
-// @Router /api/v1/system/benchmark/download [get]
+// @Success 200 {file} binary
+// @Router /system/benchmark/download [get]
 func (h *BenchmarkHandler) DownloadBenchmarkReport(w http.ResponseWriter, r *http.Request) {
 	jobID := r.URL.Query().Get("id")
 

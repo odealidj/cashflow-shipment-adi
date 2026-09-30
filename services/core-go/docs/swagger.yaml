@@ -44,6 +44,8 @@ definitions:
         type: number
       id:
         type: integer
+      invoice_id:
+        type: integer
       kredit:
         type: number
       margin_pct:
@@ -94,10 +96,12 @@ definitions:
     enum:
     - SHIPMENT
     - TOP_UP
+    - INVOICE_PAYMENT
     type: string
     x-enum-varnames:
     - EntryShipment
     - EntryTopUp
+    - EntryInvoicePayment
   domain.PaymentStatus:
     enum:
     - PAID
@@ -214,6 +218,8 @@ definitions:
         type: number
       data_sent_kb:
         type: number
+      database_analysis:
+        $ref: '#/definitions/handler.DatabaseBenchmarkAnalysis'
       duration:
         type: string
       failed_requests:
@@ -287,11 +293,33 @@ definitions:
       open:
         example: 5
         type: integer
+      postgres:
+        $ref: '#/definitions/handler.PostgresContainerMetrics'
       wait_count:
         example: 0
         type: integer
       wait_duration_ms:
         example: 0
+        type: number
+    type: object
+  handler.DatabaseBenchmarkAnalysis:
+    properties:
+      db_recommendation:
+        type: string
+      db_verdict:
+        description: SEHAT, WASPADA, BOTTLENECK
+        type: string
+      peak_in_use:
+        type: integer
+      peak_utilization_pct:
+        type: number
+      pool_max_open:
+        type: integer
+      slow_queries_count:
+        type: integer
+      wait_count_delta:
+        type: integer
+      wait_duration_ms:
         type: number
     type: object
   handler.ExecutiveSummary:
@@ -351,6 +379,18 @@ definitions:
         type: string
       password:
         type: string
+    type: object
+  handler.PostgresContainerMetrics:
+    properties:
+      cpu_percent:
+        example: 6.4
+        type: number
+      mem_usage_mb:
+        example: 36.2
+        type: number
+      pids:
+        example: 11
+        type: integer
     type: object
   handler.RegisterRequest:
     properties:
@@ -454,6 +494,31 @@ definitions:
       total_pages:
         type: integer
     type: object
+  services.CreateInvoiceInput:
+    properties:
+      amount:
+        type: number
+      cashflow_entry_id:
+        type: integer
+      client_name:
+        type: string
+      created_by:
+        type: string
+      invoice_no:
+        type: string
+      notes:
+        type: string
+      shipment_date:
+        description: YYYY-MM-DD
+        type: string
+      status:
+        description: UNPAID, PAID, OVERDUE (opsional)
+        type: string
+      top_days:
+        type: integer
+      top_terms:
+        type: string
+    type: object
   services.CreateRoleInput:
     properties:
       code:
@@ -477,6 +542,34 @@ definitions:
         $ref: '#/definitions/domain.UserRole'
       status:
         $ref: '#/definitions/domain.UserStatus'
+    type: object
+  services.RescheduleDueDateInput:
+    properties:
+      changed_by:
+        type: string
+      changed_by_name:
+        type: string
+      new_due_date:
+        description: YYYY-MM-DD
+        type: string
+      reason:
+        type: string
+    type: object
+  services.SettleInvoiceInput:
+    properties:
+      created_by:
+        type: string
+      created_by_name:
+        type: string
+      notes:
+        type: string
+      payment_date:
+        description: YYYY-MM-DD or RFC3339, default time.Now()
+        type: string
+      proof_url:
+        type: string
+      reference_no:
+        type: string
     type: object
   services.UpdateRoleInput:
     properties:
@@ -722,8 +815,15 @@ paths:
       summary: Update activity preset
       tags:
       - activity-presets
-  /api/v1/system/benchmark/abort:
-    post:
+  /analytics/cashflow-runway:
+    get:
+      description: Menghitung proyeksi saldo kas harian/mingguan berdasarkan invoice
+        jatuh tempo vs hutang vendor
+      parameters:
+      - description: Jumlah hari proyeksi ke depan (default 60)
+        in: query
+        name: days
+        type: integer
       produces:
       - application/json
       responses:
@@ -731,84 +831,284 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/response.APIResponse'
-      summary: Hentikan Pengujian Beban yang Sedang Berjalan (Emergency Stop)
+      security:
+      - BearerAuth: []
+      summary: Proyeksi Arus Kas 30-60 Hari (P1) & CCC Gap (P6)
       tags:
-      - System
-  /api/v1/system/benchmark/download:
+      - Analytics
+  /analytics/customer-discipline-pareto:
     get:
+      description: Menghitung realisasi pembayaran customer vs janji TOP, reschedule
+        count, dan kurva Pareto omset
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Skor Kepatuhan DSO Customer (P3) & Analisis Pareto Omset 80/20 (P5)
+      tags:
+      - Analytics
+  /analytics/route-matrix:
+    get:
+      description: 'Memetakan performa rute ke dalam 4 kuadran: Bintang, Potensial,
+        Sapi Perah, dan Evaluasi'
       parameters:
-      - description: 'Job ID pengujian (default: hasil terakhir)'
+      - description: Filter tanggal mulai (YYYY-MM-DD)
         in: query
-        name: id
+        name: date_from
+        type: string
+      - description: Filter tanggal selesai (YYYY-MM-DD)
+        in: query
+        name: date_to
         type: string
       produces:
-      - application/octet-stream
-      responses: {}
-      summary: Unduh Laporan Lengkap Pengujian Beban k6
-      tags:
-      - System
-  /api/v1/system/benchmark/history:
-    get:
-      produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            allOf:
-            - $ref: '#/definitions/response.APIResponse'
-            - properties:
-                data:
-                  items:
-                    $ref: '#/definitions/handler.BenchmarkReport'
-                  type: array
-              type: object
-      summary: Ambil Riwayat 10 Pengujian Terakhir
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Matriks Kuadran Profitabilitas Rute BCG (P2)
       tags:
-      - System
-  /api/v1/system/benchmark/start:
-    post:
-      consumes:
-      - application/json
+      - Analytics
+  /analytics/vendor-efficiency:
+    get:
+      description: Menghitung rasio konsentrasi armada vendor, total biaya pokok,
+        dan rata-rata margin keuntungan
       parameters:
-      - description: Pilihan Skenario Uji Beban
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/handler.BenchmarkStartRequest'
-      produces:
-      - application/json
-      responses:
-        "202":
-          description: Accepted
-          schema:
-            allOf:
-            - $ref: '#/definitions/response.APIResponse'
-            - properties:
-                data:
-                  $ref: '#/definitions/handler.BenchmarkJobStatus'
-              type: object
-      summary: Memulai Uji Beban k6 Latar Belakang (Async)
-      tags:
-      - System
-  /api/v1/system/benchmark/status:
-    get:
+      - description: Filter tanggal mulai (YYYY-MM-DD)
+        in: query
+        name: date_from
+        type: string
+      - description: Filter tanggal selesai (YYYY-MM-DD)
+        in: query
+        name: date_to
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            allOf:
-            - $ref: '#/definitions/response.APIResponse'
-            - properties:
-                data:
-                  $ref: '#/definitions/handler.BenchmarkJobStatus'
-              type: object
-      summary: Ambil Status Terkini Uji Beban k6
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Analisis Efisiensi & Ketergantungan Rekanan Vendor (P4)
       tags:
-      - System
+      - Analytics
+  /audit/anomalies:
+    get:
+      description: Daftar anomali selisih margin negatif, biaya janggal, dan transaksi
+        terindikasi fraud
+      parameters:
+      - description: Nomor halaman (default 1)
+        in: query
+        name: page
+        type: integer
+      - description: Jumlah data per halaman (default 50)
+        in: query
+        name: limit
+        type: integer
+      - description: Filter severity (LOW, MEDIUM, HIGH, CRITICAL)
+        in: query
+        name: severity
+        type: string
+      - description: Filter tanggal mulai (YYYY-MM-DD)
+        in: query
+        name: start_date
+        type: string
+      - description: Filter tanggal akhir (YYYY-MM-DD)
+        in: query
+        name: end_date
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Get Fraud & Margin Anomalies
+      tags:
+      - Audit
+  /audit/input-lag:
+    get:
+      description: Daftar transaksi yang diinput terlambat melewati batas SLA toleransi
+        (input lag backlog)
+      parameters:
+      - description: Nomor halaman (default 1)
+        in: query
+        name: page
+        type: integer
+      - description: Jumlah data per halaman (default 50)
+        in: query
+        name: limit
+        type: integer
+      - description: Minimal hari keterlambatan input
+        in: query
+        name: min_lag_days
+        type: integer
+      - description: Filter tanggal mulai (YYYY-MM-DD)
+        in: query
+        name: start_date
+        type: string
+      - description: Filter tanggal akhir (YYYY-MM-DD)
+        in: query
+        name: end_date
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Get Input Lag and Delay Records
+      tags:
+      - Audit
+  /audit/logs:
+    get:
+      description: Daftar rekaman log audit forensik lengkap (append-only ledger)
+        dengan filter multivariat
+      parameters:
+      - description: Nomor halaman (default 1)
+        in: query
+        name: page
+        type: integer
+      - description: Jumlah data per halaman (default 50)
+        in: query
+        name: limit
+        type: integer
+      - description: Pencarian nama staf pembuat perubahan
+        in: query
+        name: actor_name
+        type: string
+      - description: Aksi audit (CREATE, UPDATE, DELETE, SETTLE, RESCHEDULE)
+        in: query
+        name: action
+        type: string
+      - description: Entitas terdampak (cashflow, invoice, vendor, customer, user)
+        in: query
+        name: entity_type
+        type: string
+      - description: Tingkat keparahan (INFO, LOW, MEDIUM, HIGH, CRITICAL)
+        in: query
+        name: severity
+        type: string
+      - description: Kata kunci pencarian deskripsi / diff
+        in: query
+        name: search
+        type: string
+      - description: Filter tanggal mulai (YYYY-MM-DD)
+        in: query
+        name: start_date
+        type: string
+      - description: Filter tanggal akhir (YYYY-MM-DD)
+        in: query
+        name: end_date
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Get Full Forensic Audit Logs List
+      tags:
+      - Audit
+  /audit/logs/{id}:
+    get:
+      description: Detail spesifik satu entri rekaman audit forensik termasuk snapshot
+        sebelum dan sesudah perubahan
+      parameters:
+      - description: ID entri audit log
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Get Audit Log Detail by ID
+      tags:
+      - Audit
+  /audit/staff-scorecard:
+    get:
+      description: Kartu skor kepatuhan SLA input data kasir/admin, rata-rata lag
+        penginputan, dan deteksi anomali per staf
+      parameters:
+      - description: Filter tanggal mulai (YYYY-MM-DD)
+        in: query
+        name: start_date
+        type: string
+      - description: Filter tanggal akhir (YYYY-MM-DD)
+        in: query
+        name: end_date
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Get Staff SLA & Input Discipline Scorecard
+      tags:
+      - Audit
+  /audit/summary:
+    get:
+      description: Ringkasan metrik audit eksekutif mencakup fraud risk index, delayed
+        entries, dan integritas finansial
+      parameters:
+      - description: Filter tanggal mulai (YYYY-MM-DD)
+        in: query
+        name: start_date
+        type: string
+      - description: Filter tanggal akhir (YYYY-MM-DD)
+        in: query
+        name: end_date
+        type: string
+      - description: Filter ID pengguna (UUID)
+        in: query
+        name: actor_id
+        type: string
+      - description: Filter tingkat keparahan (INFO, LOW, MEDIUM, HIGH, CRITICAL)
+        in: query
+        name: severity
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Get Executive Audit Summary KPI
+      tags:
+      - Audit
   /auth/login:
     post:
       consumes:
@@ -1400,18 +1700,50 @@ paths:
   /invoices:
     get:
       parameters:
+      - description: Nomor halaman (default 1)
+        in: query
+        name: page
+        type: integer
+      - description: Jumlah item per halaman (default 50)
+        in: query
+        name: limit
+        type: integer
+      - description: Filter berdasarkan ID Klien
+        in: query
+        name: customer_id
+        type: integer
+      - description: Filter status invoice (UNPAID, PAID, OVERDUE)
+        in: query
+        name: status
+        type: string
+      - description: Filter nomor invoice
+        in: query
+        name: invoice_no
+        type: string
+      - description: Filter tanggal jatuh tempo awal (YYYY-MM-DD)
+        in: query
+        name: date_from
+        type: string
+      - description: Filter tanggal jatuh tempo akhir (YYYY-MM-DD)
+        in: query
+        name: date_to
+        type: string
       - description: 'API Version (default: v1)'
         in: header
         name: X-API-Version
         type: string
       produces:
       - application/json
-      responses: {}
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
       security:
       - BearerAuth: []
       summary: Get invoices list
       tags:
-      - invoices
+      - Invoices
     post:
       consumes:
       - application/json
@@ -1425,17 +1757,32 @@ paths:
         in: header
         name: X-API-Version
         type: string
+      - description: Invoice Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/services.CreateInvoiceInput'
       produces:
       - application/json
-      responses: {}
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/response.APIResponse'
       security:
       - BearerAuth: []
       summary: Create new invoice
       tags:
-      - invoices
+      - Invoices
   /invoices/{id}:
     delete:
       parameters:
+      - description: ID Invoice
+        in: path
+        name: id
+        required: true
+        type: integer
       - default: a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11
         description: Idempotency Key (UUID unik pencegah duplikasi transaksi)
         in: header
@@ -1447,30 +1794,48 @@ paths:
         type: string
       produces:
       - application/json
-      responses: {}
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
       security:
       - BearerAuth: []
       summary: Soft delete invoice
       tags:
-      - invoices
+      - Invoices
     get:
       parameters:
+      - description: ID Invoice
+        in: path
+        name: id
+        required: true
+        type: integer
       - description: 'API Version (default: v1)'
         in: header
         name: X-API-Version
         type: string
       produces:
       - application/json
-      responses: {}
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
       security:
       - BearerAuth: []
       summary: Get invoice by ID
       tags:
-      - invoices
+      - Invoices
     put:
       consumes:
       - application/json
       parameters:
+      - description: ID Invoice
+        in: path
+        name: id
+        required: true
+        type: integer
       - default: a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11
         description: Idempotency Key (UUID unik pencegah duplikasi transaksi)
         in: header
@@ -1480,17 +1845,54 @@ paths:
         in: header
         name: X-API-Version
         type: string
+      - description: Updated Invoice Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/services.CreateInvoiceInput'
       produces:
       - application/json
-      responses: {}
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
       security:
       - BearerAuth: []
       summary: Update invoice
       tags:
-      - invoices
+      - Invoices
+  /invoices/{id}/history:
+    get:
+      parameters:
+      - description: ID Invoice
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Get full audit trail history of an invoice
+      tags:
+      - Invoices
   /invoices/{id}/pay:
     patch:
+      consumes:
+      - application/json
       parameters:
+      - description: ID Invoice
+        in: path
+        name: id
+        required: true
+        type: integer
       - default: a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11
         description: Idempotency Key (UUID unik pencegah duplikasi transaksi)
         in: header
@@ -1500,29 +1902,249 @@ paths:
         in: header
         name: X-API-Version
         type: string
+      - description: Detail pelunasan
+        in: body
+        name: body
+        schema:
+          $ref: '#/definitions/services.SettleInvoiceInput'
       produces:
       - application/json
-      responses: {}
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
       security:
       - BearerAuth: []
-      summary: Mark invoice as paid
+      summary: Mark invoice as paid / Settle invoice
       tags:
-      - invoices
+      - Invoices
+  /invoices/{id}/reschedule:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID Invoice
+        in: path
+        name: id
+        required: true
+        type: integer
+      - default: a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11
+        description: Idempotency Key (UUID unik pencegah duplikasi transaksi)
+        in: header
+        name: X-Idempotency-Key
+        type: string
+      - description: 'API Version (default: v1)'
+        in: header
+        name: X-API-Version
+        type: string
+      - description: Payload perpanjangan jatuh tempo
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/services.RescheduleDueDateInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Reschedule invoice due date with audit reason
+      tags:
+      - Invoices
+  /invoices/export:
+    get:
+      parameters:
+      - description: Filter berdasarkan ID Klien
+        in: query
+        name: customer_id
+        type: integer
+      - description: Filter status invoice
+        in: query
+        name: status
+        type: string
+      - description: Filter tanggal jatuh tempo awal (YYYY-MM-DD)
+        in: query
+        name: date_from
+        type: string
+      - description: Filter tanggal jatuh tempo akhir (YYYY-MM-DD)
+        in: query
+        name: date_to
+        type: string
+      produces:
+      - application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+      security:
+      - BearerAuth: []
+      summary: Export invoice recap data to Excel
+      tags:
+      - Invoices
   /invoices/summary:
     get:
       parameters:
+      - description: Filter berdasarkan ID Klien
+        in: query
+        name: customer_id
+        type: integer
+      - description: Filter status invoice
+        in: query
+        name: status
+        type: string
+      - description: Filter tanggal jatuh tempo awal (YYYY-MM-DD)
+        in: query
+        name: date_from
+        type: string
+      - description: Filter tanggal jatuh tempo akhir (YYYY-MM-DD)
+        in: query
+        name: date_to
+        type: string
       - description: 'API Version (default: v1)'
         in: header
         name: X-API-Version
         type: string
       produces:
       - application/json
-      responses: {}
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
       security:
       - BearerAuth: []
       summary: Get invoice summary KPI
       tags:
-      - invoices
+      - Invoices
+  /notifications:
+    get:
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      - description: Filter by category (INVOICE, CASHFLOW, VENDOR, SHIPMENT, SYSTEM)
+        in: query
+        name: category
+        type: string
+      - description: Filter by severity (CRITICAL, WARNING, INFO)
+        in: query
+        name: severity
+        type: string
+      - description: Only show unread notifications
+        in: query
+        name: unread_only
+        type: boolean
+      - description: Search query
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Get notifications feed for current user
+      tags:
+      - notifications
+  /notifications/{id}:
+    delete:
+      parameters:
+      - description: Notification UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete a notification
+      tags:
+      - notifications
+  /notifications/{id}/read:
+    patch:
+      parameters:
+      - description: Notification UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Mark a notification as read
+      tags:
+      - notifications
+  /notifications/check-invoices:
+    post:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Trigger scan for due and overdue invoices
+      tags:
+      - notifications
+  /notifications/read-all:
+    post:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Mark all notifications as read for current user/role
+      tags:
+      - notifications
+  /notifications/unread-count:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Get unread notifications count
+      tags:
+      - notifications
   /roles:
     get:
       description: Retrieves list of all available roles with user counts
@@ -1756,6 +2378,97 @@ paths:
       summary: List all available system permissions
       tags:
       - roles
+  /system/benchmark/abort:
+    post:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      summary: Hentikan Pengujian Beban yang Sedang Berjalan (Emergency Stop)
+      tags:
+      - System
+  /system/benchmark/download:
+    get:
+      parameters:
+      - description: 'Job ID pengujian (default: hasil terakhir)'
+        in: query
+        name: id
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+      summary: Unduh Laporan Lengkap Pengujian Beban k6
+      tags:
+      - System
+  /system/benchmark/history:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.APIResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/handler.BenchmarkReport'
+                  type: array
+              type: object
+      summary: Ambil Riwayat 10 Pengujian Terakhir
+      tags:
+      - System
+  /system/benchmark/start:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Pilihan Skenario Uji Beban
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.BenchmarkStartRequest'
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/handler.BenchmarkJobStatus'
+              type: object
+      summary: Memulai Uji Beban k6 Latar Belakang (Async)
+      tags:
+      - System
+  /system/benchmark/status:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/handler.BenchmarkJobStatus'
+              type: object
+      summary: Ambil Status Terkini Uji Beban k6
+      tags:
+      - System
   /system/metrics:
     get:
       description: Aggregates real-time performance indicators, gateway throughput,
