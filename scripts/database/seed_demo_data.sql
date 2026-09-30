@@ -165,6 +165,16 @@ VALUES
     '0811-2233-4455',
     'ACTIVE',
     (SELECT id FROM roles WHERE code = 'owner' LIMIT 1)
+  ),
+  (
+    'c0000000-0000-0000-0000-000000000006',
+    'direktur.basri@adijayantara.co.id',
+    '$2a$14$4jy/s63YXdDzVJCEBe4V6eTJyl.pLO.6ite2o0OeITIpuoeW7RfPi',
+    'Basri',
+    'direktur',
+    '0817-1234-5678',
+    'ACTIVE',
+    (SELECT id FROM roles WHERE code = 'direktur' LIMIT 1)
   )
 ON CONFLICT (email) DO UPDATE SET
   password_hash = EXCLUDED.password_hash,

@@ -205,6 +205,7 @@ Seluruh akun demo telah dienkripsi dengan algoritma Bcrypt yang aman.
 | :--- | :--- | :--- |
 | **IT Super Admin** | `odealidj.go@gmail.com` | **Root All-Access Bypass.** Mengakses seluruh modul, manajemen pengguna, konfigurasi PBAC, audit log forensik, dan metrik server. |
 | **Direktur** | `direktur.wildan@adijayantara.co.id` | **Eksekutif Read-Only.** Cocok untuk demo Rapat Direksi, Tab 2 (Tren Makro), Tab 3 (Intelijen Strategis), serta pengaktifan Mode Rapat. |
+| **Direktur** | `direktur.basri@adijayantara.co.id` | **Eksekutif Read-Only.** Akun demo jajaran direksi untuk pengawasan operasional, margin laba, dan supervisi pimpinan. |
 | **Pemilik (Owner)** | `owner.adi@adijayantara.co.id` | **Eksekutif Monitoring & Audit Forensik.** Pemantauan likuiditas kas, pengawasan invoice piutang, radar anomali kas (Audit), dan ekspor laporan Excel/PDF. |
 | **Finance & Kasir** | `finance.ayu@adijayantara.co.id` | **Operasional Kas & Invoice.** Demo pencatatan kas harian, input pengeluaran, cetak invoice piutang, pelunasan parsial, dan reschedule jatuh tempo. |
 | **Admin Bisnis** | `admin.bisnis@adijayantara.co.id` | **Operasional Ekspedisi.** Demo pengelolaan rekanan vendor armada, data klien, preset rute, dan pengelolaan akun staf. |

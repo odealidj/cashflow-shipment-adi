@@ -259,6 +259,7 @@ Seluruh akun demo telah dienkripsi menggunakan algoritma **Bcrypt** (*cost facto
 | **Admin Bisnis** | `admin.bisnis@adijayantara.co.id` | `password123` | `admin` | Administrator Bisnis | `0812-3456-7890` | `ACTIVE` |
 | **Ayu** | `finance.ayu@adijayantara.co.id` | `password123` | `finance` | Finance & Akuntansi | `0813-9876-5432` | `ACTIVE` |
 | **Wildan** | `direktur.wildan@adijayantara.co.id` | `password123` | `direktur` | Direktur Perusahaan | `0818-8899-0011` | `ACTIVE` |
+| **Basri** | `direktur.basri@adijayantara.co.id` | `password123` | `direktur` | Direktur Perusahaan | `0817-1234-5678` | `ACTIVE` |
 | **Adi Jayantara** | `owner.adi@adijayantara.co.id` | `password123` | `owner` | Pemilik Perusahaan (Owner) | `0811-2233-4455` | `ACTIVE` |
 
 ---
