@@ -17,6 +17,10 @@ Selamat datang di direktori dokumentasi resmi sistem aplikasi **PT. Adijayantara
 | 🎛️ **[Spesifikasi Matriks Hak Akses Dinamis](./teknikal/dynamic_rbac_matrix_specification.md)** | Detail teknis tabel perizinan modular, permission codes, dan pemetaan endpoint API. |
 | 📡 **[Standarisasi Respon API & HTTP 409 Conflict](./teknikal/standarisasi_api_response.md)** | Format baku respon REST API (`status`, `message`, `data`, `meta`, `errors`), kontrak pagination koleksi array murni, dan penanganan duplikasi key (409 Conflict). |
 | 📊 **[Analisis Metrik Telemetri & Panduan Benchmark k6](./teknikal/analisis_metrik_telemetri_dan_panduan_benchmark.md)** | **Buku Panduan Observabilitas & Benchmark**: Bedah detail 5 panel dashboard, analisa metrik Connection Pool & Slow Queries, evaluasi 6 skenario k6, dan runbook mitigasi bottleneck. |
+| 🗄️ **[Panduan Manajemen Database & Akun Demo](./panduan_database_make_dan_user_demo.md)** | **Buku Panduan Operasional Database & Kredensial**: Panduan langkah-demi-langkah seluruh perintah `make db-*` dan `make redis-flush`, matriks perbandingan operasi skema, serta katalog lengkap 5 akun demo, password default, dan peran RBAC. |
+| 🎬 **[Panduan Urutan Eksekusi Demo & Variasi Skenario](./panduan_urutan_demo_dan_variasi_skenario.md)** | **Runbook Demonstrasi Sistem dari Awal**: Urutan eksekusi terminal step-by-step (Golden Path 9 bulan), 5 variasi skenario demo (Clean Slate, Transaksi Baru, Ringkas, API Gateway), katalog kredensial akun, naskah alur presentasi di layar, dan troubleshooting. |
+| 🚀 **[Panduan Deployment VPS Biznet GIO](./panduan_deployment_vps_biznet.md)** | **Buku Panduan Deployment Produksi VPS**: Setup Ubuntu 22.04 LTS (Paket MS.4.2 4GB RAM 2 vCPU 60GB Disk), instalasi software wajib (Docker, Go, Node.js 20, PM2, Nginx, Certbot SSL), alokasi Swap 4GB, hardening UFW, daemonisasi Go systemd & Next.js PM2, reverse proxy Nginx, dan backup otomatis. |
+
 
 ### 2. Proses Bisnis, Kalkulasi & Kasus Operasional
 | Dokumen | Deskripsi |
