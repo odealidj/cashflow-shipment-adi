@@ -59,7 +59,7 @@ Berikut adalah ringkasan seluruh perangkat lunak yang wajib dipasang di VPS bese
 | No | Nama Software / Tools | Versi Rekomendasi | Peran dalam Sistem |
 | :-: | :--- | :---: | :--- |
 | 1 | **Docker Engine & Compose** | `24.x+` / Compose v2 | Menjalankan kontainer PostgreSQL 15 & Redis 7 |
-| 2 | **Golang Compiler** | `1.22+` / `1.23` | Mengompilasi dan mengeksekusi Core Go API |
+| 2 | **Golang Compiler** | `1.26.3` (Sesuai `go.mod`) | Mengompilasi dan mengeksekusi Core Go API |
 | 3 | **Node.js & npm** | `v20 LTS` (Iron) | Lingkungan runtime frontend Next.js 16 |
 | 4 | **PM2 Process Manager** | `Latest` | Menjaga Next.js hidup 24/7 di background & auto-start saat reboot |
 | 5 | **Nginx Web Server** | `1.18+` (Ubuntu Repo) | Reverse Proxy port 80/443, SSL termination, kompresi Gzip |
