@@ -392,23 +392,38 @@ pm2 status
 
 ### FASE 7: Konfigurasi Nginx Reverse Proxy & SSL HTTPS
 
-Nginx bertindak sebagai gerbang terdepan yang menerima request publik pada port 80/443, lalu meneruskannya secara cerdas:
+Nginx bertindak sebagai gerbang terdepan yang menerima request publik pada port 80 (HTTP) dan port 443 (HTTPS), lalu meneruskannya secara cerdas:
 - Path `/api/` ➡️ Diteruskan ke Backend Go (`http://127.0.0.1:8080/api/`)
 - Seluruh path lainnya (`/`) ➡️ Diteruskan ke Next.js (`http://127.0.0.1:3000/`)
 
-#### 1. Buat File Konfigurasi Nginx
-Buat file `/etc/nginx/sites-available/cashflow`:
-```bash
-nano /etc/nginx/sites-available/cashflow
-```
-Salin konfigurasi berikut (ganti `domainanda.com` dengan domain Anda, atau gunakan IP publik VPS jika belum ada domain):
+Pilih salah satu opsi di bawah ini sesuai kesiapan domain Anda:
 
-```nginx
+---
+
+#### 🟢 OPSI A: Menggunakan IP Publik VPS (Dual Port 80 HTTP & 443 HTTPS Self-Signed) — *Direkomendasikan Jika Belum Beli Domain*
+
+> [!IMPORTANT]
+> **Mengapa Perlu Port 443 Self-Signed pada IP?**  
+> Smartphone modern (*Chrome di Android* & *Safari di iOS*) secara otomatis memaksa fitur *HTTPS-First*. Jika VPS hanya membuka port 80 biasa, browser HP akan menolak koneksi (*Connection Refused*). Dengan mengaktifkan SSL *Self-Signed*, server VPS siap merespons baik akses `http://` maupun `https://`.
+
+##### 1. Buat Sertifikat SSL Self-Signed Gratis untuk IP VPS
+```bash
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+  -keyout /etc/ssl/private/cashflow-selfsigned.key \
+  -out /etc/ssl/certs/cashflow-selfsigned.crt \
+  -subj "/C=ID/ST=Jakarta/L=Jakarta/O=Adijayantara/CN=103.94.238.109"
+```
+
+##### 2. Buat File Konfigurasi Nginx Dual-Port (80 & 443)
+```bash
+cat << 'EOF' > /etc/nginx/sites-available/cashflow
 server {
     listen 80;
-    # Jika belum memiliki domain, cukup gunakan IP VPS:
+    listen 443 ssl;
     server_name 103.94.238.109;
-    # (Jika nantinya sudah membeli domain, ganti menjadi: server_name namadomain.com www.namadomain.com 103.94.238.109;)
+
+    ssl_certificate /etc/ssl/certs/cashflow-selfsigned.crt;
+    ssl_certificate_key /etc/ssl/private/cashflow-selfsigned.key;
 
     # Ukuran maksimum upload file (Excel Import s.d. 50MB)
     client_max_body_size 50M;
@@ -435,7 +450,7 @@ server {
         proxy_send_timeout 120s;
     }
 
-    # 2. Routing Web & PWA ke Next.js
+    # 2. Routing Web ke Next.js
     location / {
         proxy_pass http://127.0.0.1:3000;
         proxy_http_version 1.1;
@@ -448,14 +463,15 @@ server {
         proxy_cache_bypass $http_upgrade;
     }
 }
+EOF
 ```
 
-#### 2. Aktifkan Konfigurasi & Reload Nginx
+##### 3. Aktifkan Konfigurasi & Reload Nginx
 ```bash
 # Aktifkan site
-ln -s /etc/nginx/sites-available/cashflow /etc/nginx/sites-enabled/
+ln -sf /etc/nginx/sites-available/cashflow /etc/nginx/sites-enabled/
 
-# Hapus konfigurasi default Nginx
+# Hapus konfigurasi default Nginx jika masih ada
 rm -f /etc/nginx/sites-enabled/default
 
 # Tes sintaks Nginx
@@ -464,11 +480,37 @@ nginx -t
 # Muat ulang Nginx
 systemctl reload nginx
 ```
+*(Catatan Akses HP: Saat membuka di HP via HTTPS, jika muncul peringatan "Koneksi tidak privat", cukup ketuk **Lanjutan / Advanced** ➡️ **Lanjutkan ke 103.94.238.109**)*.
 
-#### 3. Pasang Sertifikat SSL Gratis (Let's Encrypt HTTPS)
-*Syarat: Pastikan Domain Anda sudah diarahkan (DNS A-Record) ke IP Publik VPS Biznet.*
+---
+
+#### 🔵 OPSI B: Menggunakan Domain Resmi + SSL Let's Encrypt Gratis (Certbot) — *Jika Sudah Membeli Domain*
+
+> [!NOTE]
+> Jika sebelumnya Anda menggunakan **OPSI A (Self-Signed)**, Anda bisa langsung beralih ke **OPSI B** ini kapan saja tanpa perlu mereset server. Certbot akan otomatis menimpa sertifikat self-signed dengan sertifikat SSL resmi dunia (gembok hijau).
+
+##### 1. Arahkan DNS Domain ke IP VPS Biznet
+Masuk ke dashboard domain registrar Anda (Niagahoster / Cloudflare / Rumahweb / dll.) dan tambahkan DNS Record:
+* Type: `A` | Name: `@` | Value: `103.94.238.109`
+* Type: `A` | Name: `www` | Value: `103.94.238.109`
+
+##### 2. Konfigurasi Nginx untuk Domain Anda
+Edit `/etc/nginx/sites-available/cashflow`:
 ```bash
-certbot --nginx -d domainanda.com -d www.domainanda.com
+nano /etc/nginx/sites-available/cashflow
+```
+Ubah baris `server_name` menjadi domain Anda:
+```nginx
+server_name domainanda.co.id www.domainanda.co.id 103.94.238.109;
+```
+Simpan (`Ctrl + O`, `Enter`, `Ctrl + X`), lalu reload:
+```bash
+nginx -t && systemctl reload nginx
+```
+
+##### 3. Pasang Sertifikat SSL Resmi Let's Encrypt (Certbot)
+```bash
+certbot --nginx -d domainanda.co.id -d www.domainanda.co.id
 ```
 *(Ikuti petunjuk di layar: masukkan email Anda dan pilih opsi redirect otomatis ke HTTPS).*  
 Certbot akan otomatis memperbarui konfigurasi Nginx dan menjadwalkan perpanjangan otomatis (*auto-renewal*).
