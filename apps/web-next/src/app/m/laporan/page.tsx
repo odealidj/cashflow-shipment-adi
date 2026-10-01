@@ -1,13 +1,31 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { Search, Calendar, Store, ArrowUpDown, X, Check } from 'lucide-react';
+import { 
+  Search, 
+  Calendar, 
+  Store, 
+  ArrowUpDown, 
+  X, 
+  Check, 
+  Truck, 
+  Route, 
+  DollarSign, 
+  TrendingUp, 
+  TrendingDown, 
+  Clock, 
+  AlertCircle,
+  FileText,
+  CreditCard
+} from 'lucide-react';
 import { TransactionCardMobile } from '@/components/mobile/TransactionCardMobile';
 import { VendorPerformanceCard } from '@/components/mobile/VendorPerformanceCard';
-import { useCashflowMobile } from '@/hooks/useCashflowMobile';
+import { useCashflowMobile, CashflowEntry } from '@/hooks/useCashflowMobile';
+import { formatRupiah } from '@/hooks/useAutoCalculate';
+import { formatDate } from '@/lib/dateUtils';
 
 export default function LaporanPage() {
-  const { entries, loading } = useCashflowMobile();
+  const { entries, loading, quickPay } = useCashflowMobile();
   const safeEntries = Array.isArray(entries) ? entries : [];
   
   // Filter States
@@ -21,6 +39,8 @@ export default function LaporanPage() {
   // Modal / Bottom Sheet States
   const [isDateModalOpen, setIsDateModalOpen] = useState(false);
   const [isVendorModalOpen, setIsVendorModalOpen] = useState(false);
+  const [selectedEntry, setSelectedEntry] = useState<CashflowEntry | null>(null);
+  const [isPaying, setIsPaying] = useState(false);
 
   // Temp states for modals
   const [tempDateFrom, setTempDateFrom] = useState('');
@@ -91,11 +111,25 @@ export default function LaporanPage() {
     setSearchQuery('');
   };
 
+  const handleDetailQuickPay = async () => {
+    if (!selectedEntry) return;
+    setIsPaying(true);
+    const res = await quickPay(selectedEntry.id);
+    setIsPaying(false);
+    if (res.success) {
+      setSelectedEntry({ ...selectedEntry, remarks: 'PAID' });
+      alert('Transaksi berhasil ditandai LUNAS!');
+    } else {
+      alert(res.error || 'Gagal memperbarui status bayar');
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-[#F8FAFC] pb-10">
+    <div className="min-h-screen bg-[#F8FAFC] pb-24">
       {/* Page Title (Centered) */}
       <div className="pt-6 pb-2 text-center">
         <h1 className="text-xl font-black text-slate-900 tracking-tight">Laporan Transaksi</h1>
+        <p className="text-[11px] text-slate-500 font-medium">Buku kas & rincian operasional ekspedisi</p>
       </div>
 
       <div className="px-4 py-2 space-y-3.5">
@@ -106,8 +140,8 @@ export default function LaporanPage() {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Cari vendor atau aktivitas..."
-            className="w-full bg-white pl-10 pr-4 py-2.5 rounded-full border border-slate-200 text-[13px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-xs"
+            placeholder="Cari vendor, armada, atau rute..."
+            className="w-full bg-white pl-10 pr-4 py-2.5 rounded-full border border-slate-200 text-[13px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-xs font-medium"
           />
         </div>
 
@@ -207,7 +241,7 @@ export default function LaporanPage() {
         {/* 5. Performa Vendor Card */}
         <VendorPerformanceCard entries={safeEntries} />
 
-        {/* 6. List Card Transaksi */}
+        {/* 6. List Card Transaksi (Clickable for Detail Modal) */}
         <div className="space-y-2.5 pt-2">
           {loading ? (
             <div className="py-12 text-center text-slate-400 text-xs font-semibold">Memuat transaksi...</div>
@@ -217,11 +251,194 @@ export default function LaporanPage() {
             </div>
           ) : (
             filteredEntries.map((entry) => (
-              <TransactionCardMobile key={entry.id} entry={entry} />
+              <div
+                key={entry.id}
+                onClick={() => setSelectedEntry(entry)}
+                className="cursor-pointer active:scale-98 transition-transform"
+              >
+                <TransactionCardMobile entry={entry} />
+              </div>
             ))
           )}
         </div>
       </div>
+
+      {/* ======================================================== */}
+      {/* MODAL BOTTOM-SHEET: RINCIAN DETAIL TRANSAKSI             */}
+      {/* ======================================================== */}
+      {selectedEntry && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/60 backdrop-blur-xs animate-fade-in">
+          <div className="bg-white w-full max-w-md rounded-t-3xl p-5 space-y-4 shadow-2xl border-t border-slate-100 max-h-[88vh] flex flex-col">
+            {/* Header Modal */}
+            <div className="flex justify-between items-center pb-2 border-b border-slate-100 shrink-0">
+              <div className="flex items-center gap-2">
+                <FileText className="w-5 h-5 text-sky-700" />
+                <div>
+                  <h3 className="font-extrabold text-slate-900 text-base">
+                    Rincian Transaksi #{selectedEntry.sequence_no || selectedEntry.id}
+                  </h3>
+                  <p className="text-[10px] text-slate-400 font-medium">
+                    ID Database: #{selectedEntry.id} • {formatDate(selectedEntry.date_of_entry)}
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setSelectedEntry(null)}
+                className="p-1 text-slate-400 hover:text-slate-600 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Content Body */}
+            <div className="flex-1 overflow-y-auto space-y-3 py-1 text-xs">
+              {/* Status & Entry Type */}
+              <div className="flex items-center justify-between bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                <div className="flex items-center gap-2">
+                  <span className="text-base">{selectedEntry.entry_type === 'TOP_UP' ? '💳' : '🚚'}</span>
+                  <div>
+                    <span className="font-bold text-slate-800 block text-[13px]">
+                      {selectedEntry.entry_type === 'TOP_UP' ? 'Top-Up Modal Kas' : 'Biaya Pengiriman Shipment'}
+                    </span>
+                    <span className="text-[10px] text-slate-400">Tipe Buku Kas</span>
+                  </div>
+                </div>
+
+                <span className={`px-2.5 py-1 rounded-full text-[11px] font-extrabold ${
+                  selectedEntry.remarks === 'PAID' 
+                    ? 'bg-emerald-100 text-emerald-800' 
+                    : selectedEntry.remarks === 'UNPAID'
+                    ? 'bg-amber-100 text-amber-800'
+                    : 'bg-slate-200 text-slate-800'
+                }`}>
+                  {selectedEntry.remarks === 'PAID' ? 'LUNAS' : selectedEntry.remarks === 'UNPAID' ? 'BELUM LUNAS' : 'SEBAGIAN'}
+                </span>
+              </div>
+
+              {/* Detail Info Armada & Rute */}
+              <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100 space-y-2">
+                <div>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                    Keterangan Armada / Aktivitas
+                  </span>
+                  <p className="font-extrabold text-slate-900 text-xs mt-0.5">
+                    {selectedEntry.act_information || '-'}
+                  </p>
+                </div>
+
+                {selectedEntry.act_explaination && (
+                  <div className="pt-1.5 border-t border-slate-200/60">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                      Rincian Catatan / Rute
+                    </span>
+                    <p className="font-semibold text-slate-800 text-xs mt-0.5">
+                      {selectedEntry.act_explaination}
+                    </p>
+                  </div>
+                )}
+
+                {selectedEntry.vendor_name_raw && (
+                  <div className="pt-1.5 border-t border-slate-200/60">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                      Vendor / Transporter
+                    </span>
+                    <p className="font-extrabold text-sky-800 text-xs mt-0.5">
+                      {selectedEntry.vendor_name_raw}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Rincian Finansial (HPP, Selling, Profit, Saldo) */}
+              <div className="bg-white p-3 rounded-2xl border border-slate-200 space-y-2">
+                <span className="text-[11px] font-extrabold text-slate-800 block pb-1 border-b border-slate-100">
+                  Rincian Keuangan
+                </span>
+
+                <div className="grid grid-cols-2 gap-2 text-[11px]">
+                  <div>
+                    <span className="text-slate-500 block">Biaya Kas Keluar (Debit / HPP)</span>
+                    <span className="font-extrabold text-rose-600 text-[13px]">
+                      {formatRupiah(selectedEntry.debit || selectedEntry.grand_cost)}
+                    </span>
+                  </div>
+
+                  <div>
+                    <span className="text-slate-500 block">Kredit Masuk (Revenue)</span>
+                    <span className="font-extrabold text-emerald-600 text-[13px]">
+                      {formatRupiah(selectedEntry.kredit || selectedEntry.grand_selling)}
+                    </span>
+                  </div>
+                </div>
+
+                {selectedEntry.entry_type === 'SHIPMENT' && (
+                  <div className="grid grid-cols-2 gap-2 text-[11px] pt-2 border-t border-slate-100">
+                    <div>
+                      <span className="text-slate-500 block">Profit Bersih</span>
+                      <span className={`font-black text-[13px] ${selectedEntry.profit >= 0 ? 'text-teal-700' : 'text-rose-600'}`}>
+                        {formatRupiah(selectedEntry.profit)}
+                      </span>
+                    </div>
+
+                    <div>
+                      <span className="text-slate-500 block">Margin Keuntungan</span>
+                      <span className="font-black text-sky-700 text-[13px]">
+                        {selectedEntry.margin_pct}%
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                <div className="pt-2 border-t border-slate-100 flex justify-between items-center">
+                  <span className="text-slate-600 font-bold">Saldo Akhir Berjalan:</span>
+                  <span className="font-black text-slate-900 text-sm">
+                    {formatRupiah(selectedEntry.saldo)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Info T.O.P & Jatuh Tempo */}
+              {selectedEntry.due_date && (
+                <div className="bg-amber-50/80 p-3 rounded-2xl border border-amber-200 text-amber-900 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-amber-600" />
+                    <div>
+                      <span className="font-bold block text-xs">Jatuh Tempo Pembayaran</span>
+                      <span className="text-[10px] text-amber-700">T.O.P: {selectedEntry.top_days || 0} hari</span>
+                    </div>
+                  </div>
+                  <span className="font-black text-xs text-amber-950">
+                    {formatDate(selectedEntry.due_date)}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Actions Footer */}
+            <div className="pt-2 border-t border-slate-100 flex gap-2 shrink-0">
+              {selectedEntry.remarks !== 'PAID' && (
+                <button
+                  type="button"
+                  onClick={handleDetailQuickPay}
+                  disabled={isPaying}
+                  className="flex-1 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-md transition-all cursor-pointer disabled:opacity-50"
+                >
+                  <Check className="w-4 h-4 stroke-[3]" />
+                  <span>{isPaying ? 'Memproses...' : 'Tandai Lunas'}</span>
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={() => setSelectedEntry(null)}
+                className="flex-1 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-colors cursor-pointer"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ======================================================== */}
       {/* MODAL: FILTER RENTANG TANGGAL                            */}

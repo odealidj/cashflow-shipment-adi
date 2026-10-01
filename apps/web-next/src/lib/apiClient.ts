@@ -35,8 +35,16 @@ export async function fetchWithAuth(url: string, options: FetchOptions = {}): Pr
         localStorage.removeItem("token");
         localStorage.removeItem("user");
         
-        if (window.location.pathname !== "/" && window.location.pathname !== "/m/pin") {
-          window.location.href = "/?expired=true";
+        if (
+          window.location.pathname !== "/" && 
+          window.location.pathname !== "/m/login" && 
+          window.location.pathname !== "/m/pin"
+        ) {
+          if (window.location.pathname.startsWith("/m")) {
+            window.location.href = "/m/login?expired=true";
+          } else {
+            window.location.href = "/?expired=true";
+          }
         }
       }
     }

@@ -18,14 +18,22 @@ import {
 import { MobileHeader } from '@/components/mobile/MobileHeader';
 import { useCashflowMobile } from '@/hooks/useCashflowMobile';
 import { useAutoCalculate, formatRupiah } from '@/hooks/useAutoCalculate';
+import { useAuth } from '@/hooks/useAuth';
 import { VendorSelect } from '@/components/VendorSelect';
 import { ActivityPresetSelect } from '@/components/shared/ActivityPresetSelect';
 
 export default function TambahTransaksiPage() {
   const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
   const { summary, createEntry } = useCashflowMobile();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (!authLoading && !user) {
+      router.replace('/m/login');
+    }
+  }, [user, authLoading, router]);
 
   // Form State
   const [entryType, setEntryType] = useState<'SHIPMENT' | 'TOP_UP'>('SHIPMENT');

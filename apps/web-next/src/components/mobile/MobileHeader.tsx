@@ -78,9 +78,9 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
       </div>
 
       <Link
-        href="/dashboard/notifications"
+        href="/m/tagihan"
         className="relative p-2 text-slate-600 hover:text-slate-900 transition-colors"
-        aria-label="Notifikasi"
+        aria-label="Tagihan & Notifikasi"
       >
         <Bell className="w-5 h-5" />
         {activeCount > 0 && (

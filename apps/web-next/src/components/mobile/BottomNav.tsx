@@ -8,8 +8,13 @@ import { Home, BarChart2, Bell, Settings, Plus } from 'lucide-react';
 export const BottomNav: React.FC = () => {
   const pathname = usePathname();
 
-  // Hide BottomNav on full-screen push pages like /m/tambah and /m/pin
-  if (pathname === '/m/tambah' || pathname === '/m/pin' || pathname === '/m') {
+  // Hide BottomNav on full-screen push pages like /m/tambah, /m/pin, and /m/login
+  if (
+    pathname === '/m/tambah' || 
+    pathname === '/m/pin' || 
+    pathname === '/m' || 
+    pathname.startsWith('/m/login')
+  ) {
     return null;
   }
 

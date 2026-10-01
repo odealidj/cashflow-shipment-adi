@@ -6,10 +6,21 @@ import { TagihanCardMobile } from '@/components/mobile/TagihanCardMobile';
 import { useCashflowMobile } from '@/hooks/useCashflowMobile';
 import { formatRupiah } from '@/hooks/useAutoCalculate';
 
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/hooks/useAuth';
+
 export default function TagihanPage() {
+  const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
   const { entries, loading, quickPay } = useCashflowMobile();
   const safeEntries = Array.isArray(entries) ? entries : [];
   const [tabFilter, setTabFilter] = useState<'ALL' | 'UNPAID' | 'OVERDUE'>('ALL');
+
+  React.useEffect(() => {
+    if (!authLoading && !user) {
+      router.replace('/m/login');
+    }
+  }, [user, authLoading, router]);
 
   // Filter only unpaid or pending entries (tagihan)
   const allTagihan = useMemo(() => {
@@ -34,7 +45,7 @@ export default function TagihanPage() {
   }, [allTagihan, overdueTagihan, tabFilter]);
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] pb-10">
+    <div className="min-h-screen bg-[#F8FAFC] pb-24">
       {/* Header */}
       <div className="px-4 pt-6 pb-2">
         <h1 className="text-2xl font-black text-slate-900 tracking-tight">Tagihan</h1>
