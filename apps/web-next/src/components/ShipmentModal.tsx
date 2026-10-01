@@ -50,7 +50,7 @@ export function ShipmentModal({ isOpen, onClose, onSuccess }: ShipmentModalProps
     const fetchSaldo = async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await fetch("http://localhost:8080/api/v1/cashflow/summary", {
+        const res = await fetch("/api/v1/cashflow/summary", {
           headers: { Authorization: `Bearer ${token}` }
         });
         const data = await res.json();
@@ -81,7 +81,7 @@ export function ShipmentModal({ isOpen, onClose, onSuccess }: ShipmentModalProps
 
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:8080/api/v1/cashflow/shipment", {
+      const res = await fetch("/api/v1/cashflow/shipment", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

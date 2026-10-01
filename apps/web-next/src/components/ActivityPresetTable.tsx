@@ -64,7 +64,7 @@ export function ActivityPresetTable({ category }: ActivityPresetTableProps) {
       const categoryParam = effectiveCategory ? `&category=${effectiveCategory}` : "";
       const searchParam = searchTerm ? `&search=${encodeURIComponent(searchTerm.trim())}` : "";
       const sortParam = `&sort_by=${sortBy}&sort_dir=${sortDir}`;
-      const res = await fetchWithAuth(`http://localhost:8080/api/v1/activity-presets?page=${page}&limit=${pageSize}${categoryParam}${searchParam}${sortParam}`);
+      const res = await fetchWithAuth(`/api/v1/activity-presets?page=${page}&limit=${pageSize}${categoryParam}${searchParam}${sortParam}`);
       const data = await res.json();
       if (data.status && data.data) {
         setPresets(Array.isArray(data.data) ? data.data : (data.data.entries || []));
@@ -101,7 +101,7 @@ export function ActivityPresetTable({ category }: ActivityPresetTableProps) {
     setIsDeleting(true);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`http://localhost:8080/api/v1/activity-presets/${deleteCandidate.id}`, {
+      const res = await fetch(`/api/v1/activity-presets/${deleteCandidate.id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` }
       });

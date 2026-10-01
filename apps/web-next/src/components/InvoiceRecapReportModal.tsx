@@ -119,7 +119,7 @@ export function InvoiceRecapReportModal({
       params.set("page", "1");
       params.set("limit", "1000");
 
-      const res = await fetchWithAuth(`http://localhost:8080/api/v1/invoices?${params.toString()}`);
+      const res = await fetchWithAuth(`/api/v1/invoices?${params.toString()}`);
       const data = await res.json();
       if (data.status && data.data) {
         const rawEntries = Array.isArray(data.data) ? data.data : (data.data.entries || []);
@@ -323,7 +323,7 @@ export function InvoiceRecapReportModal({
       if (searchQuery.trim()) query.append("client_name", searchQuery.trim());
       query.append("sort_dir", "ASC");
 
-      const res = await fetchWithAuth(`http://localhost:8080/api/v1/invoices/export?${query.toString()}`);
+      const res = await fetchWithAuth(`/api/v1/invoices/export?${query.toString()}`);
       if (!res.ok) {
         throw new Error("Gagal mengunduh file Excel dari server");
       }

@@ -189,7 +189,7 @@ export default function SystemMetricsPage() {
   const fetchMetrics = useCallback(async (isManual = false) => {
     if (isManual) setIsRefreshing(true);
     try {
-      const res = await fetchWithAuth("http://localhost:8080/api/v1/system/metrics");
+      const res = await fetchWithAuth("/api/v1/system/metrics");
       if (res.ok) {
         const json = await res.json();
         if (json.status && json.data) {
@@ -208,7 +208,7 @@ export default function SystemMetricsPage() {
 
   const fetchBenchmarkStatus = useCallback(async () => {
     try {
-      const res = await fetchWithAuth("http://localhost:8080/api/v1/system/benchmark/status");
+      const res = await fetchWithAuth("/api/v1/system/benchmark/status");
       if (res.ok) {
         const json = await res.json();
         if (json.data) {
@@ -230,7 +230,7 @@ export default function SystemMetricsPage() {
 
   const fetchHistory = useCallback(async () => {
     try {
-      const res = await fetchWithAuth("http://localhost:8080/api/v1/system/benchmark/history");
+      const res = await fetchWithAuth("/api/v1/system/benchmark/history");
       if (res.ok) {
         const json = await res.json();
         if (json.data) {
@@ -271,7 +271,7 @@ export default function SystemMetricsPage() {
   const handleStartBenchmark = async (scenario: string) => {
     setIsStartingBenchmark(true);
     try {
-      const res = await fetchWithAuth("http://localhost:8080/api/v1/system/benchmark/start", {
+      const res = await fetchWithAuth("/api/v1/system/benchmark/start", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ scenario }),
@@ -297,7 +297,7 @@ export default function SystemMetricsPage() {
     if (!confirm("Apakah Anda yakin ingin membatalkan pengujian beban ini secara darurat?")) return;
     setIsAborting(true);
     try {
-      const res = await fetchWithAuth("http://localhost:8080/api/v1/system/benchmark/abort", {
+      const res = await fetchWithAuth("/api/v1/system/benchmark/abort", {
         method: "POST",
       });
       if (res.ok) {
@@ -312,7 +312,7 @@ export default function SystemMetricsPage() {
 
   const handleDownloadReport = async (report: BenchmarkReport) => {
     try {
-      const res = await fetchWithAuth(`http://localhost:8080/api/v1/system/benchmark/download?id=${report.job_id}`);
+      const res = await fetchWithAuth(`/api/v1/system/benchmark/download?id=${report.job_id}`);
       if (res.ok) {
         const blob = await res.blob();
         const url = window.URL.createObjectURL(blob);
@@ -333,7 +333,7 @@ export default function SystemMetricsPage() {
     setSimulatingSlow(true);
     setSimulateSuccessMsg(null);
     try {
-      const res = await fetchWithAuth("http://localhost:8080/api/v1/system/simulate-slow-query?duration_ms=150", {
+      const res = await fetchWithAuth("/api/v1/system/simulate-slow-query?duration_ms=150", {
         method: "POST"
       });
       if (res.ok) {

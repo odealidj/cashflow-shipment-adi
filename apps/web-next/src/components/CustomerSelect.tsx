@@ -50,7 +50,7 @@ export function CustomerSelect({
 
   const fetchCustomers = async () => {
     try {
-      const res = await fetchWithAuth("http://localhost:8080/api/v1/customers?limit=200");
+      const res = await fetchWithAuth("/api/v1/customers?limit=200");
       if (res.ok) {
         const data = await res.json();
         setCustomers(Array.isArray(data.data) ? data.data : (data.data?.entries || []));
@@ -119,7 +119,7 @@ export function CustomerSelect({
     setQuickError("");
 
     try {
-      const res = await fetchWithAuth("http://localhost:8080/api/v1/customers", {
+      const res = await fetchWithAuth("/api/v1/customers", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

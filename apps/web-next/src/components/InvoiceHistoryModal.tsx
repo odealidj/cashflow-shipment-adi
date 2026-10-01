@@ -37,7 +37,7 @@ export function InvoiceHistoryModal({ isOpen, invoice, onClose }: InvoiceHistory
       setLoading(true);
       setError(null);
       try {
-        const res = await fetchWithAuth(`http://localhost:8080/api/v1/invoices/${invoice.id}/history`);
+        const res = await fetchWithAuth(`/api/v1/invoices/${invoice.id}/history`);
         const data = await res.json();
         if (!res.ok || !data.status) {
           throw new Error(data.message || "Gagal mengambil riwayat invoice");

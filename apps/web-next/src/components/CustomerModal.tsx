@@ -73,8 +73,8 @@ export function CustomerModal({ isOpen, customer, onClose, onSuccess }: Customer
     try {
       const token = localStorage.getItem("token");
       const url = isEdit
-        ? `http://localhost:8080/api/v1/customers/${customer?.id}`
-        : "http://localhost:8080/api/v1/customers";
+        ? `/api/v1/customers/${customer?.id}`
+        : "/api/v1/customers";
       const method = isEdit ? "PUT" : "POST";
 
       const res = await fetch(url, {

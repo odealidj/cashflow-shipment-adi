@@ -93,7 +93,7 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
     setLoading(true);
     try {
       const query = buildQueryString();
-      const res = await fetchWithAuth(`http://localhost:8080/api/v1/cashflow?${query}`);
+      const res = await fetchWithAuth(`/api/v1/cashflow?${query}`);
       const data = await res.json();
       if (data.status && data.data) {
         setEntries(Array.isArray(data.data) ? data.data : (data.data.entries || []));
@@ -118,7 +118,7 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
       if (filters.date_to) params.set("date_to", filters.date_to);
 
       const q = params.toString();
-      const url = q ? `http://localhost:8080/api/v1/cashflow/summary?${q}` : "http://localhost:8080/api/v1/cashflow/summary";
+      const url = q ? `/api/v1/cashflow/summary?${q}` : "/api/v1/cashflow/summary";
       const res = await fetchWithAuth(url);
       const data = await res.json();
       if (data.status && data.data) {
@@ -147,7 +147,7 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
   const handleExport = async () => {
     try {
       const query = buildQueryString();
-      const res = await fetchWithAuth(`http://localhost:8080/api/v1/cashflow/export?${query}`);
+      const res = await fetchWithAuth(`/api/v1/cashflow/export?${query}`);
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -169,7 +169,7 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
     formData.append("file", file);
 
     try {
-      const res = await fetchWithAuth("http://localhost:8080/api/v1/cashflow/import", {
+      const res = await fetchWithAuth("/api/v1/cashflow/import", {
         method: "POST",
         body: formData
       });
@@ -187,7 +187,7 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
 
   const handleDeleteConfirm = async (entry: any) => {
     try {
-      const res = await fetchWithAuth(`http://localhost:8080/api/v1/cashflow/${entry.id}`, {
+      const res = await fetchWithAuth(`/api/v1/cashflow/${entry.id}`, {
         method: "DELETE"
       });
       if (!res.ok) throw new Error("Gagal menghapus transaksi");
@@ -205,7 +205,7 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
 
   const handleStatusChange = async (entryId: any, nextStatus: string) => {
     try {
-      await fetchWithAuth(`http://localhost:8080/api/v1/cashflow/${entryId}/status`, {
+      await fetchWithAuth(`/api/v1/cashflow/${entryId}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ remarks: nextStatus })

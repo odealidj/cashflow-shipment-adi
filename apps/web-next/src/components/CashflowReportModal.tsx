@@ -117,7 +117,7 @@ export function CashflowReportModal({
         query.append("sort", "ASC");
         query.append("limit", "1000"); // Ambil seluruh transaksi dalam periode cetak
 
-        const resEntries = await fetchWithAuth(`http://localhost:8080/api/v1/cashflow?${query.toString()}`);
+        const resEntries = await fetchWithAuth(`/api/v1/cashflow?${query.toString()}`);
         const dataEntries = await resEntries.json();
         if (!isMounted) return;
 
@@ -218,7 +218,7 @@ export function CashflowReportModal({
       if (dateFrom) query.append("date_from", dateFrom);
       if (dateTo) query.append("date_to", dateTo);
 
-      const res = await fetchWithAuth(`http://localhost:8080/api/v1/cashflow/export?${query.toString()}`);
+      const res = await fetchWithAuth(`/api/v1/cashflow/export?${query.toString()}`);
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");

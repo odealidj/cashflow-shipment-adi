@@ -6,7 +6,7 @@
  * Jika status 401 Unauthorized diterima, otomatis mengarahkan ke halaman login (/?expired=true).
  */
 
-export const API_BASE_URL = "http://localhost:8080/api/v1";
+export const API_BASE_URL = "/api/v1";
 
 interface FetchOptions extends RequestInit {
   skipAuth?: boolean;

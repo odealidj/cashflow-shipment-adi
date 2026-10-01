@@ -173,21 +173,21 @@ export default function Dashboard() {
       const queryString = params.toString() ? `?${params.toString()}` : "";
 
       // 1. Fetch Cashflow Summary (Period Filtered)
-      const resCashflowSummary = await fetchWithAuth(`http://localhost:8080/api/v1/cashflow/summary${queryString}`);
+      const resCashflowSummary = await fetchWithAuth(`/api/v1/cashflow/summary${queryString}`);
       const dataCashflowSummary = await resCashflowSummary.json();
       if (dataCashflowSummary.status && dataCashflowSummary.data) {
         setCashflowSummary(dataCashflowSummary.data);
       }
 
       // 2. Fetch Invoices Summary (Period Filtered)
-      const resInvoiceSummary = await fetchWithAuth(`http://localhost:8080/api/v1/invoices/summary${queryString}`);
+      const resInvoiceSummary = await fetchWithAuth(`/api/v1/invoices/summary${queryString}`);
       const dataInvoiceSummary = await resInvoiceSummary.json();
       if (dataInvoiceSummary.status && dataInvoiceSummary.data) {
         setInvoiceSummary(dataInvoiceSummary.data);
       }
 
       // 3. Fetch Overdue & Urgent Invoices
-      const resUrgent = await fetchWithAuth(`http://localhost:8080/api/v1/invoices?status=OVERDUE&limit=10`);
+      const resUrgent = await fetchWithAuth(`/api/v1/invoices?status=OVERDUE&limit=10`);
       const dataUrgent = await resUrgent.json();
       if (dataUrgent.status && dataUrgent.data) {
         const list = Array.isArray(dataUrgent.data) ? dataUrgent.data : (dataUrgent.data.invoices || []);
@@ -196,8 +196,8 @@ export default function Dashboard() {
 
       // 4. Fetch Historical Entries for Growth Chart & Top Routes
       const [resEntries, resAllInvoices] = await Promise.all([
-        fetchWithAuth(`http://localhost:8080/api/v1/cashflow?page=1&limit=500&sort=DESC`),
-        fetchWithAuth(`http://localhost:8080/api/v1/invoices?page=1&limit=500&sort_dir=DESC`)
+        fetchWithAuth(`/api/v1/cashflow?page=1&limit=500&sort=DESC`),
+        fetchWithAuth(`/api/v1/invoices?page=1&limit=500&sort_dir=DESC`)
       ]);
 
       const dataEntries = await resEntries.json();
@@ -227,10 +227,10 @@ export default function Dashboard() {
       const qs = params.toString() ? `?${params.toString()}` : "";
 
       const [resRunway, resRoute, resCust, resVend] = await Promise.all([
-        fetchWithAuth(`http://localhost:8080/api/v1/analytics/cashflow-runway`),
-        fetchWithAuth(`http://localhost:8080/api/v1/analytics/route-matrix${qs}`),
-        fetchWithAuth(`http://localhost:8080/api/v1/analytics/customer-discipline-pareto${qs}`),
-        fetchWithAuth(`http://localhost:8080/api/v1/analytics/vendor-efficiency${qs}`)
+        fetchWithAuth(`/api/v1/analytics/cashflow-runway`),
+        fetchWithAuth(`/api/v1/analytics/route-matrix${qs}`),
+        fetchWithAuth(`/api/v1/analytics/customer-discipline-pareto${qs}`),
+        fetchWithAuth(`/api/v1/analytics/vendor-efficiency${qs}`)
       ]);
 
       const [dataRunway, dataRoute, dataCust, dataVend] = await Promise.all([

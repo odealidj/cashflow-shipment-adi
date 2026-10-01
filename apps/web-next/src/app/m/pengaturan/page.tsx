@@ -63,7 +63,7 @@ export default function PengaturanPage() {
 
   const handleExportExcel = () => {
     const token = localStorage.getItem('token');
-    const url = `http://localhost:8080/api/v1/cashflow/export${token ? `?token=${token}` : ''}`;
+    const url = `/api/v1/cashflow/export${token ? `?token=${token}` : ''}`;
     window.open(url, '_blank');
   };
 
@@ -83,7 +83,7 @@ export default function PengaturanPage() {
     try {
       setIsUploading(true);
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:8080/api/v1/cashflow/import', {
+      const res = await fetch('/api/v1/cashflow/import', {
         method: 'POST',
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -109,7 +109,7 @@ export default function PengaturanPage() {
     setLoadingVendors(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:8080/api/v1/vendors', {
+      const res = await fetch('/api/v1/vendors', {
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },

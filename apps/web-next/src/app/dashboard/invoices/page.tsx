@@ -225,7 +225,7 @@ export default function InvoicesPage() {
       params.set("page", String(page));
       params.set("limit", String(pageSize));
 
-      const res = await fetchWithAuth(`http://localhost:8080/api/v1/invoices?${params.toString()}`);
+      const res = await fetchWithAuth(`/api/v1/invoices?${params.toString()}`);
       const data = await res.json();
       if (data.status && data.data) {
         setInvoices(Array.isArray(data.data) ? data.data : (data.data.entries || []));
@@ -249,7 +249,7 @@ export default function InvoicesPage() {
       if (dateTo) params.set("date_to", dateTo);
 
       const q = params.toString();
-      const url = q ? `http://localhost:8080/api/v1/invoices/summary?${q}` : "http://localhost:8080/api/v1/invoices/summary";
+      const url = q ? `/api/v1/invoices/summary?${q}` : "/api/v1/invoices/summary";
       const res = await fetchWithAuth(url);
       const data = await res.json();
       if (data.status && data.data) {
@@ -268,7 +268,7 @@ export default function InvoicesPage() {
   const handleMarkPaid = async (id: number) => {
     if (!window.confirm("Tandai invoice ini sebagai LUNAS?")) return;
     try {
-      const res = await fetchWithAuth(`http://localhost:8080/api/v1/invoices/${id}/pay`, {
+      const res = await fetchWithAuth(`/api/v1/invoices/${id}/pay`, {
         method: "PATCH"
       });
       const data = await res.json();
@@ -285,7 +285,7 @@ export default function InvoicesPage() {
 
   const handleConfirmDelete = async (inv: InvoiceItem) => {
     try {
-      const res = await fetchWithAuth(`http://localhost:8080/api/v1/invoices/${inv.id}`, {
+      const res = await fetchWithAuth(`/api/v1/invoices/${inv.id}`, {
         method: "DELETE"
       });
       const data = await res.json();

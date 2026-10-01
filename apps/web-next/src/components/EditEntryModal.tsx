@@ -71,7 +71,7 @@ export function EditEntryModal({ isOpen, entry, onClose, onSuccess }: EditEntryM
       const fetchSaldo = async () => {
         try {
           const token = localStorage.getItem("token");
-          const res = await fetch("http://localhost:8080/api/v1/cashflow/summary", {
+          const res = await fetch("/api/v1/cashflow/summary", {
             headers: { Authorization: `Bearer ${token}` }
           });
           const data = await res.json();
@@ -124,7 +124,7 @@ export function EditEntryModal({ isOpen, entry, onClose, onSuccess }: EditEntryM
         payload.kredit = parseFloat(formData.kredit.replace(/[^0-9.-]+/g, "") || "0");
       }
 
-      const res = await fetch(`http://localhost:8080/api/v1/cashflow/${entry.id}`, {
+      const res = await fetch(`/api/v1/cashflow/${entry.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -151,7 +151,7 @@ export function EditEntryModal({ isOpen, entry, onClose, onSuccess }: EditEntryM
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`http://localhost:8080/api/v1/cashflow/${entry.id}`, {
+      const res = await fetch(`/api/v1/cashflow/${entry.id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` }
       });

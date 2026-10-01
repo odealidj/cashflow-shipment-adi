@@ -49,7 +49,7 @@ export function VendorSelect({
   const fetchVendors = async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:8080/api/v1/vendors?limit=200", {
+      const res = await fetch("/api/v1/vendors?limit=200", {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -123,7 +123,7 @@ export function VendorSelect({
 
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:8080/api/v1/vendors", {
+      const res = await fetch("/api/v1/vendors", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

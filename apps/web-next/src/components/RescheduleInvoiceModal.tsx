@@ -67,7 +67,7 @@ export function RescheduleInvoiceModal({ isOpen, invoice, onClose, onSuccess }: 
         reason: reason.trim()
       };
 
-      const res = await fetchWithAuth(`http://localhost:8080/api/v1/invoices/${invoice.id}/reschedule`, {
+      const res = await fetchWithAuth(`/api/v1/invoices/${invoice.id}/reschedule`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"

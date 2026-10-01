@@ -62,7 +62,7 @@ export default function AuthPage() {
     setWarningMessage("");
 
     try {
-      const res = await fetch("http://localhost:8080/api/v1/auth/login", {
+      const res = await fetch("/api/v1/auth/login", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -115,7 +115,7 @@ export default function AuthPage() {
     }
 
     try {
-      const res = await fetch("http://localhost:8080/api/v1/auth/register", {
+      const res = await fetch("/api/v1/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

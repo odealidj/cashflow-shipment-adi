@@ -110,7 +110,7 @@ export function CreateInvoiceModal({ isOpen, onClose, onSuccess }: CreateInvoice
 
     setLoading(true);
     try {
-      const res = await fetchWithAuth("http://localhost:8080/api/v1/invoices", {
+      const res = await fetchWithAuth("/api/v1/invoices", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"

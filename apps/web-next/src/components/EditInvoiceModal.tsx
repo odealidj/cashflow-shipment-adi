@@ -95,7 +95,7 @@ export function EditInvoiceModal({ isOpen, invoice, onClose, onSuccess }: EditIn
 
     setLoading(true);
     try {
-      const res = await fetchWithAuth(`http://localhost:8080/api/v1/invoices/${invoice.id}`, {
+      const res = await fetchWithAuth(`/api/v1/invoices/${invoice.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json"

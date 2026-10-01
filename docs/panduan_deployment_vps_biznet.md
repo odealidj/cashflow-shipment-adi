@@ -333,9 +333,9 @@ systemctl status cashflow-backend
 ```
 Uji respon endpoint lokal:
 ```bash
-curl -I http://localhost:8080/api/v1/health
+curl -i http://localhost:8080/api/v1/health
 ```
-*(Jika muncul `HTTP/1.1 200 OK`, backend Go telah berjalan sempurna).*
+*(Jika muncul status `200 OK` dan JSON status kesehatan sistem, backend Go telah berjalan sempurna).*
 
 ---
 
@@ -406,7 +406,9 @@ Salin konfigurasi berikut (ganti `domainanda.com` dengan domain Anda, atau gunak
 ```nginx
 server {
     listen 80;
-    server_name domainanda.com www.domainanda.com 103.94.238.109; # Atau isi dengan: 103.94.238.109;
+    # Jika belum memiliki domain, cukup gunakan IP VPS:
+    server_name 103.94.238.109;
+    # (Jika nantinya sudah membeli domain, ganti menjadi: server_name namadomain.com www.namadomain.com 103.94.238.109;)
 
     # Ukuran maksimum upload file (Excel Import s.d. 50MB)
     client_max_body_size 50M;

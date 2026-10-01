@@ -74,8 +74,8 @@ export function ActivityPresetModal({
     try {
       const token = localStorage.getItem("token");
       const url = isEdit
-        ? `http://localhost:8080/api/v1/activity-presets/${preset?.id}`
-        : "http://localhost:8080/api/v1/activity-presets";
+        ? `/api/v1/activity-presets/${preset?.id}`
+        : "/api/v1/activity-presets";
       const method = isEdit ? "PUT" : "POST";
 
       const res = await fetch(url, {

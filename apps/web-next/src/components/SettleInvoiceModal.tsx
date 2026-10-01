@@ -55,7 +55,7 @@ export function SettleInvoiceModal({ isOpen, invoice, onClose, onSuccess }: Sett
         notes: paymentNotes.trim() || undefined
       };
 
-      const res = await fetchWithAuth(`http://localhost:8080/api/v1/invoices/${invoice.id}/pay`, {
+      const res = await fetchWithAuth(`/api/v1/invoices/${invoice.id}/pay`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json"

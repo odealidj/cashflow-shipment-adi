@@ -57,8 +57,8 @@ export function VendorModal({ isOpen, vendor, onClose, onSuccess }: VendorModalP
     try {
       const token = localStorage.getItem("token");
       const url = isEdit
-        ? `http://localhost:8080/api/v1/vendors/${vendor?.id}`
-        : "http://localhost:8080/api/v1/vendors";
+        ? `/api/v1/vendors/${vendor?.id}`
+        : "/api/v1/vendors";
       const method = isEdit ? "PUT" : "POST";
 
       const res = await fetch(url, {

@@ -59,7 +59,7 @@ export function ActivityPresetSelect({
 
   const fetchPresets = async () => {
     try {
-      const res = await fetchWithAuth(`http://localhost:8080/api/v1/activity-presets?category=${category}&limit=100`);
+      const res = await fetchWithAuth(`/api/v1/activity-presets?category=${category}&limit=100`);
       const data = await res.json();
       if (data.status && data.data) {
         if (Array.isArray(data.data)) {
@@ -118,7 +118,7 @@ export function ActivityPresetSelect({
     setQuickError("");
 
     try {
-      const res = await fetchWithAuth("http://localhost:8080/api/v1/activity-presets", {
+      const res = await fetchWithAuth("/api/v1/activity-presets", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

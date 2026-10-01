@@ -60,7 +60,7 @@ export function RecentTransactions({ entries, loading = false, onRefresh }: Rece
   const handleStatusChange = async (id: number, nextStatus: string) => {
     try {
       const token = localStorage.getItem("token");
-      await fetch(`http://localhost:8080/api/v1/cashflow/${id}/status`, {
+      await fetch(`/api/v1/cashflow/${id}/status`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
