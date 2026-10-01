@@ -177,6 +177,40 @@ run_clean() {
 }
 
 # -----------------------------------------------------------------------------
+# 3b. PEMBERSIHAN DATA TRANSAKSI, VENDOR & CUSTOMER (KEEP USERS & ROLES)
+# -----------------------------------------------------------------------------
+run_clean_all() {
+    ensure_db_ready
+    log_step "Membersihkan data transaksi, invoices, vendor, dan customer..."
+    log_info "Master akun (users, roles, permissions, presets) tetap dipertahankan."
+
+    local truncate_sql="
+    DO \$\$ 
+    BEGIN
+        TRUNCATE TABLE 
+            invoice_payment_history, 
+            invoice_due_date_history, 
+            notifications, 
+            audit_logs,
+            invoices, 
+            cashflow_entries,
+            customers,
+            vendors
+        RESTART IDENTITY CASCADE;
+
+        IF to_regclass('public.cashflow_entries_history') IS NOT NULL THEN
+            EXECUTE 'TRUNCATE TABLE cashflow_entries_history RESTART IDENTITY CASCADE;';
+        END IF;
+    END \$\$;
+    "
+
+    "${COMPOSE_CMD[@]}" exec -T postgres psql -U "${DB_USER}" -d "${DB_NAME}" -c "${truncate_sql}" > /dev/null
+    flush_redis
+    log_success "Seluruh data transaksi, vendor, dan customer berhasil dikosongkan!"
+    show_status
+}
+
+# -----------------------------------------------------------------------------
 # 4. RESET SKEMA TOTAL (EMPTY SCHEMA RESET)
 # -----------------------------------------------------------------------------
 run_reset() {
@@ -337,6 +371,9 @@ case "$1" in
     clean)
         run_clean
         ;;
+    clean-all)
+        run_clean_all
+        ;;
     reset)
         run_reset
         ;;
@@ -353,7 +390,7 @@ case "$1" in
         flush_redis
         ;;
     *)
-        echo "Penggunaan: $0 {migrate|seed|seed-2026|clean|reset|fresh|fresh-2026|status|redis-flush}"
+        echo "Penggunaan: $0 {migrate|seed|seed-2026|clean|clean-all|reset|fresh|fresh-2026|status|redis-flush}"
         exit 1
         ;;
 esac

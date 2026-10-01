@@ -1,4 +1,4 @@
-.PHONY: help up down up-local down-local status-local logs-local infra-up infra-down infra-logs run-local-core-go run-core-go run-local-api-gateway-go run-api-gateway-go run-local-all-go run-all-go run-local-web-next generate-ui-assets swagger-gen db-migrate db-seed db-seed-2026 db-clean db-reset db-fresh db-fresh-2026 db-status redis-flush
+.PHONY: help up down up-local down-local status-local logs-local infra-up infra-down infra-logs run-local-core-go run-core-go run-local-api-gateway-go run-api-gateway-go run-local-all-go run-all-go run-local-web-next generate-ui-assets swagger-gen db-migrate db-seed db-seed-2026 db-clean db-clean-all db-reset db-fresh db-fresh-2026 db-status redis-flush
 
 # Default command
 help:
@@ -22,6 +22,7 @@ help:
 	@echo "  make db-seed                 - Populate standard executive demo data (August-September)"
 	@echo "  make db-seed-2026            - Populate comprehensive 9-month demo data (Januari - September 2026)"
 	@echo "  make db-clean                - Wipe transactional data (Cashflow, Invoices, Notifs) keeping master data"
+	@echo "  make db-clean-all            - Wipe transactions, invoices, vendors & customers (keep users & roles)"
 	@echo "  make db-reset                - Drop schema, recreate & re-run all migrations (clean empty DB)"
 	@echo "  make db-migrate              - Run all database SQL migrations (000001 to 000013)"
 	@echo "  make db-status               - Check database connection and table row count statistics"
@@ -89,6 +90,9 @@ db-seed-2026:
 
 db-clean:
 	@bash scripts/database/db_manager.sh clean
+
+db-clean-all:
+	@bash scripts/database/db_manager.sh clean-all
 
 db-reset:
 	@bash scripts/database/db_manager.sh reset
