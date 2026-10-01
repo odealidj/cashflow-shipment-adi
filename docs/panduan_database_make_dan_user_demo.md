@@ -44,7 +44,7 @@ Gunakan tabel berikut untuk memilih perintah yang tepat sesuai kebutuhan penguji
 | `make db-seed-2026` | Pertahankan | ✅ Terisi | ✅ Tambah Jan–Sep 2026 | ✅ Ya | Mengisi data 9 bulan ke dalam skema database yang sudah bermigrasi tanpa drop skema. |
 | `make db-seed` | Pertahankan | ✅ Terisi | ✅ Tambah Agt–Sep | ✅ Ya | Mengisi data standar tanpa drop skema. |
 | `make db-clean` | Pertahankan | ✅ **Tetap Utuh** | ❌ **Dihapus Bersih** | ✅ Ya | Mengosongkan data transaksi kas & invoice, tetapi akun login dan rekanan tetap ada. |
-| `make db-clean-all` | Pertahankan | ✅ **Hanya User, Role & Preset** | ❌ **Dihapus Bersih (Transaksi + Vendor + Customer)** | ✅ Ya | Mengosongkan data transaksi, invoice, notifikasi, audit, vendor, dan customer, tetapi akun login & hak akses tetap utuh. |
+| `make db-clean-all` | Pertahankan | ✅ **Hanya User & Role (RBAC)** | ❌ **Dihapus Bersih (Transaksi + Rekanan + Presets)** | ✅ Ya | Mengosongkan data transaksi, invoice, notifikasi, audit, vendor, customer, dan presets aktivitas, tetapi akun login & hak akses tetap utuh. |
 | `make db-reset` | **Reset Total** | ❌ Kosong | ❌ Kosong | ✅ Ya | Menghasilkan database kosong murni (hanya struktur tabel) untuk pengujian dari nol. |
 | `make db-migrate` | **Update Skema**| Tidak Berubah | Tidak Berubah | ❌ Tidak | Mengaplikasikan file migrasi baru (`000001` s.d. `000014`) tanpa menghapus data. |
 | `make db-status` | Hanya Baca | - | - | - | Memeriksa status koneksi, row count tabel, dan saldo kas berjalan riil. |
@@ -142,21 +142,22 @@ Gunakan tabel berikut untuk memilih perintah yang tepat sesuai kebutuhan penguji
 
 ---
 
-### 5b. `make db-clean-all` — Hapus Transaksi, Invoices, Vendor & Customer (Pertahankan User & Role)
-> **Reset Operasional Bersih — Siap Input Rekanan & Transaksi Baru**
+### 5b. `make db-clean-all` — Hapus Transaksi, Invoices, Vendor, Customer & Presets (Pertahankan User & Role)
+> **Reset Operasional Bersih — Siap Input Rekanan, Rute & Transaksi Baru**
 
 * **Apa yang dilakukan sistem:**
   - Menghapus bersih seluruh tabel transaksi: `cashflow_entries`, `invoices`, `invoice_payment_history`, `invoice_due_date_history`, `notifications`, dan `audit_logs`.
   - Menghapus bersih data rekanan: `customers` (klien) dan `vendors` (mitra armada).
+  - Menghapus bersih master presets: `activity_presets` (*Daftar Master Keterangan Aktivitas & Armada* serta *Daftar Master Catatan & Rute Pengiriman*).
   - Me-restart sequence penomoran (`RESTART IDENTITY CASCADE`) sehingga ID mulai kembali dari 1.
-  - **Tetap mempertahankan data akun**: `users` (akun login pengguna), `roles` (peran sistem), `permissions`, `role_permissions`, dan `activity_presets`.
+  - **Tetap mempertahankan data akun & hak akses**: `users` (akun login pengguna), `roles` (peran sistem), `permissions`, dan `role_permissions`.
   - Mengosongkan cache Redis (`FLUSHALL`).
 * **Cara Penggunaan:**
   ```bash
   make db-clean-all
   ```
 * **Kapan Digunakan:**
-  - Saat sistem akan diserahkan untuk operasional riil dari nol, di mana Anda ingin mendaftarkan vendor dan customer riil sendiri tanpa terganggu data dummy, namun akun staf/direksi/owner tetap bisa login.
+  - Saat sistem akan diserahkan untuk operasional riil dari nol, di mana Anda ingin mendaftarkan vendor, customer, dan rute armada riil sendiri tanpa terganggu data dummy, namun akun staf/direksi/owner tetap bisa login.
 
 ---
 

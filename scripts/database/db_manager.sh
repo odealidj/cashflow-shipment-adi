@@ -177,12 +177,12 @@ run_clean() {
 }
 
 # -----------------------------------------------------------------------------
-# 3b. PEMBERSIHAN DATA TRANSAKSI, VENDOR & CUSTOMER (KEEP USERS & ROLES)
+# 3b. PEMBERSIHAN DATA TRANSAKSI, VENDOR, CUSTOMER & PRESETS (KEEP USERS & ROLES)
 # -----------------------------------------------------------------------------
 run_clean_all() {
     ensure_db_ready
-    log_step "Membersihkan data transaksi, invoices, vendor, dan customer..."
-    log_info "Master akun (users, roles, permissions, presets) tetap dipertahankan."
+    log_step "Membersihkan data transaksi, invoices, vendor, customer, dan presets aktivitas..."
+    log_info "Master akun & RBAC (users, roles, permissions) tetap dipertahankan."
 
     local truncate_sql="
     DO \$\$ 
@@ -195,7 +195,8 @@ run_clean_all() {
             invoices, 
             cashflow_entries,
             customers,
-            vendors
+            vendors,
+            activity_presets
         RESTART IDENTITY CASCADE;
 
         IF to_regclass('public.cashflow_entries_history') IS NOT NULL THEN
@@ -206,7 +207,7 @@ run_clean_all() {
 
     "${COMPOSE_CMD[@]}" exec -T postgres psql -U "${DB_USER}" -d "${DB_NAME}" -c "${truncate_sql}" > /dev/null
     flush_redis
-    log_success "Seluruh data transaksi, vendor, dan customer berhasil dikosongkan!"
+    log_success "Seluruh data transaksi, vendor, customer, dan presets aktivitas berhasil dikosongkan!"
     show_status
 }
 

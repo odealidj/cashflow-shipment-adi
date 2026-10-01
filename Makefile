@@ -22,7 +22,7 @@ help:
 	@echo "  make db-seed                 - Populate standard executive demo data (August-September)"
 	@echo "  make db-seed-2026            - Populate comprehensive 9-month demo data (Januari - September 2026)"
 	@echo "  make db-clean                - Wipe transactional data (Cashflow, Invoices, Notifs) keeping master data"
-	@echo "  make db-clean-all            - Wipe transactions, invoices, vendors & customers (keep users & roles)"
+	@echo "  make db-clean-all            - Wipe transactions, invoices, vendors, customers & presets (keep users & roles)"
 	@echo "  make db-reset                - Drop schema, recreate & re-run all migrations (clean empty DB)"
 	@echo "  make db-migrate              - Run all database SQL migrations (000001 to 000013)"
 	@echo "  make db-status               - Check database connection and table row count statistics"
