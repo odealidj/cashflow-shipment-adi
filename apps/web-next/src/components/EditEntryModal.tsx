@@ -107,6 +107,7 @@ export function EditEntryModal({ isOpen, entry, onClose, onSuccess }: EditEntryM
     try {
       const token = localStorage.getItem("token");
       const payload: any = {
+        entry_type: entry.entry_type || (isShipment ? "SHIPMENT" : "TOP_UP"),
         date_of_entry: new Date(formData.date_of_entry).toISOString(),
         act_information: formData.act_information,
         act_explaination: formData.act_explaination,
@@ -122,6 +123,7 @@ export function EditEntryModal({ isOpen, entry, onClose, onSuccess }: EditEntryM
         payload.due_date = formData.due_date ? new Date(formData.due_date).toISOString() : null;
       } else {
         payload.kredit = parseFloat(formData.kredit.replace(/[^0-9.-]+/g, "") || "0");
+        payload.debit = 0;
       }
 
       const res = await fetch(`/api/v1/cashflow/${entry.id}`, {

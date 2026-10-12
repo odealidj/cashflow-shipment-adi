@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { Truck, ChevronDown, Check, Plus, Search, X, Sparkles, Phone, Building2, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import { fetchWithAuth } from "@/lib/apiClient";
 
@@ -31,8 +32,13 @@ export function VendorSelect({
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState(value || "");
+  const [mounted, setMounted] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Quick Mini Modal State for Vendor
   const [isQuickModalOpen, setIsQuickModalOpen] = useState(false);
@@ -241,7 +247,15 @@ export function VendorSelect({
               {/* Option B: Register to Master Vendor DB */}
               <button
                 type="button"
-                onClick={() => handleOpenQuickModal(searchTerm.trim())}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleOpenQuickModal(searchTerm.trim());
+                }}
                 className="w-full py-1 px-3 rounded-lg text-[11px] font-bold text-sky-700 hover:text-sky-900 hover:bg-sky-100/50 flex items-center justify-center gap-1 transition-colors cursor-pointer"
               >
                 <Plus className="w-3 h-3" />
@@ -261,14 +275,30 @@ export function VendorSelect({
                 <div className="flex justify-center gap-2 pt-1">
                   <button
                     type="button"
-                    onClick={() => handleSelect(searchTerm.trim())}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleSelect(searchTerm.trim());
+                    }}
                     className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold shadow-2xs cursor-pointer transition-all"
                   >
                     Gunakan Langsung
                   </button>
                   <button
                     type="button"
-                    onClick={() => handleOpenQuickModal(searchTerm.trim())}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleOpenQuickModal(searchTerm.trim());
+                    }}
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-sky-700 hover:bg-sky-800 text-white text-xs font-bold shadow-xs cursor-pointer active:scale-95 transition-all"
                   >
                     <Plus className="w-3.5 h-3.5 stroke-[3]" /> Daftarkan Master
@@ -284,7 +314,15 @@ export function VendorSelect({
                   <button
                     key={vendor.id}
                     type="button"
-                    onClick={() => handleSelect(vendorName)}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleSelect(vendorName);
+                    }}
                     className={`w-full text-left px-3 py-2 rounded-xl text-xs flex items-center justify-between transition-colors cursor-pointer ${
                       isSelected
                         ? "bg-sky-50 text-sky-950 font-black border border-sky-200/60 shadow-2xs"
@@ -315,7 +353,15 @@ export function VendorSelect({
           <div className="p-2 bg-slate-50 border-t border-slate-100 shrink-0">
             <button
               type="button"
-              onClick={() => handleOpenQuickModal()}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleOpenQuickModal();
+              }}
               className="w-full py-1.5 px-3 rounded-xl border border-dashed border-slate-300 hover:border-sky-600 hover:bg-sky-50/50 text-slate-600 hover:text-sky-800 text-[11px] font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5 text-sky-700" />
@@ -326,13 +372,19 @@ export function VendorSelect({
       )}
 
       {/* ========================================================================= */}
-      {/* QUICK MINI MODAL UNTUK MASTER VENDOR                                     */}
+      {/* QUICK MINI MODAL UNTUK MASTER VENDOR VIA CREATEPORTAL                    */}
       {/* ========================================================================= */}
-      {isQuickModalOpen && (
-        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden flex flex-col animate-in zoom-in-95 duration-150">
+      {mounted && isQuickModalOpen && createPortal(
+        <div 
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-150"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div 
+            className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden flex flex-col animate-in zoom-in-95 duration-150"
+            onClick={(e) => e.stopPropagation()}
+          >
             {/* Header Nordic Navy Gradient */}
-            <div className="bg-linear-to-r from-[#1B2A4A] to-[#223249] p-4.5 text-white flex justify-between items-center shrink-0">
+            <div className="bg-gradient-to-r from-[#1B2A4A] to-[#223249] p-4.5 text-white flex justify-between items-center shrink-0">
               <div className="flex items-center gap-2.5">
                 <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center border border-white/20">
                   <Truck className="w-4.5 h-4.5 text-sky-300" />
@@ -346,7 +398,10 @@ export function VendorSelect({
               </div>
               <button
                 type="button"
-                onClick={() => setIsQuickModalOpen(false)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsQuickModalOpen(false);
+                }}
                 className="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/80 hover:text-white transition-colors cursor-pointer"
                 title="Tutup"
               >
@@ -355,7 +410,7 @@ export function VendorSelect({
             </div>
 
             {/* Form Body */}
-            <form onSubmit={handleSaveQuickVendor} className="p-5 space-y-3.5">
+            <form onSubmit={handleSaveQuickVendor} className="p-5 space-y-3.5" onClick={(e) => e.stopPropagation()}>
               {quickError && (
                 <div className="bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold p-3 rounded-xl flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 shrink-0" />
@@ -411,7 +466,10 @@ export function VendorSelect({
               <div className="pt-2 flex gap-2">
                 <button
                   type="button"
-                  onClick={() => setIsQuickModalOpen(false)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsQuickModalOpen(false);
+                  }}
                   disabled={quickLoading}
                   className="flex-1 py-2.5 rounded-xl font-bold text-xs text-slate-600 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
                 >
@@ -437,7 +495,8 @@ export function VendorSelect({
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

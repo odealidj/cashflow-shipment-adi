@@ -166,6 +166,16 @@ func (s *CashflowService) UpdateEntry(ctx context.Context, entry *domain.Cashflo
 		return err
 	}
 
+	if entry.EntryType == "" {
+		entry.EntryType = oldEntry.EntryType
+	}
+	if entry.InvoiceID == nil {
+		entry.InvoiceID = oldEntry.InvoiceID
+	}
+	if entry.VendorID == nil {
+		entry.VendorID = oldEntry.VendorID
+	}
+
 	// Validasi & sinkronisasi jika bertipe SHIPMENT
 	if entry.EntryType == domain.EntryShipment {
 		if entry.GrandCost > 0 && entry.Debit == 0 {

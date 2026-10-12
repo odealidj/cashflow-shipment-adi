@@ -3,15 +3,21 @@ package repository
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/redis/go-redis/v9"
 )
 
 func NewRedisClient(ctx context.Context, redisURL string) (*redis.Client, error) {
-	opts, err := redis.ParseURL(redisURL)
-	if err != nil {
-		// Fallback if redisURL is just host:port (e.g. "localhost:6379")
+	var opts *redis.Options
+	if strings.HasPrefix(redisURL, "redis://") || strings.HasPrefix(redisURL, "rediss://") {
+		var err error
+		opts, err = redis.ParseURL(redisURL)
+		if err != nil {
+			return nil, fmt.Errorf("invalid redis url %s: %w", redisURL, err)
+		}
+	} else {
 		opts = &redis.Options{
 			Addr: redisURL,
 		}
