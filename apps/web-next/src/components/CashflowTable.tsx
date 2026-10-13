@@ -21,7 +21,10 @@ import {
   TrendingUp,
   Calendar,
   Printer,
-  ExternalLink
+  ExternalLink,
+  ChevronDown,
+  ChevronUp,
+  FileSpreadsheet
 } from "lucide-react";
 import Link from "next/link";
 
@@ -71,6 +74,38 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
   const [isReportOpen, setIsReportOpen] = useState(false);
   const [entryToDelete, setEntryToDelete] = useState<any>(null);
   const [selectedEntry, setSelectedEntry] = useState<any>(null);
+
+  // Collapsible KPI Summary State (dengan penyimpanan preferensi di localStorage)
+  const [isKpiCollapsed, setIsKpiCollapsed] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("cashflow_kpi_collapsed") === "true";
+    }
+    return false;
+  });
+
+  const toggleKpi = () => {
+    setIsKpiCollapsed(prev => {
+      const next = !prev;
+      if (typeof window !== "undefined") {
+        localStorage.setItem("cashflow_kpi_collapsed", String(next));
+      }
+      return next;
+    });
+  };
+
+  // Dropdown Menu Laporan & Dokumen State
+  const [isDocMenuOpen, setIsDocMenuOpen] = useState(false);
+  const docMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (docMenuRef.current && !docMenuRef.current.contains(event.target as Node)) {
+        setIsDocMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -283,8 +318,8 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
 
           return (
             <div className="shrink-0 space-y-2">
-              {/* PENANDA WAKTU & PERIODE AKTIF (STRATEGI 1) */}
-              <div className="flex items-center justify-between px-1">
+              {/* PENANDA WAKTU, PERIODE AKTIF & TOGGLE RINGKASAN */}
+              <div className="flex flex-wrap items-center justify-between gap-2 px-1">
                 <div className="flex items-center gap-2 text-xs font-black text-slate-700">
                   <div className="w-5 h-5 rounded-md bg-sky-100/80 text-sky-800 flex items-center justify-center">
                     <Calendar className="w-3.5 h-3.5" />
@@ -298,81 +333,119 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
                     </span>
                   )}
                 </div>
-                <div className="text-[11px] text-slate-400 font-medium hidden sm:block">
-                  Nilai otomatis menyesuaikan filter periode
+
+                <div className="flex items-center gap-2.5">
+                  {/* Mini Ringkasan Inline Saat Kartu KPI Dilipat */}
+                  {isKpiCollapsed && (
+                    <div className="flex items-center gap-2.5 text-xs font-mono font-bold bg-white px-3 py-1 rounded-xl border border-slate-200/80 shadow-2xs animate-fade-in">
+                      <span className="text-slate-400 font-sans text-[10px] uppercase font-bold">Saldo:</span>
+                      <span className="text-sky-950 font-black">{formatCurrency(summary.current_saldo)}</span>
+                      <span className="text-slate-200">|</span>
+                      <span className="text-slate-400 font-sans text-[10px] uppercase font-bold">Profit:</span>
+                      <span className={summary.total_profit >= 0 ? "text-teal-700" : "text-rose-600"}>
+                        {formatCurrency(summary.total_profit || 0)}
+                      </span>
+                    </div>
+                  )}
+
+                  <div className="text-[11px] text-slate-400 font-medium hidden md:block">
+                    {isKpiCollapsed ? "Ringkasan dilipat" : "Nilai otomatis menyesuaikan filter"}
+                  </div>
+
+                  {/* Tombol Toggle Sembunyikan / Tampilkan Ringkasan */}
+                  <button
+                    type="button"
+                    onClick={toggleKpi}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold text-slate-600 hover:text-sky-900 bg-white hover:bg-slate-50 border border-slate-200/80 shadow-2xs transition-all cursor-pointer"
+                    title={isKpiCollapsed ? "Tampilkan 5 kartu ringkasan KPI lengkap" : "Sembunyikan kartu ringkasan KPI untuk memperluas tabel transaksi"}
+                  >
+                    {isKpiCollapsed ? (
+                      <>
+                        <ChevronDown className="w-3.5 h-3.5 text-sky-600" />
+                        <span>Tampilkan Ringkasan</span>
+                      </>
+                    ) : (
+                      <>
+                        <ChevronUp className="w-3.5 h-3.5 text-slate-500" />
+                        <span>Sembunyikan Ringkasan</span>
+                      </>
+                    )}
+                  </button>
                 </div>
               </div>
 
-              {/* 5 KARTU KPI DENGAN LABEL JELAS (STRATEGI 2) */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-                {/* 1. Saldo Kas */}
-                <div className="bg-white rounded-2xl p-3.5 border border-slate-200/80 shadow-2xs">
-                  <div className="flex items-center justify-between text-slate-500 text-[11px] font-bold uppercase tracking-wider">
-                    <span>Saldo Kas Terkini</span>
-                    <Wallet className="w-4 h-4 text-sky-700" />
+              {/* 5 KARTU KPI DENGAN LABEL JELAS (TAMPIL HANYA JIKA TIDAK DILIPAT) */}
+              {!isKpiCollapsed && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 animate-fade-in">
+                  {/* 1. Saldo Kas */}
+                  <div className="bg-white rounded-2xl p-3.5 border border-slate-200/80 shadow-2xs">
+                    <div className="flex items-center justify-between text-slate-500 text-[11px] font-bold uppercase tracking-wider">
+                      <span>Saldo Kas Terkini</span>
+                      <Wallet className="w-4 h-4 text-sky-700" />
+                    </div>
+                    <div className="mt-1.5 font-mono text-base lg:text-lg font-black text-sky-950 truncate">
+                      {formatCurrency(summary.current_saldo)}
+                    </div>
+                    <div className="text-[10px] text-slate-400 mt-0.5">Saldo riil di kas</div>
                   </div>
-                  <div className="mt-1.5 font-mono text-base lg:text-lg font-black text-sky-950 truncate">
-                    {formatCurrency(summary.current_saldo)}
-                  </div>
-                  <div className="text-[10px] text-slate-400 mt-0.5">Saldo riil di kas</div>
-                </div>
 
-                {/* 2. Total Profit & Margin */}
-                <div className="bg-white rounded-2xl p-3.5 border border-teal-200/80 shadow-2xs bg-gradient-to-b from-white to-teal-50/20">
-                  <div className="flex items-center justify-between text-slate-500 text-[11px] font-bold uppercase tracking-wider">
-                    <span>{isThisMonth ? "Profit Bulan Ini" : "Profit Periode Ini"}</span>
-                    <TrendingUp className="w-4 h-4 text-teal-600" />
+                  {/* 2. Total Profit & Margin */}
+                  <div className="bg-white rounded-2xl p-3.5 border border-teal-200/80 shadow-2xs bg-gradient-to-b from-white to-teal-50/20">
+                    <div className="flex items-center justify-between text-slate-500 text-[11px] font-bold uppercase tracking-wider">
+                      <span>{isThisMonth ? "Profit Bulan Ini" : "Profit Periode Ini"}</span>
+                      <TrendingUp className="w-4 h-4 text-teal-600" />
+                    </div>
+                    <div className="mt-1.5 font-mono text-base lg:text-lg font-black text-teal-700 truncate">
+                      {formatCurrency(summary.total_profit || 0)}
+                    </div>
+                    <div className="text-[10px] text-teal-600 font-bold mt-0.5 flex items-center gap-1">
+                      <span className="bg-teal-50 text-teal-700 px-1.5 py-0.2 rounded border border-teal-200/60 font-mono">
+                        {summary.avg_margin_pct ? `${(summary.avg_margin_pct * 100).toFixed(1)}%` : "0%"}
+                      </span>
+                      <span className="text-slate-400 font-normal">avg margin</span>
+                    </div>
                   </div>
-                  <div className="mt-1.5 font-mono text-base lg:text-lg font-black text-teal-700 truncate">
-                    {formatCurrency(summary.total_profit || 0)}
-                  </div>
-                  <div className="text-[10px] text-teal-600 font-bold mt-0.5 flex items-center gap-1">
-                    <span className="bg-teal-50 text-teal-700 px-1.5 py-0.2 rounded border border-teal-200/60 font-mono">
-                      {summary.avg_margin_pct ? `${(summary.avg_margin_pct * 100).toFixed(1)}%` : "0%"}
-                    </span>
-                    <span className="text-slate-400 font-normal">avg margin</span>
-                  </div>
-                </div>
 
-                {/* 3. Total Pengeluaran (Debit) */}
-                <div className="bg-white rounded-2xl p-3.5 border border-slate-200/80 shadow-2xs">
-                  <div className="flex items-center justify-between text-slate-500 text-[11px] font-bold uppercase tracking-wider">
-                    <span>{isThisMonth ? "Pengeluaran Bulan Ini" : "Pengeluaran Periode Ini"}</span>
-                    <ArrowDownRight className="w-4 h-4 text-rose-600" />
+                  {/* 3. Total Pengeluaran (Debit) */}
+                  <div className="bg-white rounded-2xl p-3.5 border border-slate-200/80 shadow-2xs">
+                    <div className="flex items-center justify-between text-slate-500 text-[11px] font-bold uppercase tracking-wider">
+                      <span>{isThisMonth ? "Pengeluaran Bulan Ini" : "Pengeluaran Periode Ini"}</span>
+                      <ArrowDownRight className="w-4 h-4 text-rose-600" />
+                    </div>
+                    <div className="mt-1.5 font-mono text-base lg:text-lg font-black text-rose-600 truncate">
+                      {formatCurrency(summary.total_debit)}
+                    </div>
+                    <div className="text-[10px] text-slate-400 mt-0.5">Kas keluar periode ini</div>
                   </div>
-                  <div className="mt-1.5 font-mono text-base lg:text-lg font-black text-rose-600 truncate">
-                    {formatCurrency(summary.total_debit)}
-                  </div>
-                  <div className="text-[10px] text-slate-400 mt-0.5">Kas keluar periode ini</div>
-                </div>
 
-                {/* 4. Total Modal Masuk (Kredit) */}
-                <div className="bg-white rounded-2xl p-3.5 border border-slate-200/80 shadow-2xs">
-                  <div className="flex items-center justify-between text-slate-500 text-[11px] font-bold uppercase tracking-wider">
-                    <span>{isThisMonth ? "Modal Masuk Bulan Ini" : "Modal Masuk Periode Ini"}</span>
-                    <ArrowUpRight className="w-4 h-4 text-emerald-600" />
+                  {/* 4. Total Modal Masuk (Kredit) */}
+                  <div className="bg-white rounded-2xl p-3.5 border border-slate-200/80 shadow-2xs">
+                    <div className="flex items-center justify-between text-slate-500 text-[11px] font-bold uppercase tracking-wider">
+                      <span>{isThisMonth ? "Modal Masuk Bulan Ini" : "Modal Masuk Periode Ini"}</span>
+                      <ArrowUpRight className="w-4 h-4 text-emerald-600" />
+                    </div>
+                    <div className="mt-1.5 font-mono text-base lg:text-lg font-black text-emerald-700 truncate">
+                      {formatCurrency(summary.total_kredit)}
+                    </div>
+                    <div className="text-[10px] text-slate-400 mt-0.5">Top-up kas periode ini</div>
                   </div>
-                  <div className="mt-1.5 font-mono text-base lg:text-lg font-black text-emerald-700 truncate">
-                    {formatCurrency(summary.total_kredit)}
-                  </div>
-                  <div className="text-[10px] text-slate-400 mt-0.5">Top-up kas periode ini</div>
-                </div>
 
-                {/* 5. Tagihan Belum Lunas */}
-                <div className="bg-white rounded-2xl p-3.5 border border-slate-200/80 shadow-2xs col-span-2 sm:col-span-1">
-                  <div className="flex items-center justify-between text-slate-500 text-[11px] font-bold uppercase tracking-wider">
-                    <span>Tagihan Belum Lunas</span>
-                    <Clock className="w-4 h-4 text-amber-600" />
+                  {/* 5. Tagihan Belum Lunas */}
+                  <div className="bg-white rounded-2xl p-3.5 border border-slate-200/80 shadow-2xs col-span-2 sm:col-span-1">
+                    <div className="flex items-center justify-between text-slate-500 text-[11px] font-bold uppercase tracking-wider">
+                      <span>Tagihan Belum Lunas</span>
+                      <Clock className="w-4 h-4 text-amber-600" />
+                    </div>
+                    <div className="mt-1.5 font-mono text-base lg:text-lg font-black text-amber-700 flex items-baseline gap-1.5 truncate">
+                      <span>{summary.unpaid_count}</span>
+                      <span className="text-xs font-bold text-slate-400 font-sans">
+                        ({formatCurrency(summary.unpaid_amount)})
+                      </span>
+                    </div>
+                    <div className="text-[10px] text-slate-400 mt-0.5">Kewajiban periode ini</div>
                   </div>
-                  <div className="mt-1.5 font-mono text-base lg:text-lg font-black text-amber-700 flex items-baseline gap-1.5 truncate">
-                    <span>{summary.unpaid_count}</span>
-                    <span className="text-xs font-bold text-slate-400 font-sans">
-                      ({formatCurrency(summary.unpaid_amount)})
-                    </span>
-                  </div>
-                  <div className="text-[10px] text-slate-400 mt-0.5">Kewajiban periode ini</div>
                 </div>
-              </div>
+              )}
             </div>
           );
         })()}
@@ -380,10 +453,10 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
         {/* UNIFIED 1 CARD CONTAINER: HEADER + FILTER BAR + 14-COL TABLE + FOOTER */}
         <div className="bg-white rounded-2xl overflow-hidden border border-slate-200/80 shadow-xs flex-1 flex flex-col min-h-0">
           {/* Top Header & Actions Bar */}
-          <div className="shrink-0 px-6 py-4 border-b border-slate-100 flex flex-wrap justify-between items-center gap-4 bg-slate-50/50">
+          <div className="shrink-0 px-6 py-3.5 border-b border-slate-100 flex flex-wrap justify-between items-center gap-3 bg-slate-50/50">
             <div>
-              <h1 className="text-xl font-black text-slate-900 flex items-center gap-2.5 tracking-tight">
-                <div className="w-8 h-8 rounded-xl bg-sky-100/80 text-sky-800 flex items-center justify-center shadow-2xs">
+              <h1 className="text-lg lg:text-xl font-black text-slate-900 flex items-center gap-2.5 tracking-tight">
+                <div className="w-7 h-7 lg:w-8 lg:h-8 rounded-xl bg-sky-100/80 text-sky-800 flex items-center justify-center shadow-2xs">
                   <Activity className="w-4 h-4" />
                 </div>
                 <span>Transaksi Cashflow & Shipment</span>
@@ -393,7 +466,7 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
               </p>
             </div>
             
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-2">
               <input 
                 type="file" 
                 accept=".xlsx, .xls" 
@@ -401,45 +474,86 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
                 ref={fileInputRef} 
                 onChange={handleImport} 
               />
-              {can("cashflow.export") && (
-                <button 
-                  onClick={() => setIsReportOpen(true)}
-                  className="text-xs bg-sky-50 hover:bg-sky-100 text-sky-800 px-3.5 py-2 rounded-xl transition-colors font-bold border border-sky-200 flex items-center gap-1.5 shadow-2xs cursor-pointer"
-                  title="Buka Pratinjau & Cetak Laporan (Excel Asli / Grid Modern)"
-                >
-                  <Printer className="w-3.5 h-3.5 text-sky-700" /> Cetak Laporan
-                </button>
+
+              {/* Dropdown Menu Laporan & Dokumen */}
+              {(can("cashflow.export") || can("cashflow.import")) && (
+                <div className="relative" ref={docMenuRef}>
+                  <button
+                    type="button"
+                    onClick={() => setIsDocMenuOpen(prev => !prev)}
+                    className="text-xs bg-white hover:bg-slate-50 text-slate-700 px-3 py-2 rounded-xl transition-all font-bold border border-slate-200/90 flex items-center gap-1.5 shadow-2xs cursor-pointer whitespace-nowrap"
+                    title="Menu Laporan, Ekspor, dan Impor Data"
+                  >
+                    <FileSpreadsheet className="w-3.5 h-3.5 text-sky-700" />
+                    <span>Laporan & Data</span>
+                    <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform ${isDocMenuOpen ? "rotate-180" : ""}`} />
+                  </button>
+
+                  {isDocMenuOpen && (
+                    <div className="absolute right-0 mt-1.5 w-52 bg-white rounded-xl shadow-lg border border-slate-200 py-1 z-40 animate-fade-in">
+                      {can("cashflow.export") && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsDocMenuOpen(false);
+                            setIsReportOpen(true);
+                          }}
+                          className="w-full text-left px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-sky-50 hover:text-sky-900 flex items-center gap-2.5 transition-colors cursor-pointer"
+                        >
+                          <Printer className="w-3.5 h-3.5 text-sky-600" />
+                          <span>Cetak Laporan</span>
+                        </button>
+                      )}
+                      {can("cashflow.export") && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsDocMenuOpen(false);
+                            handleExport();
+                          }}
+                          className="w-full text-left px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-emerald-50 hover:text-emerald-900 flex items-center gap-2.5 transition-colors cursor-pointer"
+                        >
+                          <Download className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>Ekspor Excel (.xlsx)</span>
+                        </button>
+                      )}
+                      {can("cashflow.import") && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsDocMenuOpen(false);
+                            fileInputRef.current?.click();
+                          }}
+                          className="w-full text-left px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2.5 transition-colors cursor-pointer"
+                        >
+                          <Upload className="w-3.5 h-3.5 text-slate-600" />
+                          <span>Impor Excel</span>
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
               )}
-              {can("cashflow.import") && (
-                <button 
-                  onClick={() => fileInputRef.current?.click()}
-                  className="text-xs bg-white hover:bg-slate-50 text-slate-700 px-3.5 py-2 rounded-xl transition-colors font-bold border border-slate-200 flex items-center gap-1.5 shadow-2xs cursor-pointer"
-                >
-                  <Upload className="w-3.5 h-3.5 text-slate-600" /> Impor Excel
-                </button>
-              )}
-              {can("cashflow.export") && (
-                <button 
-                  onClick={handleExport}
-                  className="text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-800 px-3.5 py-2 rounded-xl transition-colors font-bold border border-emerald-200 flex items-center gap-1.5 shadow-2xs cursor-pointer"
-                >
-                  <Download className="w-3.5 h-3.5 text-emerald-700" /> Ekspor Excel
-                </button>
-              )}
+
+              {/* Tombol Utama: Tambah Modal */}
               {can("cashflow.create") && (
                 <button 
                   onClick={() => setIsTopUpOpen(true)}
-                  className="text-xs bg-white hover:bg-slate-50 text-slate-700 px-3.5 py-2 rounded-xl transition-colors font-bold border border-slate-200 flex items-center gap-1.5 shadow-2xs cursor-pointer"
+                  className="text-xs bg-white hover:bg-slate-50 text-slate-700 px-3 py-2 rounded-xl transition-colors font-bold border border-slate-200 flex items-center gap-1.5 shadow-2xs cursor-pointer whitespace-nowrap"
                 >
-                  <Wallet className="w-3.5 h-3.5 text-slate-600" /> Tambah Modal
+                  <Wallet className="w-3.5 h-3.5 text-slate-600" />
+                  <span>Tambah Modal</span>
                 </button>
               )}
+
+              {/* Tombol Utama: Catat Shipment */}
               {can("cashflow.create") && (
                 <button 
                   onClick={() => setIsShipmentOpen(true)}
-                  className="text-xs bg-sky-700 hover:bg-sky-800 text-white px-4 py-2 rounded-xl transition-all font-bold shadow-2xs flex items-center gap-1.5 cursor-pointer active:scale-95"
+                  className="text-xs bg-sky-700 hover:bg-sky-800 text-white px-3.5 py-2 rounded-xl transition-all font-bold shadow-2xs flex items-center gap-1.5 cursor-pointer active:scale-95 whitespace-nowrap"
                 >
-                  <Plus className="w-4 h-4 stroke-[3]" /> Catat Shipment
+                  <Plus className="w-4 h-4 stroke-[3]" />
+                  <span>Catat Shipment</span>
                 </button>
               )}
             </div>
@@ -488,13 +602,13 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
                     )}
                   </div>
                 </th>
-                <th className="px-4 py-3.5 min-w-[220px]">Aktivitas</th>
-                <th className="px-3 py-3.5 text-right min-w-[150px]">Penjualan & Biaya</th>
-                <th className="px-3 py-3.5 text-right min-w-[130px]">Profit & Margin</th>
-                <th className="px-3 py-3.5 text-center min-w-[110px]">T.O.P / Due</th>
-                <th className="px-4 py-3.5 text-right min-w-[140px]">Arus Kas</th>
-                <th className="px-4 py-3.5 text-right min-w-[140px] bg-sky-100/50">
-                  <span className="inline-flex items-center gap-1 bg-sky-900 text-white text-[10px] font-black px-2.5 py-1 rounded-lg shadow-2xs tracking-wider border border-sky-800">
+                <th className="px-4 py-3.5 min-w-[190px] xl:min-w-[220px]">Aktivitas</th>
+                <th className="px-3 py-3.5 text-right min-w-[130px] xl:min-w-[150px]">Penjualan & Biaya</th>
+                <th className="px-3 py-3.5 text-right min-w-[110px] xl:min-w-[130px]">Profit & Margin</th>
+                <th className="px-3 py-3.5 text-center min-w-[95px] xl:min-w-[110px]">T.O.P / Due</th>
+                <th className="px-4 py-3.5 text-right min-w-[125px] xl:min-w-[140px]">Arus Kas</th>
+                <th className="px-4 py-3.5 text-right min-w-[125px] xl:min-w-[140px] bg-sky-100/50">
+                  <span className="inline-flex items-center gap-1 bg-sky-900 text-white text-[10px] font-black px-2.5 py-1 rounded-lg shadow-2xs tracking-wider border border-sky-800 whitespace-nowrap">
                     ★ ROLLING SALDO
                   </span>
                 </th>

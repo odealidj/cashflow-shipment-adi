@@ -58,9 +58,22 @@ body {
   animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Smooth Scrolling */
+/* Smooth Scrolling & Responsive Root Scaling */
 html {
   scroll-behavior: smooth;
+}
+
+/* Responsive Laptop & Compact Screen Scaling (Global Dashboard Fit) */
+@media (max-width: 1440px), (max-height: 860px) {
+  html {
+    font-size: 14.5px;
+  }
+}
+
+@media (max-width: 1280px), (max-height: 768px) {
+  html {
+    font-size: 14px;
+  }
 }
 
 /* Modern Soft Scrollbars */

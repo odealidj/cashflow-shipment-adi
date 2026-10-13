@@ -41,6 +41,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     const savedCollapsed = localStorage.getItem("sidebar_collapsed");
     if (savedCollapsed === "true") {
       setIsCollapsed(true);
+    } else if (savedCollapsed === null) {
+      // Default auto-collapse pada layar laptop / resolusi terbatas (< 1366px)
+      if (typeof window !== "undefined" && window.innerWidth < 1366) {
+        setIsCollapsed(true);
+      }
     }
   }, []);
 
