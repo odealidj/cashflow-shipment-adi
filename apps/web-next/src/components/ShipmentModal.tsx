@@ -5,6 +5,7 @@ import { X, Loader2, Truck, TrendingUp, DollarSign, Wallet, ArrowRight, AlertTri
 import { formatRupiah, calculateProfit, calculateMarginPct, calculateDueDate } from "@/hooks/useAutoCalculate";
 import { formatThousand, cleanThousand, terbilangRingkas } from "@/hooks/useTerbilang";
 import { VendorSelect } from "@/components/VendorSelect";
+import { CustomerSelect } from "@/components/CustomerSelect";
 import { ActivityPresetSelect } from "@/components/shared/ActivityPresetSelect";
 import { formatDate } from "@/lib/dateUtils";
 
@@ -21,6 +22,7 @@ export function ShipmentModal({ isOpen, onClose, onSuccess }: ShipmentModalProps
   const [formData, setFormData] = useState({
     date_of_entry: new Date().toISOString().split("T")[0],
     vendor_name_raw: "",
+    customer_name_raw: "",
     act_information: "",
     act_explaination: "",
     grand_cost: "",
@@ -37,6 +39,7 @@ export function ShipmentModal({ isOpen, onClose, onSuccess }: ShipmentModalProps
     setFormData({
       date_of_entry: new Date().toISOString().split("T")[0],
       vendor_name_raw: "",
+      customer_name_raw: "",
       act_information: "",
       act_explaination: "",
       grand_cost: "",
@@ -90,6 +93,7 @@ export function ShipmentModal({ isOpen, onClose, onSuccess }: ShipmentModalProps
         body: JSON.stringify({
           date_of_entry: new Date(formData.date_of_entry).toISOString(),
           vendor_name_raw: formData.vendor_name_raw,
+          customer_name_raw: formData.customer_name_raw,
           act_information: formData.act_information,
           act_explaination: formData.act_explaination,
           grand_cost: costNum,
@@ -145,7 +149,7 @@ export function ShipmentModal({ isOpen, onClose, onSuccess }: ShipmentModalProps
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
-          {/* SEKSI 1: IDENTITAS OPERASIONAL & VENDOR */}
+          {/* SEKSI 1: IDENTITAS OPERASIONAL, CUSTOMER & VENDOR */}
           <div className="space-y-3">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
               <div>
@@ -159,6 +163,17 @@ export function ShipmentModal({ isOpen, onClose, onSuccess }: ShipmentModalProps
                 />
               </div>
               <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Nama Customer</label>
+                <CustomerSelect
+                  value={formData.customer_name_raw}
+                  onChange={v => setFormData({ ...formData, customer_name_raw: v })}
+                  placeholder="Pilih atau ketik customer..."
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+              <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">Nama Vendor / Transporter *</label>
                 <VendorSelect
                   value={formData.vendor_name_raw}
@@ -167,9 +182,6 @@ export function ShipmentModal({ isOpen, onClose, onSuccess }: ShipmentModalProps
                   placeholder="Pilih atau ketik vendor..."
                 />
               </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">Keterangan Aktivitas / Armada *</label>
                 <ActivityPresetSelect
@@ -180,15 +192,16 @@ export function ShipmentModal({ isOpen, onClose, onSuccess }: ShipmentModalProps
                   onChange={v => setFormData({ ...formData, act_information: v })}
                 />
               </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Rincian / Catatan Tambahan (Rute)</label>
-                <ActivityPresetSelect
-                  category="ACT_EXPLAIN"
-                  placeholder="Pilih atau ketik rute (mis. CIBINONG - SBY)..."
-                  value={formData.act_explaination}
-                  onChange={v => setFormData({ ...formData, act_explaination: v })}
-                />
-              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Rincian / Catatan Tambahan (Rute)</label>
+              <ActivityPresetSelect
+                category="ACT_EXPLAIN"
+                placeholder="Pilih atau ketik rute (mis. CIBITUNG - MEDAN)..."
+                value={formData.act_explaination}
+                onChange={v => setFormData({ ...formData, act_explaination: v })}
+              />
             </div>
           </div>
 

@@ -58,16 +58,16 @@ func (r *PostgresCashflowRepo) Create(ctx context.Context, entry *domain.Cashflo
 			entry_type, kredit, debit, saldo, date_of_entry, 
 			act_information, act_explaination, vendor_id, vendor_name_raw, 
 			top_days, due_date, grand_cost, grand_selling, profit, margin_pct, 
-			remarks, created_by, updated_by, invoice_id
+			remarks, created_by, updated_by, invoice_id, customer_id, customer_name_raw
 		) VALUES (
-			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19
+			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21
 		) RETURNING id, sequence_no, created_at, updated_at
 	`
 	err = tx.QueryRowContext(ctx, queryInsert,
 		entry.EntryType, entry.Kredit, entry.Debit, entry.Saldo, entry.DateOfEntry,
 		entry.ActInformation, entry.ActExplaination, entry.VendorID, entry.VendorNameRaw,
 		entry.TopDays, entry.DueDate, entry.GrandCost, entry.GrandSelling, entry.Profit, entry.MarginPct,
-		entry.Remarks, entry.CreatedBy, entry.UpdatedBy, entry.InvoiceID,
+		entry.Remarks, entry.CreatedBy, entry.UpdatedBy, entry.InvoiceID, entry.CustomerID, entry.CustomerNameRaw,
 	).Scan(&entry.ID, &entry.SequenceNo, &entry.CreatedAt, &entry.UpdatedAt)
 
 	if err != nil {
@@ -83,14 +83,16 @@ func (r *PostgresCashflowRepo) Update(ctx context.Context, entry *domain.Cashflo
 			entry_type = $1, kredit = $2, debit = $3, saldo = $4, date_of_entry = $5,
 			act_information = $6, act_explaination = $7, vendor_id = $8, vendor_name_raw = $9,
 			top_days = $10, due_date = $11, grand_cost = $12, grand_selling = $13, 
-			profit = $14, margin_pct = $15, remarks = $16, updated_by = $17, invoice_id = $18, updated_at = CURRENT_TIMESTAMP
-		WHERE id = $19
+			profit = $14, margin_pct = $15, remarks = $16, updated_by = $17, invoice_id = $18,
+			customer_id = $19, customer_name_raw = $20, updated_at = CURRENT_TIMESTAMP
+		WHERE id = $21
 	`
 	_, err := r.db.ExecContext(ctx, query,
 		entry.EntryType, entry.Kredit, entry.Debit, entry.Saldo, entry.DateOfEntry,
 		entry.ActInformation, entry.ActExplaination, entry.VendorID, entry.VendorNameRaw,
 		entry.TopDays, entry.DueDate, entry.GrandCost, entry.GrandSelling,
-		entry.Profit, entry.MarginPct, entry.Remarks, entry.UpdatedBy, entry.InvoiceID, entry.ID,
+		entry.Profit, entry.MarginPct, entry.Remarks, entry.UpdatedBy, entry.InvoiceID,
+		entry.CustomerID, entry.CustomerNameRaw, entry.ID,
 	)
 	return err
 }
@@ -302,13 +304,13 @@ func (r *PostgresCashflowRepo) ArchiveEntry(ctx context.Context, entry *domain.C
 			act_information, act_explaination, vendor_id, vendor_name_raw,
 			top_days, due_date, grand_cost, grand_selling, profit, margin_pct,
 			remarks, created_by, updated_by, original_created_at, original_updated_at,
-			archived_by, archive_reason
+			archived_by, archive_reason, customer_id, customer_name_raw
 		) VALUES (
 			$1, $2, $3, $4, $5, $6, $7,
 			$8, $9, $10, $11,
 			$12, $13, $14, $15, $16, $17,
 			$18, $19, $20, $21, $22,
-			$23, $24
+			$23, $24, $25, $26
 		)
 	`
 	_, err := r.db.ExecContext(ctx, query,
@@ -316,7 +318,7 @@ func (r *PostgresCashflowRepo) ArchiveEntry(ctx context.Context, entry *domain.C
 		entry.ActInformation, entry.ActExplaination, entry.VendorID, entry.VendorNameRaw,
 		entry.TopDays, entry.DueDate, entry.GrandCost, entry.GrandSelling, entry.Profit, entry.MarginPct,
 		entry.Remarks, entry.CreatedBy, entry.UpdatedBy, entry.CreatedAt, entry.UpdatedAt,
-		archivedBy, reason,
+		archivedBy, reason, entry.CustomerID, entry.CustomerNameRaw,
 	)
 	return err
 }

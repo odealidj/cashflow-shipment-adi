@@ -59,6 +59,36 @@ func (s *ActivityPresetService) CreatePreset(ctx context.Context, preset *domain
 	return nil
 }
 
+// FindOrCreatePreset checks if an activity preset exists by category and name. If not, creates it automatically.
+func (s *ActivityPresetService) FindOrCreatePreset(ctx context.Context, category, name, description string) (*domain.ActivityPreset, error) {
+	category = strings.ToUpper(strings.TrimSpace(category))
+	name = strings.TrimSpace(name)
+	if category == "" || name == "" {
+		return nil, errors.New("kategori dan nama preset tidak boleh kosong")
+	}
+
+	preset, err := s.repo.GetByCategoryAndName(ctx, category, name)
+	if err == nil && preset != nil {
+		return preset, nil
+	}
+
+	newPreset := &domain.ActivityPreset{
+		Category:    category,
+		Name:        name,
+		Description: strings.TrimSpace(description),
+		IsActive:    true,
+	}
+	if err := s.repo.Create(ctx, newPreset); err != nil {
+		if existing, fetchErr := s.repo.GetByCategoryAndName(ctx, category, name); fetchErr == nil && existing != nil {
+			return existing, nil
+		}
+		return nil, err
+	}
+	s.invalidateCache(ctx)
+	return newPreset, nil
+}
+
+
 func (s *ActivityPresetService) UpdatePreset(ctx context.Context, preset *domain.ActivityPreset) error {
 	preset.Category = strings.ToUpper(strings.TrimSpace(preset.Category))
 	if preset.Category != "ACT_INFO" && preset.Category != "ACT_EXPLAIN" {

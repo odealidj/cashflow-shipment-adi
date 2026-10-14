@@ -5,6 +5,7 @@ import { X, Loader2, Edit3, Trash2, Wallet, ArrowRight, TrendingUp } from "lucid
 import { formatRupiah, calculateProfit, calculateMarginPct, calculateDueDate } from "@/hooks/useAutoCalculate";
 import { formatThousand, cleanThousand, terbilangRingkas } from "@/hooks/useTerbilang";
 import { VendorSelect } from "@/components/VendorSelect";
+import { CustomerSelect } from "@/components/CustomerSelect";
 import { ActivityPresetSelect } from "@/components/shared/ActivityPresetSelect";
 import { formatDate } from "@/lib/dateUtils";
 
@@ -16,6 +17,7 @@ interface CashflowEntry {
   act_information: string;
   act_explaination: string;
   vendor_name_raw: string;
+  customer_name_raw?: string;
   top_days: number;
   due_date: string | null;
   grand_cost: number;
@@ -39,6 +41,7 @@ export function EditEntryModal({ isOpen, entry, onClose, onSuccess }: EditEntryM
   const [formData, setFormData] = useState({
     date_of_entry: "",
     vendor_name_raw: "",
+    customer_name_raw: "",
     act_information: "",
     act_explaination: "",
     grand_cost: "",
@@ -55,6 +58,7 @@ export function EditEntryModal({ isOpen, entry, onClose, onSuccess }: EditEntryM
       setFormData({
         date_of_entry: entry.date_of_entry ? entry.date_of_entry.split("T")[0] : "",
         vendor_name_raw: entry.vendor_name_raw || "",
+        customer_name_raw: entry.customer_name_raw || "",
         act_information: entry.act_information || "",
         act_explaination: entry.act_explaination || "",
         grand_cost: entry.grand_cost ? String(entry.grand_cost) : "",
@@ -116,6 +120,7 @@ export function EditEntryModal({ isOpen, entry, onClose, onSuccess }: EditEntryM
 
       if (isShipment) {
         payload.vendor_name_raw = formData.vendor_name_raw;
+        payload.customer_name_raw = formData.customer_name_raw;
         payload.grand_cost = costNum;
         payload.grand_selling = sellNum;
         payload.debit = parseFloat(formData.debit || formData.grand_cost || "0");
@@ -210,12 +215,22 @@ export function EditEntryModal({ isOpen, entry, onClose, onSuccess }: EditEntryM
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs text-slate-800 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
               />
             </div>
+            {isShipment && (
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Nama Customer</label>
+                <CustomerSelect
+                  value={formData.customer_name_raw}
+                  onChange={v => setFormData({ ...formData, customer_name_raw: v })}
+                  placeholder="Pilih atau ketik customer..."
+                />
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {isShipment && (
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Nama Vendor</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Nama Vendor / Transporter *</label>
                 <VendorSelect
                   value={formData.vendor_name_raw}
                   onChange={v => setFormData({ ...formData, vendor_name_raw: v })}
@@ -239,7 +254,7 @@ export function EditEntryModal({ isOpen, entry, onClose, onSuccess }: EditEntryM
             <label className="block text-xs font-bold text-slate-700 mb-1">Rincian / Catatan Tambahan (Rute)</label>
             <ActivityPresetSelect
               category="ACT_EXPLAIN"
-              placeholder="Pilih atau ketik rute..."
+              placeholder="Pilih atau ketik rute (mis. CIBITUNG - MEDAN)..."
               value={formData.act_explaination}
               onChange={v => setFormData({ ...formData, act_explaination: v })}
             />

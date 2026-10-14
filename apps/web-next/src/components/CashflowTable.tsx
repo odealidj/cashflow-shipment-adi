@@ -652,7 +652,7 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
 
                       {/* 2. Aktivitas */}
                       <td className="px-4 py-3.5">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider ${
                             isShipment 
                               ? "bg-sky-100 text-sky-800 border border-sky-200" 
@@ -662,6 +662,11 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
                           }`}>
                             {isInvoicePayment ? "PELUNASAN INVOICE" : entry.entry_type}
                           </span>
+                          {!isInvoicePayment && entry.customer_name_raw && (
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200 line-clamp-1">
+                              Cust: {entry.customer_name_raw}
+                            </span>
+                          )}
                           {!isInvoicePayment && entry.vendor_name_raw && (
                             <span className="font-extrabold text-slate-900 text-xs line-clamp-1">
                               {entry.vendor_name_raw}

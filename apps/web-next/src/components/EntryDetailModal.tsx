@@ -91,7 +91,11 @@ export function EntryDetailModal({ isOpen, entry, onClose, onEdit, onStatusChang
             </div>
 
             {isShipment && (
-              <div className="grid grid-cols-3 gap-4 pt-3 border-t border-slate-200/80">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-3 border-t border-slate-200/80">
+                <div>
+                  <span className="text-[11px] font-bold text-slate-500 block mb-0.5">Customer</span>
+                  <span className="text-xs font-bold text-emerald-700">{entry.customer_name_raw || "-"}</span>
+                </div>
                 <div>
                   <span className="text-[11px] font-bold text-slate-500 block mb-0.5">Vendor</span>
                   <span className="text-xs font-bold text-blue-700">{entry.vendor_name_raw || "-"}</span>

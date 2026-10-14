@@ -30,6 +30,8 @@ type CashflowEntry struct {
 	ActExplaination string        `json:"act_explaination" db:"act_explaination"`
 	VendorID        *int          `json:"vendor_id" db:"vendor_id"`
 	VendorNameRaw   string        `json:"vendor_name_raw" db:"vendor_name_raw"`
+	CustomerID      *int          `json:"customer_id,omitempty" db:"customer_id"`
+	CustomerNameRaw string        `json:"customer_name_raw,omitempty" db:"customer_name_raw"`
 	TopDays         int           `json:"top_days" db:"top_days"`
 	DueDate         *time.Time    `json:"due_date" db:"due_date"`
 	GrandCost       float64       `json:"grand_cost" db:"grand_cost"`

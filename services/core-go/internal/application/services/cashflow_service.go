@@ -20,6 +20,8 @@ import (
 type CashflowService struct {
 	cashflowRepo ports.CashflowRepository
 	vendorSvc    *VendorService
+	customerSvc  *CustomerService
+	presetSvc    *ActivityPresetService
 	notifSvc     *NotificationService
 	auditSvc     *AuditService
 	cache        repository.CacheService
@@ -38,6 +40,14 @@ func (s *CashflowService) SetNotificationService(notifSvc *NotificationService) 
 
 func (s *CashflowService) SetAuditService(auditSvc *AuditService) {
 	s.auditSvc = auditSvc
+}
+
+func (s *CashflowService) SetCustomerService(customerSvc *CustomerService) {
+	s.customerSvc = customerSvc
+}
+
+func (s *CashflowService) SetActivityPresetService(presetSvc *ActivityPresetService) {
+	s.presetSvc = presetSvc
 }
 
 func (s *CashflowService) SetCacheService(cache repository.CacheService) {
@@ -132,6 +142,26 @@ func (s *CashflowService) RecordShipment(ctx context.Context, entry *domain.Cash
 		}
 	}
 
+	// Auto-register customer if it doesn't exist and CustomerID is nil but CustomerNameRaw is provided
+	if entry.CustomerID == nil && strings.TrimSpace(entry.CustomerNameRaw) != "" {
+		if s.customerSvc != nil {
+			customer, err := s.customerSvc.FindOrCreateCustomer(ctx, entry.CustomerNameRaw, "", "", "")
+			if err == nil && customer != nil {
+				entry.CustomerID = &customer.ID
+			}
+		}
+	}
+
+	// Auto-register activity presets (armada / ACT_INFO & rute / ACT_EXPLAIN) to master data
+	if s.presetSvc != nil {
+		if strings.TrimSpace(entry.ActInformation) != "" {
+			_, _ = s.presetSvc.FindOrCreatePreset(ctx, "ACT_INFO", entry.ActInformation, "")
+		}
+		if strings.TrimSpace(entry.ActExplaination) != "" {
+			_, _ = s.presetSvc.FindOrCreatePreset(ctx, "ACT_EXPLAIN", entry.ActExplaination, "")
+		}
+	}
+
 	if entry.Remarks == "" {
 		entry.Remarks = domain.PaymentUnpaid
 	}
@@ -197,6 +227,24 @@ func (s *CashflowService) UpdateEntry(ctx context.Context, entry *domain.Cashflo
 			if err == nil {
 				entry.VendorID = &vendor.ID
 			}
+		}
+		if entry.CustomerID == nil && strings.TrimSpace(entry.CustomerNameRaw) != "" {
+			if s.customerSvc != nil {
+				customer, err := s.customerSvc.FindOrCreateCustomer(ctx, entry.CustomerNameRaw, "", "", "")
+				if err == nil && customer != nil {
+					entry.CustomerID = &customer.ID
+				}
+			}
+		}
+	}
+
+	// Auto-register activity presets on update if provided
+	if s.presetSvc != nil {
+		if strings.TrimSpace(entry.ActInformation) != "" {
+			_, _ = s.presetSvc.FindOrCreatePreset(ctx, "ACT_INFO", entry.ActInformation, "")
+		}
+		if strings.TrimSpace(entry.ActExplaination) != "" {
+			_, _ = s.presetSvc.FindOrCreatePreset(ctx, "ACT_EXPLAIN", entry.ActExplaination, "")
 		}
 	}
 

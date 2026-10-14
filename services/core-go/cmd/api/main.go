@@ -143,6 +143,8 @@ func main() {
 	notificationService := services.NewNotificationService(notificationRepo)
 	cashflowService := services.NewCashflowService(cashflowRepo, vendorService)
 	cashflowService.SetNotificationService(notificationService)
+	cashflowService.SetCustomerService(customerService)
+	cashflowService.SetActivityPresetService(activityPresetService)
 	cashflowService.SetCacheService(cacheService)
 	invoiceService := services.NewInvoiceService(invoiceRepo)
 	invoiceService.SetCashflowService(cashflowService)
