@@ -149,8 +149,9 @@ export function ShipmentModal({ isOpen, onClose, onSuccess }: ShipmentModalProps
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
-          {/* SEKSI 1: IDENTITAS OPERASIONAL, CUSTOMER & VENDOR */}
+          {/* SEKSI 1: IDENTITAS OPERASIONAL & LOGISTIK */}
           <div className="space-y-3">
+            {/* Baris 1: Tanggal Transaksi & Nama Vendor / Transporter */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">Tanggal Transaksi *</label>
@@ -163,17 +164,6 @@ export function ShipmentModal({ isOpen, onClose, onSuccess }: ShipmentModalProps
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Nama Customer</label>
-                <CustomerSelect
-                  value={formData.customer_name_raw}
-                  onChange={v => setFormData({ ...formData, customer_name_raw: v })}
-                  placeholder="Pilih atau ketik customer..."
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-              <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">Nama Vendor / Transporter *</label>
                 <VendorSelect
                   value={formData.vendor_name_raw}
@@ -182,25 +172,39 @@ export function ShipmentModal({ isOpen, onClose, onSuccess }: ShipmentModalProps
                   placeholder="Pilih atau ketik vendor..."
                 />
               </div>
+            </div>
+
+            {/* Baris 2: Nama Customer & Rincian / Catatan Tambahan (Rute) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Keterangan Aktivitas / Armada *</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Nama Customer</label>
+                <CustomerSelect
+                  value={formData.customer_name_raw}
+                  onChange={v => setFormData({ ...formData, customer_name_raw: v })}
+                  placeholder="Pilih atau ketik customer..."
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Rincian / Catatan Tambahan (Rute)</label>
                 <ActivityPresetSelect
-                  category="ACT_INFO"
-                  required
-                  placeholder="Pilih atau ketik armada (mis. Tronton Bak)..."
-                  value={formData.act_information}
-                  onChange={v => setFormData({ ...formData, act_information: v })}
+                  category="ACT_EXPLAIN"
+                  placeholder="Pilih atau ketik rute (mis. CIBITUNG - MEDAN)..."
+                  value={formData.act_explaination}
+                  onChange={v => setFormData({ ...formData, act_explaination: v })}
                 />
               </div>
             </div>
 
+            {/* Baris 3: Keterangan Aktivitas / Armada (Opsional) */}
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Rincian / Catatan Tambahan (Rute)</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1">
+                Keterangan Aktivitas / Armada <span className="text-slate-400 font-normal text-[11px]">(Opsional)</span>
+              </label>
               <ActivityPresetSelect
-                category="ACT_EXPLAIN"
-                placeholder="Pilih atau ketik rute (mis. CIBITUNG - MEDAN)..."
-                value={formData.act_explaination}
-                onChange={v => setFormData({ ...formData, act_explaination: v })}
+                category="ACT_INFO"
+                placeholder="Pilih atau ketik armada (opsional, mis. Tronton Wingbox 30T)..."
+                value={formData.act_information}
+                onChange={v => setFormData({ ...formData, act_information: v })}
               />
             </div>
           </div>

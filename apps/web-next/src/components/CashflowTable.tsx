@@ -687,14 +687,22 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
                             </Link>
                           </div>
                         ) : (
-                          <div className="text-xs text-slate-600 mt-1 font-medium line-clamp-1">
-                            {entry.act_information || "-"}
-                          </div>
-                        )}
-                        {entry.act_explaination && (
-                          <div className="text-[11px] text-slate-400 mt-0.5 line-clamp-1 italic">
-                            {entry.act_explaination}
-                          </div>
+                          <>
+                            {entry.act_information ? (
+                              <div className="text-xs text-slate-700 mt-1 font-medium line-clamp-1">
+                                {entry.act_information}
+                              </div>
+                            ) : null}
+                            {entry.act_explaination ? (
+                              <div className={`line-clamp-1 ${entry.act_information ? "text-[11px] text-slate-400 mt-0.5 italic" : "text-xs text-slate-700 mt-1 font-semibold"}`}>
+                                {entry.act_explaination}
+                              </div>
+                            ) : !entry.act_information ? (
+                              <div className="text-xs text-slate-400 mt-1 font-normal">
+                                -
+                              </div>
+                            ) : null}
+                          </>
                         )}
                       </td>
 
