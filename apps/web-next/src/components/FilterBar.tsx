@@ -9,6 +9,7 @@ import {
   ChevronLeft, 
   ChevronRight,
   SlidersHorizontal,
+  ArrowUpDown,
   Clock,
   CheckCircle2,
   AlertCircle
@@ -248,10 +249,10 @@ export function FilterBar({
 
   return (
     <div className={embedded 
-      ? "shrink-0 p-4 pb-3.5 bg-slate-50/40 border-b border-slate-100 space-y-3 transition-all" 
-      : "bg-white border border-slate-200/80 rounded-2xl p-3.5 space-y-3 transition-all shadow-2xs"
+      ? "shrink-0 px-6 py-2.5 bg-slate-50/40 border-b border-slate-100 space-y-2.5 transition-all" 
+      : "bg-white border border-slate-200/80 rounded-2xl p-3 space-y-2.5 transition-all shadow-2xs"
     }>
-      {/* BARIS UTAMA: SEARCH, MONTH SELECTOR, QUICK ACTION */}
+      {/* BARIS UTAMA: SEARCH, MONTH SELECTOR, QUICK ACTION, RANGE FILTER, SORT */}
       <div className="flex flex-wrap items-center justify-between gap-2.5">
         <div className="flex flex-wrap items-center gap-2">
           {/* Quick Search */}
@@ -357,6 +358,19 @@ export function FilterBar({
             <SlidersHorizontal className="w-3.5 h-3.5" />
             <span>Range & Filter {currentMonthKey === "CUSTOM" ? "(Kustom)" : ""}</span>
           </button>
+
+          {/* URUTKAN TRANSAKSI (SEJAJAR DENGAN RANGE & FILTER) */}
+          {onToggleSort && (
+            <button
+              type="button"
+              onClick={onToggleSort}
+              className="px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer border bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:text-sky-800 shadow-2xs"
+              title="Klik untuk ubah urutan transaksi (Terbaru / Terlama)"
+            >
+              <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
+              <span>Urut: {sortDir === "ASC" ? "Terlama (ASC) ↑" : "Terbaru (DESC) ↓"}</span>
+            </button>
+          )}
         </div>
 
         {/* RIGHT: RESET ACTION */}
@@ -371,65 +385,6 @@ export function FilterBar({
             <span>Reset (Bulan Ini)</span>
           </button>
         )}
-      </div>
-
-      {/* BARIS SUB-NAV: KATEGORI PILL & INFORMASI PERIODE AKTIF */}
-      <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-slate-200/60">
-        {/* Kategori Pills */}
-        <div className="flex items-center gap-1">
-          {[
-            { label: "Semua Tipe", entry_type: "", remarks: "" },
-            { label: "Shipment", entry_type: "SHIPMENT", remarks: "" },
-            { label: "Top Up Modal", entry_type: "TOP_UP", remarks: "" },
-            { label: "Pelunasan Invoice", entry_type: "INVOICE_PAYMENT", remarks: "" },
-            { label: "Belum Lunas", entry_type: "", remarks: "UNPAID" }
-          ].map((pill, idx) => {
-            const isActive = 
-              (pill.entry_type === "" && pill.remarks === "" && !filters.entry_type && !filters.remarks) ||
-              (pill.entry_type !== "" && filters.entry_type === pill.entry_type) ||
-              (pill.remarks !== "" && filters.remarks === pill.remarks);
-
-            return (
-              <button
-                key={idx}
-                type="button"
-                onClick={() => {
-                  onFilterChange({
-                    ...filters,
-                    entry_type: pill.entry_type,
-                    remarks: pill.remarks
-                  });
-                }}
-                className={`px-2.5 py-0.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
-                  isActive
-                    ? "bg-slate-800 text-white shadow-2xs"
-                    : "bg-white text-slate-600 hover:text-slate-900 border border-slate-200/80 hover:bg-slate-100"
-                }`}
-              >
-                {pill.label}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Status Periode Aktif & Urutan */}
-        <div className="flex items-center gap-2 text-[11px]">
-          <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-sky-100/70 text-sky-900 font-bold border border-sky-200">
-            <Calendar className="w-3 h-3 text-sky-700" />
-            <span>Periode: {formatActivePeriod(filters.date_from, filters.date_to)}</span>
-          </span>
-
-          {onToggleSort && (
-            <button
-              type="button"
-              onClick={onToggleSort}
-              className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-white text-slate-600 border border-slate-200 font-bold hover:text-sky-800 cursor-pointer shadow-2xs"
-              title="Klik untuk ubah urutan"
-            >
-              <span>Urut: {sortDir === "ASC" ? "Terlama (ASC) ↑" : "Terbaru (DESC) ↓"}</span>
-            </button>
-          )}
-        </div>
       </div>
 
       {/* EXPANDABLE SECTION: RENTANG TANGGAL KUSTOM & FILTER DETAIL */}
