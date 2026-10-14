@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { X, Loader2, Wallet } from "lucide-react";
 import { formatThousand, cleanThousand, terbilangRingkas } from "@/hooks/useTerbilang";
+import { fetchWithAuth } from "@/lib/apiClient";
 
 interface TopUpModalProps {
   isOpen: boolean;
@@ -28,12 +29,10 @@ export function TopUpModal({ isOpen, onClose, onSuccess }: TopUpModalProps) {
     setError("");
 
     try {
-      const token = localStorage.getItem("token");
-      const res = await fetch("/api/v1/cashflow/topup", {
+      const res = await fetchWithAuth("/api/v1/cashflow/topup", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({
           date_of_entry: new Date(formData.date_of_entry).toISOString(),

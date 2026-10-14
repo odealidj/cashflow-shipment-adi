@@ -8,6 +8,7 @@ import { VendorSelect } from "@/components/VendorSelect";
 import { CustomerSelect } from "@/components/CustomerSelect";
 import { ActivityPresetSelect } from "@/components/shared/ActivityPresetSelect";
 import { formatDate } from "@/lib/dateUtils";
+import { fetchWithAuth } from "@/lib/apiClient";
 
 interface ShipmentModalProps {
   isOpen: boolean;
@@ -52,10 +53,7 @@ export function ShipmentModal({ isOpen, onClose, onSuccess }: ShipmentModalProps
     setError("");
     const fetchSaldo = async () => {
       try {
-        const token = localStorage.getItem("token");
-        const res = await fetch("/api/v1/cashflow/summary", {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        const res = await fetchWithAuth("/api/v1/cashflow/summary");
         const data = await res.json();
         if (data.status && data.data) {
           setCurrentSaldo(data.data.current_saldo || 0);
@@ -83,12 +81,10 @@ export function ShipmentModal({ isOpen, onClose, onSuccess }: ShipmentModalProps
     setError("");
 
     try {
-      const token = localStorage.getItem("token");
-      const res = await fetch("/api/v1/cashflow/shipment", {
+      const res = await fetchWithAuth("/api/v1/cashflow/shipment", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({
           date_of_entry: new Date(formData.date_of_entry).toISOString(),
