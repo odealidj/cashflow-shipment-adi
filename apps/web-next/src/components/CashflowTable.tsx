@@ -650,9 +650,10 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
                         {formatDate(entry.date_of_entry)}
                       </td>
 
-                      {/* 2. Aktivitas */}
+                      {/* 2. Aktivitas: Urutan Tipe Transaksi -> Vendor -> Customer -> Rute -> Keterangan */}
                       <td className="px-3 py-2">
                         <div className="flex items-center gap-2 flex-wrap">
+                          {/* 1. Tipe Transaksi */}
                           <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider ${
                             isShipment 
                               ? "bg-sky-100 text-sky-800 border border-sky-200" 
@@ -662,17 +663,23 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
                           }`}>
                             {isInvoicePayment ? "PELUNASAN INVOICE" : entry.entry_type}
                           </span>
-                          {!isInvoicePayment && entry.customer_name_raw && (
-                            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200 line-clamp-1">
-                              Cust: {entry.customer_name_raw}
-                            </span>
-                          )}
+
+                          {/* 2. Vendor */}
                           {!isInvoicePayment && entry.vendor_name_raw && (
                             <span className="font-extrabold text-slate-900 text-xs line-clamp-1">
                               {entry.vendor_name_raw}
                             </span>
                           )}
+
+                          {/* 3. Customer */}
+                          {!isInvoicePayment && entry.customer_name_raw && (
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200 line-clamp-1">
+                              Cust: {entry.customer_name_raw}
+                            </span>
+                          )}
                         </div>
+
+                        {/* 4. Rute & 5. Keterangan */}
                         {isInvoicePayment ? (
                           <div className="mt-0.5">
                             <Link
@@ -688,16 +695,19 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
                           </div>
                         ) : (
                           <>
-                            {entry.act_information ? (
-                              <div className="text-xs text-slate-700 mt-0.5 font-medium line-clamp-1">
-                                {entry.act_information}
-                              </div>
-                            ) : null}
+                            {/* 4. Rute (ACT_EXPLAIN) */}
                             {entry.act_explaination ? (
-                              <div className={`line-clamp-1 ${entry.act_information ? "text-[11px] text-slate-400 mt-0.5 italic" : "text-xs text-slate-700 mt-0.5 font-semibold"}`}>
+                              <div className="text-xs text-slate-800 mt-0.5 font-semibold line-clamp-1">
                                 {entry.act_explaination}
                               </div>
-                            ) : !entry.act_information ? (
+                            ) : null}
+
+                            {/* 5. Keterangan (ACT_INFO) */}
+                            {entry.act_information ? (
+                              <div className={`line-clamp-1 ${entry.act_explaination ? "text-[11px] text-slate-400 mt-0.5 italic" : "text-xs text-slate-700 mt-0.5 font-medium"}`}>
+                                {entry.act_information}
+                              </div>
+                            ) : !entry.act_explaination ? (
                               <div className="text-xs text-slate-400 mt-0.5 font-normal">
                                 -
                               </div>

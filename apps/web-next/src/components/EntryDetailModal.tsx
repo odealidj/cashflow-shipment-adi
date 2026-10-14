@@ -81,24 +81,24 @@ export function EntryDetailModal({ isOpen, entry, onClose, onEdit, onStatusChang
           <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <span className="text-[11px] font-bold text-slate-500 block mb-0.5">Keterangan Aktivitas</span>
-                <span className="text-sm font-bold text-slate-900">{entry.act_information || "-"}</span>
+                <span className="text-[11px] font-bold text-slate-500 block mb-0.5">Rincian / Catatan Tambahan (Rute)</span>
+                <span className="text-sm font-bold text-slate-900">{entry.act_explaination || "-"}</span>
               </div>
               <div>
-                <span className="text-[11px] font-bold text-slate-500 block mb-0.5">Rincian / Catatan Tambahan</span>
-                <span className="text-sm text-slate-700">{entry.act_explaination || "-"}</span>
+                <span className="text-[11px] font-bold text-slate-500 block mb-0.5">Keterangan Aktivitas / Armada</span>
+                <span className="text-sm text-slate-700">{entry.act_information || "-"}</span>
               </div>
             </div>
 
             {isShipment && (
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-3 border-t border-slate-200/80">
                 <div>
-                  <span className="text-[11px] font-bold text-slate-500 block mb-0.5">Customer</span>
-                  <span className="text-xs font-bold text-emerald-700">{entry.customer_name_raw || "-"}</span>
-                </div>
-                <div>
                   <span className="text-[11px] font-bold text-slate-500 block mb-0.5">Vendor</span>
                   <span className="text-xs font-bold text-blue-700">{entry.vendor_name_raw || "-"}</span>
+                </div>
+                <div>
+                  <span className="text-[11px] font-bold text-slate-500 block mb-0.5">Customer</span>
+                  <span className="text-xs font-bold text-emerald-700">{entry.customer_name_raw || "-"}</span>
                 </div>
                 <div>
                   <span className="text-[11px] font-bold text-slate-500 block mb-0.5">Terms of Payment</span>

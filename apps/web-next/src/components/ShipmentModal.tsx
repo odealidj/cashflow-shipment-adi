@@ -173,11 +173,13 @@ export function ShipmentModal({ isOpen, onClose, onSuccess }: ShipmentModalProps
             {/* Baris 2: Nama Customer & Rincian / Catatan Tambahan (Rute) */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Nama Customer</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Nama Customer <span className="text-slate-400 font-normal text-[11px]">(Opsional)</span>
+                </label>
                 <CustomerSelect
                   value={formData.customer_name_raw}
                   onChange={v => setFormData({ ...formData, customer_name_raw: v })}
-                  placeholder="Pilih atau ketik customer..."
+                  placeholder="Pilih atau ketik customer (opsional)..."
                 />
               </div>
               <div>
