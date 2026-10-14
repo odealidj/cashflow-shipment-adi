@@ -55,10 +55,10 @@ export function TablePagination({
 
   return (
     <div
-      className={`shrink-0 border-t border-slate-100 bg-slate-50/60 px-5 py-3.5 flex flex-wrap justify-between items-center gap-3 select-none ${className}`}
+      className={`shrink-0 border-t border-slate-100 bg-slate-50/60 px-5 py-2 flex flex-wrap justify-between items-center gap-2 select-none ${className}`}
     >
       {/* 1. Kiri: Info Jumlah Data & Pilihan Limit Baris */}
-      <div className="flex items-center flex-wrap gap-3">
+      <div className="flex items-center flex-wrap gap-2.5">
         <div className="text-xs text-slate-500 font-medium">
           Menampilkan{" "}
           <span className="font-extrabold text-slate-900">
@@ -74,7 +74,7 @@ export function TablePagination({
             <select
               value={pageSize}
               onChange={(e) => onPageSizeChange(Number(e.target.value))}
-              className="bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs font-bold text-slate-700 focus:outline-none focus:ring-1 focus:ring-sky-500 shadow-2xs cursor-pointer"
+              className="bg-white border border-slate-200 rounded-lg px-2 py-0.5 text-xs font-bold text-slate-700 focus:outline-none focus:ring-1 focus:ring-sky-500 shadow-2xs cursor-pointer"
             >
               {pageSizeOptions.map((opt) => (
                 <option key={opt} value={opt}>
@@ -87,14 +87,14 @@ export function TablePagination({
       </div>
 
       {/* 2. Kanan: Tombol Navigasi Halaman Profesional */}
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-1">
         {/* Tombol Halaman Pertama (<<) */}
         <button
           type="button"
           disabled={currentPage <= 1}
           onClick={() => onPageChange(1)}
           title="Halaman Pertama"
-          className="p-1.5 rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-900 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-2xs cursor-pointer"
+          className="p-1 rounded-lg bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-900 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-2xs cursor-pointer"
         >
           <ChevronsLeft className="w-3.5 h-3.5" />
         </button>
@@ -105,18 +105,18 @@ export function TablePagination({
           disabled={currentPage <= 1}
           onClick={() => onPageChange(currentPage - 1)}
           title="Halaman Sebelumnya"
-          className="px-2.5 py-1.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-slate-900 disabled:opacity-30 disabled:cursor-not-allowed transition-all text-xs font-bold shadow-2xs flex items-center gap-1 cursor-pointer"
+          className="px-2 py-1 rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-slate-900 disabled:opacity-30 disabled:cursor-not-allowed transition-all text-xs font-bold shadow-2xs flex items-center gap-1 cursor-pointer"
         >
           <ChevronLeft className="w-3.5 h-3.5" />
           <span className="hidden sm:inline">Sebelumnya</span>
         </button>
 
         {/* Nomor Halaman Dinamis */}
-        <div className="flex items-center gap-1 mx-1">
+        <div className="flex items-center gap-1 mx-0.5">
           {pageNumbers.map((p, idx) => {
             if (p === "..." || typeof p === "string") {
               return (
-                <span key={`ellipsis-${idx}`} className="px-1.5 py-1 text-xs text-slate-400 font-bold">
+                <span key={`ellipsis-${idx}`} className="px-1 py-0.5 text-xs text-slate-400 font-bold">
                   ...
                 </span>
               );
@@ -128,7 +128,7 @@ export function TablePagination({
                 key={p}
                 type="button"
                 onClick={() => onPageChange(p)}
-                className={`min-w-7 h-7 px-2 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                className={`min-w-6 h-6 px-1.5 rounded-md text-xs font-black transition-all cursor-pointer ${
                   isCurrent
                     ? "bg-[#1B2A4A] text-white shadow-xs border border-[#1B2A4A] scale-105"
                     : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-100 hover:text-slate-900 shadow-2xs"
@@ -146,7 +146,7 @@ export function TablePagination({
           disabled={currentPage >= totalPages}
           onClick={() => onPageChange(currentPage + 1)}
           title="Halaman Selanjutnya"
-          className="px-2.5 py-1.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-slate-900 disabled:opacity-30 disabled:cursor-not-allowed transition-all text-xs font-bold shadow-2xs flex items-center gap-1 cursor-pointer"
+          className="px-2 py-1 rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-slate-900 disabled:opacity-30 disabled:cursor-not-allowed transition-all text-xs font-bold shadow-2xs flex items-center gap-1 cursor-pointer"
         >
           <span className="hidden sm:inline">Selanjutnya</span>
           <ChevronRight className="w-3.5 h-3.5" />
@@ -158,7 +158,7 @@ export function TablePagination({
           disabled={currentPage >= totalPages}
           onClick={() => onPageChange(totalPages)}
           title="Halaman Terakhir"
-          className="p-1.5 rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-900 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-2xs cursor-pointer"
+          className="p-1 rounded-lg bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-900 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-2xs cursor-pointer"
         >
           <ChevronsRight className="w-3.5 h-3.5" />
         </button>
