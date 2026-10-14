@@ -54,7 +54,7 @@ func (r *PostgresVendorRepo) GetByName(ctx context.Context, name string) (*domai
 	query := `
 		SELECT id, name, email, phone, notes, created_at, updated_at, deleted_at 
 		FROM vendors 
-		WHERE name = $1 AND deleted_at IS NULL
+		WHERE LOWER(TRIM(name)) = LOWER(TRIM($1)) AND deleted_at IS NULL
 	`
 	var v domain.Vendor
 	err := r.db.GetContext(ctx, &v, query, name)

@@ -103,18 +103,24 @@ func (s *VendorService) ListAllVendors(ctx context.Context, page, limit int, sea
 
 // FindOrCreateVendor checks if a vendor exists by name. If not, creates it.
 func (s *VendorService) FindOrCreateVendor(ctx context.Context, name string, email string) (*domain.Vendor, error) {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return nil, errors.New("vendor name cannot be empty")
+	}
+
 	vendor, err := s.vendorRepo.GetByName(ctx, name)
-	if err == nil {
+	if err == nil && vendor != nil {
 		return vendor, nil
 	}
 
 	newVendor := &domain.Vendor{
 		Name:  name,
-		Email: email,
+		Email: strings.TrimSpace(email),
 	}
 	err = s.vendorRepo.Create(ctx, newVendor)
 	if err != nil {
 		return nil, err
 	}
+	s.invalidateCache(ctx)
 	return newVendor, nil
 }

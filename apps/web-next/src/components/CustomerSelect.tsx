@@ -114,6 +114,7 @@ export function CustomerSelect({
           required={required}
           value={value}
           placeholder={placeholder}
+          onFocus={fetchCustomers}
           onChange={handleInputChange}
           className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 pl-9 pr-14 text-xs text-slate-800 focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none font-semibold transition-all shadow-2xs placeholder:text-slate-400"
         />
@@ -136,7 +137,13 @@ export function CustomerSelect({
           )}
           <button
             type="button"
-            onClick={() => setIsOpen(!isOpen)}
+            onClick={() => {
+              const nextState = !isOpen;
+              setIsOpen(nextState);
+              if (nextState) {
+                fetchCustomers();
+              }
+            }}
             className="p-1 rounded-md text-slate-400 hover:text-sky-700 hover:bg-slate-200/60 transition cursor-pointer"
             title="Buka / Tutup Pilihan Customer"
           >

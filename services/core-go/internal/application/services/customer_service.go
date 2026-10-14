@@ -154,5 +154,6 @@ func (s *CustomerService) FindOrCreateCustomer(ctx context.Context, name string,
 	if err != nil {
 		return nil, err
 	}
+	s.invalidateCache(ctx)
 	return newCustomer, nil
 }
