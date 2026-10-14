@@ -23,7 +23,7 @@ export function TableCard({ children, footer, className = "" }: TableCardProps) 
   );
 }
 
-export const tableTheadClass = "sticky top-0 z-10 bg-[#EBF3FA]/95 backdrop-blur-xs text-[#223249] border-b border-sky-200/70 font-black tracking-wider uppercase text-[11px] shadow-2xs select-none";
+export const tableTheadClass = "sticky top-0 z-10 bg-[#EBF3FA]/98 backdrop-blur-xs text-[#1B2A4A] border-b-2 border-sky-300/80 font-black tracking-wider uppercase text-[11px] shadow-xs select-none";
 
 export interface ActionButtonProps {
   onClick: () => void;

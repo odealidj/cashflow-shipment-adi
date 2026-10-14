@@ -588,10 +588,10 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
             <table className="w-full text-left text-xs text-slate-700 border-collapse">
             <thead className={tableTheadClass}>
               <tr>
-                <th className="py-2 px-2.5 text-center w-11">No</th>
+                <th className="py-2.5 px-2.5 text-center w-11">No</th>
                 <th 
                   onClick={toggleSort}
-                  className="px-3 py-2 cursor-pointer hover:text-sky-900 transition-colors group select-none whitespace-nowrap"
+                  className="px-3 py-2.5 cursor-pointer hover:text-sky-950 transition-colors group select-none whitespace-nowrap"
                 >
                   <div className="flex items-center gap-1.5">
                     <span>Tanggal</span>
@@ -602,18 +602,18 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
                     )}
                   </div>
                 </th>
-                <th className="px-3 py-2 min-w-[190px] xl:min-w-[220px]">Aktivitas</th>
-                <th className="px-2.5 py-2 text-right min-w-[130px] xl:min-w-[150px]">Penjualan & Biaya</th>
-                <th className="px-2.5 py-2 text-right min-w-[110px] xl:min-w-[130px]">Profit & Margin</th>
-                <th className="px-2.5 py-2 text-center min-w-[95px] xl:min-w-[110px]">T.O.P / Due</th>
-                <th className="px-3 py-2 text-right min-w-[125px] xl:min-w-[140px]">Arus Kas</th>
-                <th className="px-3 py-2 text-right min-w-[125px] xl:min-w-[140px] bg-sky-100/50">
-                  <span className="inline-flex items-center gap-1 bg-sky-900 text-white text-[9px] font-black px-2 py-0.5 rounded-md shadow-2xs tracking-wider border border-sky-800 whitespace-nowrap">
+                <th className="px-3 py-2.5 min-w-[190px] xl:min-w-[220px]">Aktivitas</th>
+                <th className="px-2.5 py-2.5 text-right min-w-[130px] xl:min-w-[150px]">Penjualan & Biaya</th>
+                <th className="px-2.5 py-2.5 text-right min-w-[110px] xl:min-w-[130px]">Profit & Margin</th>
+                <th className="px-2.5 py-2.5 text-center min-w-[95px] xl:min-w-[110px]">T.O.P / Due</th>
+                <th className="px-3 py-2.5 text-right min-w-[125px] xl:min-w-[140px]">Arus Kas</th>
+                <th className="px-3 py-2.5 text-right min-w-[125px] xl:min-w-[140px] bg-sky-100/60">
+                  <span className="inline-flex items-center gap-1 bg-sky-950 text-white text-[9.5px] font-black px-2.5 py-0.5 rounded-md shadow-2xs tracking-wider border border-sky-800 whitespace-nowrap">
                     ★ ROLLING SALDO
                   </span>
                 </th>
-                <th className="px-2.5 py-2 text-center">Status</th>
-                <th className="px-3 py-2 text-center w-28">Aksi</th>
+                <th className="px-2.5 py-2.5 text-center">Status</th>
+                <th className="px-3 py-2.5 text-center w-28">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
