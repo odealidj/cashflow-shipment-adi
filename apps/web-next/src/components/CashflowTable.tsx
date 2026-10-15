@@ -339,7 +339,9 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
                   {isKpiCollapsed && (
                     <div className="flex items-center gap-2.5 text-xs font-mono font-bold bg-white px-3 py-1 rounded-xl border border-slate-200/80 shadow-2xs animate-fade-in">
                       <span className="text-slate-400 font-sans text-[10px] uppercase font-bold">Saldo:</span>
-                      <span className="text-sky-950 font-black">{formatCurrency(summary.current_saldo)}</span>
+                      <span className={`font-black ${summary.current_saldo < 0 ? "text-rose-600" : "text-sky-950"}`}>
+                        {formatCurrency(summary.current_saldo)}
+                      </span>
                       <span className="text-slate-200">|</span>
                       <span className="text-slate-400 font-sans text-[10px] uppercase font-bold">Profit:</span>
                       <span className={summary.total_profit >= 0 ? "text-teal-700" : "text-rose-600"}>
@@ -378,15 +380,40 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
               {!isKpiCollapsed && (
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 animate-fade-in">
                   {/* 1. Saldo Kas */}
-                  <div className="bg-white rounded-2xl p-3.5 border border-slate-200/80 shadow-2xs">
+                  <div className={`rounded-2xl p-3.5 border shadow-2xs transition-all ${
+                    summary.current_saldo < 0
+                      ? "bg-linear-to-b from-white to-rose-50/40 border-rose-200/90"
+                      : summary.current_saldo < 5000000
+                      ? "bg-linear-to-b from-white to-amber-50/40 border-amber-200/90"
+                      : "bg-white border-slate-200/80"
+                  }`}>
                     <div className="flex items-center justify-between text-slate-500 text-[11px] font-bold uppercase tracking-wider">
                       <span>Saldo Kas Terkini</span>
-                      <Wallet className="w-4 h-4 text-sky-700" />
+                      <Wallet className={`w-4 h-4 ${
+                        summary.current_saldo < 0
+                          ? "text-rose-600"
+                          : summary.current_saldo < 5000000
+                          ? "text-amber-600"
+                          : "text-sky-700"
+                      }`} />
                     </div>
-                    <div className="mt-1.5 font-mono text-base lg:text-lg font-black text-sky-950 truncate">
+                    <div className={`mt-1.5 font-mono text-base lg:text-lg font-black truncate ${
+                      summary.current_saldo < 0
+                        ? "text-rose-700"
+                        : summary.current_saldo < 5000000
+                        ? "text-amber-800"
+                        : "text-sky-950"
+                    }`}>
                       {formatCurrency(summary.current_saldo)}
                     </div>
-                    <div className="text-[10px] text-slate-400 mt-0.5">Saldo riil di kas</div>
+                    <div className="text-[10px] mt-0.5 flex items-center justify-between">
+                      <span className="text-slate-400">Saldo riil di kas</span>
+                      {summary.current_saldo < 0 ? (
+                        <span className="text-[9px] font-bold text-rose-700 bg-rose-100/80 px-1.5 py-0.2 rounded border border-rose-200">Defisit Kas</span>
+                      ) : summary.current_saldo < 5000000 ? (
+                        <span className="text-[9px] font-bold text-amber-700 bg-amber-100/80 px-1.5 py-0.2 rounded border border-amber-200">Saldo Menipis</span>
+                      ) : null}
+                    </div>
                   </div>
 
                   {/* 2. Total Profit & Margin */}
@@ -792,8 +819,15 @@ export function CashflowTable({ onDataChange }: CashflowTableProps) {
                       </td>
 
                       {/* 7. Rolling Saldo */}
-                      <td className="px-3 py-2 text-right font-mono whitespace-nowrap bg-sky-50/30">
-                        <span className="inline-block font-black text-sky-950 text-xs px-2 py-0.5 bg-white rounded-md border border-sky-200/80 shadow-2xs">
+                      <td className={`px-3 py-2 text-right font-mono whitespace-nowrap ${
+                        entry.saldo < 0 ? "bg-rose-50/30" : "bg-sky-50/30"
+                      }`}>
+                        <span className={`inline-block font-black text-xs px-2 py-0.5 rounded-md shadow-2xs ${
+                          entry.saldo < 0
+                            ? "bg-rose-50 text-rose-700 border border-rose-300 font-black"
+                            : "bg-white text-sky-950 border border-sky-200/80"
+                        }`}>
+                          {entry.saldo < 0 && <span className="mr-1 text-[11px]">⚠️</span>}
                           {formatCurrency(entry.saldo)}
                         </span>
                       </td>

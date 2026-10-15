@@ -389,6 +389,39 @@ export default function TambahTransaksiPage() {
           </div>
         )}
 
+        {/* INLINE WARNING BANNER: SALDO DEFISIT ATAU MENIPIS (MOBILE) */}
+        {entryType === 'SHIPMENT' && (grandCost > 0 || debit > 0) && (
+          <>
+            {calc.saldo < 0 ? (
+              <div className="p-3.5 bg-rose-50 border border-rose-200/90 rounded-2xl flex items-start gap-2.5 text-xs animate-fade-in shadow-2xs">
+                <span className="text-base leading-none mt-0.5">🚨</span>
+                <div className="flex-1 space-y-0.5">
+                  <div className="font-black text-rose-900 flex items-center justify-between">
+                    <span>Estimasi Saldo Kas Defisit</span>
+                    <span className="font-mono text-rose-700 font-black">{formatRupiah(calc.saldo)}</span>
+                  </div>
+                  <p className="text-[11px] text-rose-700 leading-relaxed font-medium">
+                    Pengeluaran ini melebihi kas tersedia. Transaksi tetap dapat disimpan dan otomatis dipantau di kas operasional.
+                  </p>
+                </div>
+              </div>
+            ) : calc.saldo < 5000000 ? (
+              <div className="p-3.5 bg-amber-50 border border-amber-200/90 rounded-2xl flex items-start gap-2.5 text-xs animate-fade-in shadow-2xs">
+                <span className="text-base leading-none mt-0.5">⚠️</span>
+                <div className="flex-1 space-y-0.5">
+                  <div className="font-black text-amber-900 flex items-center justify-between">
+                    <span>Sisa Saldo Kas Menipis</span>
+                    <span className="font-mono text-amber-700 font-bold">{formatRupiah(calc.saldo)}</span>
+                  </div>
+                  <p className="text-[11px] text-amber-700 leading-relaxed font-medium">
+                    Sisa saldo kas diperkirakan kurang dari Rp 5.000.000. Disarankan untuk segera koordinasi Top-Up Kas.
+                  </p>
+                </div>
+              </div>
+            ) : null}
+          </>
+        )}
+
         {/* Sticky Submit Button */}
         <div className="fixed bottom-4 left-0 right-0 z-40 flex justify-center px-4 pointer-events-none">
           <div className="w-full max-w-md pointer-events-auto">

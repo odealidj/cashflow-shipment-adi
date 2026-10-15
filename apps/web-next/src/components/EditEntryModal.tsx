@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, Loader2, Edit3, Trash2, Wallet, ArrowRight, TrendingUp } from "lucide-react";
+import { X, Loader2, Edit3, Trash2, Wallet, ArrowRight, TrendingUp, AlertTriangle } from "lucide-react";
 import { formatRupiah, calculateProfit, calculateMarginPct, calculateDueDate } from "@/hooks/useAutoCalculate";
 import { formatThousand, cleanThousand, terbilangRingkas } from "@/hooks/useTerbilang";
 import { VendorSelect } from "@/components/VendorSelect";
@@ -474,6 +474,43 @@ export function EditEntryModal({ isOpen, entry, onClose, onSuccess }: EditEntryM
                 />
               </div>
             </div>
+          )}
+
+          {/* INLINE WARNING BANNER: SALDO DEFISIT ATAU MENIPIS */}
+          {isShipment && costNum > 0 && currentSaldo !== null && (
+            <>
+              {projectedSaldo < 0 ? (
+                <div className="p-3 bg-rose-50 border border-rose-200/90 rounded-xl flex items-start gap-2.5 text-xs animate-fade-in">
+                  <div className="w-5 h-5 rounded-full bg-rose-100 text-rose-700 flex items-center justify-center shrink-0 mt-0.5">
+                    <AlertTriangle className="w-3.5 h-3.5" />
+                  </div>
+                  <div className="flex-1 space-y-0.5">
+                    <div className="font-black text-rose-900 flex items-center justify-between">
+                      <span>Peringatan: Perubahan Menyebabkan Saldo Defisit (Minus)</span>
+                      <span className="font-mono text-rose-700 font-black">{formatRupiah(projectedSaldo)}</span>
+                    </div>
+                    <p className="text-[11px] text-rose-700 leading-relaxed font-medium">
+                      Pengeluaran baru ini melebihi kas tersedia. Perubahan tetap dapat disimpan dan akan otomatis dipantau di dashboard kas.
+                    </p>
+                  </div>
+                </div>
+              ) : projectedSaldo < 5000000 ? (
+                <div className="p-3 bg-amber-50 border border-amber-200/90 rounded-xl flex items-start gap-2.5 text-xs animate-fade-in">
+                  <div className="w-5 h-5 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center shrink-0 mt-0.5">
+                    <AlertTriangle className="w-3.5 h-3.5" />
+                  </div>
+                  <div className="flex-1 space-y-0.5">
+                    <div className="font-black text-amber-900 flex items-center justify-between">
+                      <span>Perhatian: Sisa Saldo Kas Menipis</span>
+                      <span className="font-mono text-amber-700 font-bold">{formatRupiah(projectedSaldo)}</span>
+                    </div>
+                    <p className="text-[11px] text-amber-700 leading-relaxed font-medium">
+                      Sisa saldo kas setelah transaksi ini diperkirakan kurang dari Rp 5.000.000.
+                    </p>
+                  </div>
+                </div>
+              ) : null}
+            </>
           )}
 
           <div className="pt-3 flex gap-2.5">
