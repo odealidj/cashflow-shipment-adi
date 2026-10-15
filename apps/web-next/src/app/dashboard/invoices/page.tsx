@@ -724,57 +724,48 @@ export default function InvoicesPage() {
         </div>
 
         {/* 3. BARIS STATUS PEMBAYARAN TAGIHAN (TEPAT DI ATAS HEADER TABEL) */}
-        <div className="shrink-0 px-6 py-2 bg-slate-50/70 border-b border-slate-200/80 flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-1.5 flex-wrap">
-            {[
-              { id: "ALL", label: "Semua Tagihan", count: summary?.total_count },
-              { id: "UNPAID", label: "Menunggu Pembayaran (Piutang)", count: summary?.unpaid_count },
-              { id: "PAID", label: "Lunas", count: summary?.paid_count },
-              { id: "OVERDUE", label: "Jatuh Tempo (Overdue)", count: summary?.overdue_count },
-            ].map(tab => {
-              const active = statusFilter === tab.id;
-              const isOverdue = tab.id === "OVERDUE";
-              const isUnpaid = tab.id === "UNPAID";
-              const countVal = tab.count ?? 0;
+        <div className="shrink-0 px-6 py-2 bg-slate-50/70 border-b border-slate-200/80 flex items-center gap-1.5 flex-wrap">
+          {[
+            { id: "ALL", label: "Semua Tagihan", count: summary?.total_count },
+            { id: "UNPAID", label: "Menunggu Pembayaran (Piutang)", count: summary?.unpaid_count },
+            { id: "PAID", label: "Lunas", count: summary?.paid_count },
+            { id: "OVERDUE", label: "Jatuh Tempo (Overdue)", count: summary?.overdue_count },
+          ].map(tab => {
+            const active = statusFilter === tab.id;
+            const isOverdue = tab.id === "OVERDUE";
+            const isUnpaid = tab.id === "UNPAID";
+            const countVal = tab.count ?? 0;
 
-              return (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => setStatusFilter(tab.id)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                    active
-                      ? "bg-sky-800 text-white shadow-2xs"
-                      : "bg-white text-slate-600 hover:text-slate-900 border border-slate-200/80 hover:bg-slate-100"
-                  }`}
-                >
-                  <span>{tab.label}</span>
-                  {typeof tab.count === "number" && (
-                    <span
-                      className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono transition-colors ${
-                        active
-                          ? "bg-white/20 text-white"
-                          : isOverdue && countVal > 0
-                          ? "bg-rose-50 text-rose-700 border border-rose-200 font-bold"
-                          : isUnpaid && countVal > 0
-                          ? "bg-amber-50 text-amber-700 border border-amber-200 font-bold"
-                          : "bg-slate-100 text-slate-600 font-semibold border border-slate-200/60"
-                      }`}
-                    >
-                      {tab.count}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="text-[11px] text-slate-500 font-medium hidden sm:flex items-center gap-1.5">
-            <span>Menampilkan:</span>
-            <span className="font-mono font-bold text-sky-900 bg-sky-50 px-2 py-0.5 rounded-md border border-sky-200/60">
-              {total} Tagihan
-            </span>
-          </div>
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setStatusFilter(tab.id)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  active
+                    ? "bg-sky-800 text-white shadow-2xs"
+                    : "bg-white text-slate-600 hover:text-slate-900 border border-slate-200/80 hover:bg-slate-100"
+                }`}
+              >
+                <span>{tab.label}</span>
+                {typeof tab.count === "number" && (
+                  <span
+                    className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono transition-colors ${
+                      active
+                        ? "bg-white/20 text-white"
+                        : isOverdue && countVal > 0
+                        ? "bg-rose-50 text-rose-700 border border-rose-200 font-bold"
+                        : isUnpaid && countVal > 0
+                        ? "bg-amber-50 text-amber-700 border border-amber-200 font-bold"
+                        : "bg-slate-100 text-slate-600 font-semibold border border-slate-200/60"
+                    }`}
+                  >
+                    {tab.count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
 
         {/* 3. 8 Kolom Data Table */}
