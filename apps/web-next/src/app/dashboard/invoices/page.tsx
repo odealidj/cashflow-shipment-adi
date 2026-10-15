@@ -598,24 +598,19 @@ export default function InvoicesPage() {
                 </button>
               </div>
 
-              {/* RANGE TANGGAL & FILTER LANJUTAN TOGGLE */}
+              {/* RANGE TANGGAL TOGGLE */}
               <button
                 type="button"
                 onClick={() => setIsRangeFilterOpen(!isRangeFilterOpen)}
                 className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer border ${
-                  isRangeFilterOpen || currentMonthKey === "CUSTOM" || statusFilter !== "ALL"
+                  isRangeFilterOpen || currentMonthKey === "CUSTOM"
                     ? "bg-sky-700 text-white border-sky-700 shadow-2xs"
                     : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50 shadow-2xs"
                 }`}
               >
                 <SlidersHorizontal className="w-3.5 h-3.5" />
-                <span>Range & Filter</span>
-                {statusFilter !== "ALL" && (
-                  <span className="ml-0.5 px-1.5 py-0.2 rounded text-[10px] bg-white/20 font-extrabold uppercase">
-                    {statusFilter === "UNPAID" ? "Belum Lunas" : statusFilter === "PAID" ? "Lunas" : "Overdue"}
-                  </span>
-                )}
-                {currentMonthKey === "CUSTOM" && statusFilter === "ALL" && (
+                <span>Range Tanggal</span>
+                {currentMonthKey === "CUSTOM" && (
                   <span className="ml-0.5 text-[10px] text-sky-200 font-bold">(Kustom)</span>
                 )}
               </button>
@@ -660,53 +655,9 @@ export default function InvoicesPage() {
             )}
           </div>
 
-          {/* EXPANDABLE SECTION: RENTANG TANGGAL KUSTOM & FILTER STATUS TAGIHAN */}
+          {/* EXPANDABLE SECTION: RENTANG TANGGAL KUSTOM */}
           {isRangeFilterOpen && (
-            <div className="pt-2.5 border-t border-slate-200/80 animate-fade-in space-y-2.5">
-              {/* 1. Filter Status Tagihan */}
-              <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs">
-                <div className="text-xs font-bold text-slate-800 mb-2 flex items-center justify-between">
-                  <span className="flex items-center gap-1.5">
-                    <Filter className="w-3.5 h-3.5 text-sky-700" />
-                    Status Pembayaran Tagihan
-                  </span>
-                  {statusFilter !== "ALL" && (
-                    <button
-                      type="button"
-                      onClick={() => setStatusFilter("ALL")}
-                      className="text-[11px] text-sky-700 hover:underline font-bold cursor-pointer"
-                    >
-                      Tampilkan Semua
-                    </button>
-                  )}
-                </div>
-                <div className="flex flex-wrap items-center gap-1.5">
-                  {[
-                    { id: "ALL", label: "Semua Tagihan" },
-                    { id: "UNPAID", label: "Menunggu Pembayaran (Piutang)" },
-                    { id: "PAID", label: "Lunas" },
-                    { id: "OVERDUE", label: "Jatuh Tempo (Overdue)" },
-                  ].map(tab => {
-                    const active = statusFilter === tab.id;
-                    return (
-                      <button
-                        key={tab.id}
-                        type="button"
-                        onClick={() => setStatusFilter(tab.id)}
-                        className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                          active
-                            ? "bg-sky-800 text-white shadow-2xs"
-                            : "bg-slate-50 text-slate-600 hover:text-slate-900 border border-slate-200/80 hover:bg-slate-100"
-                        }`}
-                      >
-                        {tab.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* 2. Rentang Tanggal Spesifik */}
+            <div className="pt-2.5 border-t border-slate-200/80 animate-fade-in">
               <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs">
                 <div className="text-xs font-bold text-slate-800 mb-2 flex items-center justify-between">
                   <span className="flex items-center gap-1.5">
@@ -770,6 +721,60 @@ export default function InvoicesPage() {
               </div>
             </div>
           )}
+        </div>
+
+        {/* 3. BARIS STATUS PEMBAYARAN TAGIHAN (TEPAT DI ATAS HEADER TABEL) */}
+        <div className="shrink-0 px-6 py-2 bg-slate-50/70 border-b border-slate-200/80 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {[
+              { id: "ALL", label: "Semua Tagihan", count: summary?.total_count },
+              { id: "UNPAID", label: "Menunggu Pembayaran (Piutang)", count: summary?.unpaid_count },
+              { id: "PAID", label: "Lunas", count: summary?.paid_count },
+              { id: "OVERDUE", label: "Jatuh Tempo (Overdue)", count: summary?.overdue_count },
+            ].map(tab => {
+              const active = statusFilter === tab.id;
+              const isOverdue = tab.id === "OVERDUE";
+              const isUnpaid = tab.id === "UNPAID";
+              const countVal = tab.count ?? 0;
+
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setStatusFilter(tab.id)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                    active
+                      ? "bg-sky-800 text-white shadow-2xs"
+                      : "bg-white text-slate-600 hover:text-slate-900 border border-slate-200/80 hover:bg-slate-100"
+                  }`}
+                >
+                  <span>{tab.label}</span>
+                  {typeof tab.count === "number" && (
+                    <span
+                      className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono transition-colors ${
+                        active
+                          ? "bg-white/20 text-white"
+                          : isOverdue && countVal > 0
+                          ? "bg-rose-50 text-rose-700 border border-rose-200 font-bold"
+                          : isUnpaid && countVal > 0
+                          ? "bg-amber-50 text-amber-700 border border-amber-200 font-bold"
+                          : "bg-slate-100 text-slate-600 font-semibold border border-slate-200/60"
+                      }`}
+                    >
+                      {tab.count}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="text-[11px] text-slate-500 font-medium hidden sm:flex items-center gap-1.5">
+            <span>Menampilkan:</span>
+            <span className="font-mono font-bold text-sky-900 bg-sky-50 px-2 py-0.5 rounded-md border border-sky-200/60">
+              {total} Tagihan
+            </span>
+          </div>
         </div>
 
         {/* 3. 8 Kolom Data Table */}
