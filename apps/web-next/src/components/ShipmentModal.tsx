@@ -74,6 +74,9 @@ export function ShipmentModal({ isOpen, onClose, onSuccess }: ShipmentModalProps
   const autoDueDate = calculateDueDate(formData.date_of_entry, parseInt(formData.top_days || "0", 10));
   const effectiveDueDate = formData.due_date || autoDueDate;
   const projectedSaldo = (currentSaldo ?? 0) - costNum;
+  const isDeficit = currentSaldo !== null && projectedSaldo < 0;
+  const isWarningLow = currentSaldo !== null && !isDeficit && projectedSaldo < 5000000 && (costNum > 0 || (currentSaldo ?? 0) < 5000000);
+  const isSafe = currentSaldo !== null && !isDeficit && !isWarningLow;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -321,31 +324,89 @@ export function ShipmentModal({ isOpen, onClose, onSuccess }: ShipmentModalProps
           </div>
 
           {/* SEKSI 3: HASIL KALKULASI OTOMATIS SISTEM (READ-ONLY DASHBOARD BADGES) */}
-          <div className="p-3.5 bg-sky-950/5 border border-sky-200/60 rounded-2xl space-y-3">
+          <div className={`p-3.5 rounded-2xl space-y-3 transition-all duration-300 border-2 ${
+            isDeficit
+              ? 'bg-rose-50/50 border-rose-400 ring-2 ring-rose-200/50 shadow-sm'
+              : isWarningLow
+              ? 'bg-amber-50/50 border-amber-400 ring-2 ring-amber-200/50 shadow-sm'
+              : isSafe
+              ? 'bg-emerald-50/30 border-emerald-400 ring-1 ring-emerald-200/50 shadow-2xs'
+              : 'bg-sky-950/5 border-sky-200/60'
+          }`}>
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-black text-sky-900 uppercase tracking-wider flex items-center gap-1.5">
-                <TrendingUp className="w-3.5 h-3.5 text-sky-700" />
+              <span className={`text-[11px] font-black uppercase tracking-wider flex items-center gap-1.5 ${
+                isDeficit 
+                  ? 'text-rose-950' 
+                  : isWarningLow 
+                  ? 'text-amber-950' 
+                  : isSafe 
+                  ? 'text-emerald-950' 
+                  : 'text-sky-900'
+              }`}>
+                {isDeficit || isWarningLow ? (
+                  <AlertTriangle className={`w-3.5 h-3.5 ${isDeficit ? 'text-rose-600' : 'text-amber-600'}`} />
+                ) : (
+                  <TrendingUp className={`w-3.5 h-3.5 ${isSafe ? 'text-emerald-600' : 'text-sky-700'}`} />
+                )}
                 Hasil Kalkulasi Otomatis Sistem
               </span>
-              <span className="text-[10px] text-sky-700 font-semibold bg-sky-100/70 px-2 py-0.5 rounded-md">
-                Auto-calculated
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md transition-colors ${
+                isDeficit
+                  ? 'text-rose-700 bg-rose-100/90 border border-rose-200'
+                  : isWarningLow
+                  ? 'text-amber-700 bg-amber-100/90 border border-amber-200'
+                  : isSafe
+                  ? 'text-emerald-700 bg-emerald-100/90 border border-emerald-200'
+                  : 'text-sky-700 bg-sky-100/70'
+              }`}>
+                {isDeficit ? '⚠️ Defisit Kas' : isWarningLow ? '⚠️ Saldo Menipis' : isSafe ? '✓ Saldo Aman' : 'Auto-calculated'}
               </span>
             </div>
 
             {/* LIVE SALDO IMPACT BAR */}
-            <div className="bg-white rounded-xl p-3 border border-slate-200/80 shadow-2xs">
+            <div className={`rounded-xl p-3 border shadow-2xs transition-colors duration-200 ${
+              isDeficit 
+                ? 'bg-white border-rose-300' 
+                : isWarningLow 
+                ? 'bg-white border-amber-300' 
+                : isSafe
+                ? 'bg-white border-emerald-200'
+                : 'bg-white border-slate-200/80'
+            }`}>
               <div className="flex items-center justify-between mb-2">
-                <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-                  <Wallet className="w-3.5 h-3.5 text-sky-700" />
+                <span className={`text-[10px] font-extrabold uppercase tracking-wider flex items-center gap-1.5 ${
+                  isDeficit 
+                    ? 'text-rose-800' 
+                    : isWarningLow 
+                    ? 'text-amber-800' 
+                    : isSafe 
+                    ? 'text-emerald-800' 
+                    : 'text-slate-500'
+                }`}>
+                  <Wallet className={`w-3.5 h-3.5 ${
+                    isDeficit 
+                      ? 'text-rose-600' 
+                      : isWarningLow 
+                      ? 'text-amber-600' 
+                      : isSafe 
+                      ? 'text-emerald-600' 
+                      : 'text-sky-700'
+                  }`} />
                   Simulasi Dampak ke Saldo Kas
                 </span>
-                {costNum > 0 && (
+                {currentSaldo !== null && (costNum > 0 || currentSaldo < 0) && (
                   <span className={`text-[10px] font-black px-2 py-0.5 rounded-full flex items-center gap-1 ${
-                    projectedSaldo >= 0 
-                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
-                      : 'bg-rose-50 text-rose-700 border border-rose-200 animate-pulse'
+                    isDeficit
+                      ? 'bg-rose-50 text-rose-700 border border-rose-200 animate-pulse'
+                      : isWarningLow
+                      ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                      : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                   }`}>
-                    {projectedSaldo >= 0 ? '✓ Saldo Kas Cukup' : '⚠️ Saldo Kas Kurang (Defisit)'}
+                    {isDeficit 
+                      ? '⚠️ Saldo Kas Kurang (Defisit)' 
+                      : isWarningLow 
+                      ? '⚠️ Saldo Kas Menipis' 
+                      : '✓ Saldo Kas Cukup'}
                   </span>
                 )}
               </div>
@@ -354,7 +415,9 @@ export function ShipmentModal({ isOpen, onClose, onSuccess }: ShipmentModalProps
                 {/* Saldo Saat Ini */}
                 <div className="min-w-0">
                   <span className="text-[10px] text-slate-400 block font-medium">Saldo Kas Saat Ini</span>
-                  <span className="font-bold text-slate-700 font-mono text-[13px]">
+                  <span className={`font-bold font-mono text-[13px] ${
+                    (currentSaldo ?? 0) < 0 ? 'text-rose-600' : 'text-slate-700'
+                  }`}>
                     {currentSaldo !== null ? formatRupiah(currentSaldo) : "Memuat..."}
                   </span>
                 </div>
@@ -369,13 +432,27 @@ export function ShipmentModal({ isOpen, onClose, onSuccess }: ShipmentModalProps
                   </span>
                 </div>
 
-                <ArrowRight className="w-3.5 h-3.5 text-sky-700 shrink-0 hidden sm:block" />
+                <ArrowRight className={`w-3.5 h-3.5 shrink-0 hidden sm:block ${
+                  isDeficit 
+                    ? 'text-rose-500' 
+                    : isWarningLow 
+                    ? 'text-amber-500' 
+                    : isSafe 
+                    ? 'text-emerald-500' 
+                    : 'text-sky-700'
+                }`} />
 
                 {/* Estimasi Saldo Akhir */}
                 <div className="min-w-0">
                   <span className="text-[10px] text-slate-400 block font-medium">Estimasi Sisa Saldo</span>
                   <span className={`font-black font-mono text-[13px] ${
-                    projectedSaldo >= 0 ? 'text-sky-900' : 'text-rose-600'
+                    isDeficit 
+                      ? 'text-rose-600' 
+                      : isWarningLow 
+                      ? 'text-amber-600' 
+                      : isSafe 
+                      ? 'text-emerald-600' 
+                      : 'text-sky-900'
                   }`}>
                     {currentSaldo !== null ? formatRupiah(projectedSaldo) : "-"}
                   </span>
@@ -423,24 +500,30 @@ export function ShipmentModal({ isOpen, onClose, onSuccess }: ShipmentModalProps
           </div>
 
           {/* INLINE WARNING BANNER: SALDO DEFISIT ATAU MENIPIS */}
-          {costNum > 0 && currentSaldo !== null && (
+          {currentSaldo !== null && (costNum > 0 || currentSaldo < 0) && (
             <>
-              {projectedSaldo < 0 ? (
+              {isDeficit ? (
                 <div className="p-3 bg-rose-50 border border-rose-200/90 rounded-xl flex items-start gap-2.5 text-xs animate-fade-in">
                   <div className="w-5 h-5 rounded-full bg-rose-100 text-rose-700 flex items-center justify-center shrink-0 mt-0.5">
                     <AlertTriangle className="w-3.5 h-3.5" />
                   </div>
                   <div className="flex-1 space-y-0.5">
                     <div className="font-black text-rose-900 flex items-center justify-between">
-                      <span>Peringatan: Saldo Kas Akan Defisit (Minus)</span>
+                      <span>
+                        {costNum > 0 
+                          ? "Peringatan: Saldo Kas Akan Defisit (Minus)" 
+                          : "Peringatan: Saldo Kas Saat Ini Sedang Defisit (Minus)"}
+                      </span>
                       <span className="font-mono text-rose-700 font-black">{formatRupiah(projectedSaldo)}</span>
                     </div>
                     <p className="text-[11px] text-rose-700 leading-relaxed font-medium">
-                      Pengeluaran ini melebihi kas tersedia ({formatRupiah(currentSaldo)}). Transaksi tetap dapat disimpan dan akan otomatis dipantau di dashboard kas.
+                      {costNum > 0 
+                        ? `Pengeluaran ini melebihi kas tersedia (${formatRupiah(currentSaldo)}). Transaksi tetap dapat disimpan dan akan otomatis dipantau di dashboard kas.`
+                        : `Saldo kas berjalan saat ini berada di posisi minus (${formatRupiah(currentSaldo)}). Penambahan debit pengeluaran baru akan memperbesar defisit kas.`}
                     </p>
                   </div>
                 </div>
-              ) : projectedSaldo < 5000000 ? (
+              ) : isWarningLow ? (
                 <div className="p-3 bg-amber-50 border border-amber-200/90 rounded-xl flex items-start gap-2.5 text-xs animate-fade-in">
                   <div className="w-5 h-5 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center shrink-0 mt-0.5">
                     <AlertTriangle className="w-3.5 h-3.5" />
