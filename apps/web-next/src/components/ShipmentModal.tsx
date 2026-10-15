@@ -499,49 +499,6 @@ export function ShipmentModal({ isOpen, onClose, onSuccess }: ShipmentModalProps
             </div>
           </div>
 
-          {/* INLINE WARNING BANNER: SALDO DEFISIT ATAU MENIPIS */}
-          {currentSaldo !== null && (costNum > 0 || currentSaldo < 0) && (
-            <>
-              {isDeficit ? (
-                <div className="p-3 bg-rose-50 border border-rose-200/90 rounded-xl flex items-start gap-2.5 text-xs animate-fade-in">
-                  <div className="w-5 h-5 rounded-full bg-rose-100 text-rose-700 flex items-center justify-center shrink-0 mt-0.5">
-                    <AlertTriangle className="w-3.5 h-3.5" />
-                  </div>
-                  <div className="flex-1 space-y-0.5">
-                    <div className="font-black text-rose-900 flex items-center justify-between">
-                      <span>
-                        {costNum > 0 
-                          ? "Peringatan: Saldo Kas Akan Defisit (Minus)" 
-                          : "Peringatan: Saldo Kas Saat Ini Sedang Defisit (Minus)"}
-                      </span>
-                      <span className="font-mono text-rose-700 font-black">{formatRupiah(projectedSaldo)}</span>
-                    </div>
-                    <p className="text-[11px] text-rose-700 leading-relaxed font-medium">
-                      {costNum > 0 
-                        ? `Pengeluaran ini melebihi kas tersedia (${formatRupiah(currentSaldo)}). Transaksi tetap dapat disimpan dan akan otomatis dipantau di dashboard kas.`
-                        : `Saldo kas berjalan saat ini berada di posisi minus (${formatRupiah(currentSaldo)}). Penambahan debit pengeluaran baru akan memperbesar defisit kas.`}
-                    </p>
-                  </div>
-                </div>
-              ) : isWarningLow ? (
-                <div className="p-3 bg-amber-50 border border-amber-200/90 rounded-xl flex items-start gap-2.5 text-xs animate-fade-in">
-                  <div className="w-5 h-5 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center shrink-0 mt-0.5">
-                    <AlertTriangle className="w-3.5 h-3.5" />
-                  </div>
-                  <div className="flex-1 space-y-0.5">
-                    <div className="font-black text-amber-900 flex items-center justify-between">
-                      <span>Perhatian: Sisa Saldo Kas Menipis</span>
-                      <span className="font-mono text-amber-700 font-bold">{formatRupiah(projectedSaldo)}</span>
-                    </div>
-                    <p className="text-[11px] text-amber-700 leading-relaxed font-medium">
-                      Sisa saldo kas setelah transaksi ini diperkirakan kurang dari Rp 5.000.000. Disarankan untuk segera melakukan Top-Up Kas.
-                    </p>
-                  </div>
-                </div>
-              ) : null}
-            </>
-          )}
-
           {/* ACTION BUTTONS */}
           <div className="pt-2 flex gap-2.5">
             <button
