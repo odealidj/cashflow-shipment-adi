@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   Search, 
   Calendar, 
@@ -23,6 +23,12 @@ import { VendorPerformanceCard } from '@/components/mobile/VendorPerformanceCard
 import { useCashflowMobile, CashflowEntry } from '@/hooks/useCashflowMobile';
 import { formatRupiah } from '@/hooks/useAutoCalculate';
 import { formatDate } from '@/lib/dateUtils';
+import { fetchWithAuth } from '@/lib/apiClient';
+import { 
+  getMonthRange, 
+  formatActivePeriod, 
+  MONTH_NAMES 
+} from '@/components/FilterBar';
 
 export default function LaporanPage() {
   const { entries, loading, quickPay } = useCashflowMobile();
@@ -35,6 +41,95 @@ export default function LaporanPage() {
   const [dateTo, setDateTo] = useState('');
   const [selectedVendor, setSelectedVendor] = useState('');
   const [sortAsc, setSortAsc] = useState(false);
+
+  // Dynamic Periods from Database
+  const [dbPeriods, setDbPeriods] = useState<Array<{
+    month_key: string;
+    year: number;
+    month: number;
+    total_count: number;
+  }>>([]);
+
+  // Fetch available periods from backend database
+  useEffect(() => {
+    let isMounted = true;
+    async function loadPeriods() {
+      try {
+        const res = await fetchWithAuth('/api/v1/cashflow/periods');
+        if (res.ok) {
+          const json = await res.json();
+          if (json.status && Array.isArray(json.data) && isMounted) {
+            setDbPeriods(json.data);
+          }
+        }
+      } catch (err) {
+        console.error('Gagal memuat periode di mobile laporan:', err);
+      }
+    }
+    loadPeriods();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // Generate dynamic month options bounded by actual data and current month
+  const monthOptions = useMemo(() => {
+    const now = new Date();
+    const currentY = now.getFullYear();
+    const currentM = now.getMonth();
+    const curRange = getMonthRange(currentY, currentM);
+    const lastRange = getMonthRange(currentY, currentM - 1);
+
+    const countMap = new Map<string, number>();
+    dbPeriods.forEach((p) => {
+      countMap.set(p.month_key, p.total_count);
+    });
+
+    const keysSet = new Set<string>();
+    keysSet.add(curRange.monthKey);
+    keysSet.add(lastRange.monthKey);
+
+    dbPeriods.forEach((p) => {
+      if (p.month_key && p.month_key <= curRange.monthKey) {
+        keysSet.add(p.month_key);
+      }
+    });
+
+    return Array.from(keysSet).map((mKey) => {
+      const [yStr, mStr] = mKey.split('-');
+      const y = parseInt(yStr, 10);
+      const mIdx = parseInt(mStr, 10) - 1;
+      const range = getMonthRange(y, mIdx);
+      const count = countMap.get(mKey) || 0;
+      const isCurrent = mKey === curRange.monthKey;
+      const isLast = mKey === lastRange.monthKey;
+
+      let displayLabel = range.label;
+      if (isCurrent) {
+        displayLabel = count > 0 
+          ? `${range.label} (Bulan Ini - ${count})`
+          : `${range.label} (Bulan Ini)`;
+      } else if (isLast && count === 0) {
+        displayLabel = `${range.label} (Bulan Lalu)`;
+      } else if (count > 0) {
+        displayLabel = `${range.label} (${count})`;
+      }
+
+      return {
+        key: mKey,
+        label: displayLabel,
+        count,
+        date_from: range.date_from,
+        date_to: range.date_to,
+      };
+    }).sort((a, b) => b.key.localeCompare(a.key));
+  }, [dbPeriods]);
+
+  const activePeriodKey = useMemo(() => {
+    if (!dateFrom && !dateTo) return 'ALL';
+    const found = monthOptions.find((o) => o.date_from === dateFrom && o.date_to === dateTo);
+    return found ? found.key : 'CUSTOM';
+  }, [dateFrom, dateTo, monthOptions]);
 
   // Modal / Bottom Sheet States
   const [isDateModalOpen, setIsDateModalOpen] = useState(false);
@@ -66,13 +161,14 @@ export default function LaporanPage() {
         return false;
       }
 
-      // 2. Search Query (Vendor & Activity)
+      // 2. Search Query (Vendor, Activity & Customer)
       if (searchQuery.trim() !== '') {
         const q = searchQuery.toLowerCase();
         const vendorMatch = entry.vendor_name_raw?.toLowerCase().includes(q);
         const actMatch = entry.act_information?.toLowerCase().includes(q);
         const expMatch = entry.act_explaination?.toLowerCase().includes(q);
-        if (!vendorMatch && !actMatch && !expMatch) return false;
+        const custMatch = entry.customer_name_raw?.toLowerCase().includes(q);
+        if (!vendorMatch && !actMatch && !expMatch && !custMatch) return false;
       }
 
       // 3. Date Range Filter
@@ -140,15 +236,51 @@ export default function LaporanPage() {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Cari vendor, armada, atau rute..."
+            placeholder="Cari vendor, customer, armada, atau rute..."
             className="w-full bg-white pl-10 pr-4 py-2.5 rounded-full border border-slate-200 text-[13px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-xs font-medium"
           />
         </div>
 
-        {/* 2. Status Filter Chips (Horizontal Scroll) */}
+        {/* 2. Dynamic Period Filter Chips (Horizontal Scroll) */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+          <button
+            onClick={() => {
+              setDateFrom('');
+              setDateTo('');
+            }}
+            className={`px-3 py-1.5 rounded-xl text-[12px] font-bold shrink-0 transition-all cursor-pointer ${
+              activePeriodKey === 'ALL'
+                ? 'bg-slate-900 text-white shadow-xs'
+                : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+            }`}
+          >
+            📅 Semua Periode
+          </button>
+          {monthOptions.map((opt) => {
+            const isActive = activePeriodKey === opt.key;
+            return (
+              <button
+                key={opt.key}
+                onClick={() => {
+                  setDateFrom(opt.date_from);
+                  setDateTo(opt.date_to);
+                }}
+                className={`px-3 py-1.5 rounded-xl text-[12px] font-bold shrink-0 transition-all cursor-pointer ${
+                  isActive
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+                }`}
+              >
+                {opt.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* 3. Status Filter Chips (Horizontal Scroll) */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
           {[
-            { key: 'ALL', label: 'Semua' },
+            { key: 'ALL', label: 'Semua Status' },
             { key: 'UNPAID', label: 'Belum Lunas' },
             { key: 'PAID', label: 'Lunas' },
             { key: 'PENDING', label: 'Sebagian' },
@@ -158,7 +290,7 @@ export default function LaporanPage() {
               <button
                 key={chip.key}
                 onClick={() => setStatusFilter(chip.key as any)}
-                className={`px-4 py-1.5 rounded-full text-[12px] font-bold shrink-0 transition-all cursor-pointer ${
+                className={`px-3.5 py-1.5 rounded-full text-[12px] font-bold shrink-0 transition-all cursor-pointer ${
                   isActive
                     ? 'bg-blue-600 text-white shadow-xs'
                     : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
@@ -170,7 +302,7 @@ export default function LaporanPage() {
           })}
         </div>
 
-        {/* 3. Advanced Filter Row (Date Range & Vendor) */}
+        {/* 4. Advanced Filter Row (Date Range & Vendor) */}
         <div className="flex items-center gap-2 flex-wrap">
           {/* Button Filter Rentang Tanggal */}
           <button 
@@ -186,10 +318,8 @@ export default function LaporanPage() {
             }`}
           >
             <Calendar className="w-3.5 h-3.5" />
-            <span>
-              {dateFrom || dateTo
-                ? `${dateFrom || '...'} s/d ${dateTo || '...'}`
-                : 'Rentang Tanggal'}
+            <span className="truncate max-w-[170px]">
+              {formatActivePeriod(dateFrom, dateTo)}
             </span>
           </button>
 
@@ -337,6 +467,17 @@ export default function LaporanPage() {
                   </div>
                 )}
 
+                {selectedEntry.customer_name_raw && (
+                  <div className="pt-1.5 border-t border-slate-200/60">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                      Customer / Klien
+                    </span>
+                    <p className="font-extrabold text-blue-700 text-xs mt-0.5">
+                      {selectedEntry.customer_name_raw}
+                    </p>
+                  </div>
+                )}
+
                 {selectedEntry.vendor_name_raw && (
                   <div className="pt-1.5 border-t border-slate-200/60">
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
@@ -457,6 +598,49 @@ export default function LaporanPage() {
             </div>
 
             <div className="space-y-3">
+              {/* Pilihan Periode Cepat */}
+              <div>
+                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+                  Pilih Periode Cepat
+                </label>
+                <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto p-1.5 bg-slate-50 rounded-2xl border border-slate-200">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTempDateFrom('');
+                      setTempDateTo('');
+                    }}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                      !tempDateFrom && !tempDateTo
+                        ? 'bg-slate-900 text-white shadow-xs'
+                        : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'
+                    }`}
+                  >
+                    Semua Waktu
+                  </button>
+                  {monthOptions.map((opt) => {
+                    const isSelected = tempDateFrom === opt.date_from && tempDateTo === opt.date_to;
+                    return (
+                      <button
+                        key={opt.key}
+                        type="button"
+                        onClick={() => {
+                          setTempDateFrom(opt.date_from);
+                          setTempDateTo(opt.date_to);
+                        }}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-blue-600 text-white shadow-xs'
+                            : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">Dari Tanggal (Date From)</label>
                 <input

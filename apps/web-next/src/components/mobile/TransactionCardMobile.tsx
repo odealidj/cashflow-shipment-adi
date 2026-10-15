@@ -28,13 +28,19 @@ export const TransactionCardMobile: React.FC<TransactionCardMobileProps> = ({ en
   }
 
   return (
-    <div className="bg-white rounded-2xl p-3.5 shadow-sm border border-slate-100 border-l-4 border-l-rose-500 relative transition-all">
+    <div className={`bg-white rounded-2xl p-3.5 shadow-sm border border-slate-100 border-l-4 ${isShipment ? 'border-l-rose-500' : 'border-l-emerald-500'} relative transition-all`}>
       {/* Top Row: Vendor & Status Badge */}
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
           <h2 className="text-[14px] font-bold text-slate-900 truncate">
             {entry.vendor_name_raw || entry.act_information || 'Top-Up Kas'}
           </h2>
+          {entry.customer_name_raw && (
+            <p className="text-[11px] font-semibold text-blue-700 truncate mt-0.5 flex items-center gap-1">
+              <span className="text-[10px] font-bold bg-blue-50 text-blue-700 px-1.5 py-0.2 rounded border border-blue-200">Klien</span>
+              <span>{entry.customer_name_raw}</span>
+            </p>
+          )}
           <p className="text-[12px] text-slate-600 truncate mt-0.5">
             {entry.act_information || entry.act_explaination || (isShipment ? 'Biaya Operasional' : 'Modal Masuk')}
           </p>

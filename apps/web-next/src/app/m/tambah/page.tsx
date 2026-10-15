@@ -13,13 +13,16 @@ import {
   TrendingUp, 
   Clock, 
   CheckCircle2,
-  Check
+  Check,
+  AlertTriangle,
+  Wallet
 } from 'lucide-react';
 import { MobileHeader } from '@/components/mobile/MobileHeader';
 import { useCashflowMobile } from '@/hooks/useCashflowMobile';
 import { useAutoCalculate, formatRupiah } from '@/hooks/useAutoCalculate';
 import { useAuth } from '@/hooks/useAuth';
 import { VendorSelect } from '@/components/VendorSelect';
+import { CustomerSelect } from '@/components/CustomerSelect';
 import { ActivityPresetSelect } from '@/components/shared/ActivityPresetSelect';
 
 export default function TambahTransaksiPage() {
@@ -43,6 +46,7 @@ export default function TambahTransaksiPage() {
   const [actInformation, setActInformation] = useState('');
   const [actExplaination, setActExplaination] = useState('');
   const [vendorName, setVendorName] = useState('');
+  const [customerName, setCustomerName] = useState('');
   const [grandCost, setGrandCost] = useState<number>(0);
   const [grandSelling, setGrandSelling] = useState<number>(0);
   const [topDays, setTopDays] = useState<number>(14);
@@ -63,6 +67,13 @@ export default function TambahTransaksiPage() {
   );
 
   const effectiveDueDate = manualDueDate || calc.dueDate;
+
+  const finalDebit = entryType === 'SHIPMENT' ? Number(grandCost || debit || 0) : Number(debit || 0);
+  const finalGrandCost = entryType === 'SHIPMENT' ? finalDebit : 0;
+  const currentSaldo = summary.current_saldo;
+  const isDeficit = calc.saldo < 0;
+  const isWarningLow = !isDeficit && calc.saldo < 5000000 && (finalDebit > 0 || currentSaldo < 5000000);
+  const isSafe = !isDeficit && !isWarningLow && (finalDebit > 0 || kredit > 0 || currentSaldo >= 5000000);
 
   const handleSubmit = async () => {
     setErrorMessage(null);
@@ -89,9 +100,6 @@ export default function TambahTransaksiPage() {
       return;
     }
 
-    const finalDebit = entryType === 'SHIPMENT' ? Number(grandCost || debit || 0) : Number(debit || 0);
-    const finalGrandCost = entryType === 'SHIPMENT' ? finalDebit : 0;
-
     const payload = {
       entry_type: entryType,
       date_of_entry: dateOfEntry,
@@ -100,7 +108,8 @@ export default function TambahTransaksiPage() {
       saldo: calc.saldo,
       act_information: actInformation || (entryType === 'TOP_UP' ? 'Penambahan Modal' : 'Operasional Pengiriman'),
       act_explaination: actExplaination,
-      vendor_name_raw: entryType === 'SHIPMENT' ? vendorName : undefined,
+      vendor_name_raw: entryType === 'SHIPMENT' ? (vendorName.trim() || undefined) : undefined,
+      customer_name_raw: entryType === 'SHIPMENT' ? (customerName.trim() || undefined) : undefined,
       top_days: entryType === 'SHIPMENT' ? Number(topDays || 0) : 0,
       due_date: entryType === 'SHIPMENT' ? effectiveDueDate : undefined,
       grand_cost: finalGrandCost,
@@ -232,22 +241,43 @@ export default function TambahTransaksiPage() {
             </div>
           )}
 
-          {/* Saldo Akhir (Otomatis) */}
+          {/* Saldo Akhir (Otomatis) dengan Dynamic Warning Border */}
           <div>
-            <label className="block text-[12px] font-bold text-slate-500 mb-1">Saldo Akhir (Otomatis)</label>
-            <div className="w-full bg-[#EFF6FF] border border-blue-200 rounded-xl px-3 py-2.5 text-[14px] font-black text-blue-700">
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-[12px] font-bold text-slate-500">Saldo Akhir (Otomatis)</label>
+              {(finalDebit > 0 || kredit > 0) && (
+                <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border transition-colors ${
+                  isDeficit
+                    ? 'bg-rose-50 text-rose-700 border-rose-200'
+                    : isWarningLow
+                    ? 'bg-amber-50 text-amber-700 border-amber-200'
+                    : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                }`}>
+                  {isDeficit ? '⚠️ Defisit Kas' : isWarningLow ? '⚠️ Saldo Menipis' : '✓ Saldo Kas Aman'}
+                </span>
+              )}
+            </div>
+            <div className={`w-full rounded-xl px-3 py-2.5 text-[14px] font-black border-2 transition-all ${
+              isDeficit
+                ? 'bg-rose-50/80 border-rose-400 text-rose-700 ring-2 ring-rose-200/50'
+                : isWarningLow
+                ? 'bg-amber-50/80 border-amber-400 text-amber-800 ring-2 ring-amber-200/50'
+                : isSafe
+                ? 'bg-emerald-50/50 border-emerald-400 text-emerald-800 ring-1 ring-emerald-200/50'
+                : 'bg-[#EFF6FF] border-blue-200 text-blue-700'
+            }`}>
               {formatRupiah(calc.saldo)}
             </div>
           </div>
         </div>
 
         {/* ======================================================== */}
-        {/* SEKSI 2: AKTIVITAS & VENDOR                              */}
+        {/* SEKSI 2: AKTIVITAS, VENDOR & CUSTOMER                    */}
         {/* ======================================================== */}
         <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-3">
           <div className="flex items-center gap-2 pb-1 border-b border-slate-100">
             <span className="text-sm">🚚</span>
-            <h3 className="font-bold text-[14px] text-slate-900">Aktivitas & Vendor</h3>
+            <h3 className="font-bold text-[14px] text-slate-900">Aktivitas, Vendor & Customer</h3>
           </div>
 
           {/* Keterangan Aktivitas */}
@@ -272,16 +302,29 @@ export default function TambahTransaksiPage() {
             />
           </div>
 
-          {/* Vendor */}
+          {/* Vendor & Customer (Khusus Shipment) */}
           {entryType === 'SHIPMENT' && (
-            <div>
-              <label className="block text-[12px] font-bold text-slate-700 mb-1">Vendor / Transporter</label>
-              <VendorSelect
-                value={vendorName}
-                onChange={setVendorName}
-                placeholder="Pilih atau ketik vendor..."
-              />
-            </div>
+            <>
+              <div>
+                <label className="block text-[12px] font-bold text-slate-700 mb-1">Vendor / Transporter</label>
+                <VendorSelect
+                  value={vendorName}
+                  onChange={setVendorName}
+                  placeholder="Pilih atau ketik vendor..."
+                />
+              </div>
+
+              <div>
+                <label className="block text-[12px] font-bold text-slate-700 mb-1">
+                  Nama Customer <span className="text-slate-400 font-normal text-[11px]">(Opsional)</span>
+                </label>
+                <CustomerSelect
+                  value={customerName}
+                  onChange={setCustomerName}
+                  placeholder="Pilih atau ketik customer (opsional)..."
+                />
+              </div>
+            </>
           )}
         </div>
 
@@ -389,37 +432,82 @@ export default function TambahTransaksiPage() {
           </div>
         )}
 
-        {/* INLINE WARNING BANNER: SALDO DEFISIT ATAU MENIPIS (MOBILE) */}
-        {entryType === 'SHIPMENT' && (grandCost > 0 || debit > 0) && (
-          <>
-            {calc.saldo < 0 ? (
-              <div className="p-3.5 bg-rose-50 border border-rose-200/90 rounded-2xl flex items-start gap-2.5 text-xs animate-fade-in shadow-2xs">
-                <span className="text-base leading-none mt-0.5">🚨</span>
-                <div className="flex-1 space-y-0.5">
-                  <div className="font-black text-rose-900 flex items-center justify-between">
-                    <span>Estimasi Saldo Kas Defisit</span>
-                    <span className="font-mono text-rose-700 font-black">{formatRupiah(calc.saldo)}</span>
-                  </div>
-                  <p className="text-[11px] text-rose-700 leading-relaxed font-medium">
-                    Pengeluaran ini melebihi kas tersedia. Transaksi tetap dapat disimpan dan otomatis dipantau di kas operasional.
-                  </p>
-                </div>
+        {/* ======================================================== */}
+        {/* SEKSI 4: SIMULASI DAMPAK KE SALDO KAS (DESKTOP ALIGNED)  */}
+        {/* ======================================================== */}
+        {entryType === 'SHIPMENT' && (finalDebit > 0 || currentSaldo < 5000000) && (
+          <div className={`p-4 rounded-2xl border-2 shadow-xs transition-all duration-300 space-y-2.5 ${
+            isDeficit
+              ? 'bg-rose-50/80 border-rose-400 ring-2 ring-rose-200/50'
+              : isWarningLow
+              ? 'bg-amber-50/80 border-amber-400 ring-2 ring-amber-200/50'
+              : 'bg-emerald-50/60 border-emerald-400 ring-1 ring-emerald-200/40'
+          }`}>
+            <div className="flex items-center justify-between">
+              <span className={`text-[11px] font-black uppercase tracking-wider flex items-center gap-1.5 ${
+                isDeficit 
+                  ? 'text-rose-900' 
+                  : isWarningLow 
+                  ? 'text-amber-900' 
+                  : 'text-emerald-900'
+              }`}>
+                {isDeficit || isWarningLow ? (
+                  <AlertTriangle className={`w-4 h-4 ${isDeficit ? 'text-rose-600' : 'text-amber-600'}`} />
+                ) : (
+                  <Wallet className="w-4 h-4 text-emerald-600" />
+                )}
+                Simulasi Dampak Saldo Kas
+              </span>
+              <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border ${
+                isDeficit
+                  ? 'bg-rose-100 text-rose-800 border-rose-300 animate-pulse'
+                  : isWarningLow
+                  ? 'bg-amber-100 text-amber-800 border-amber-300'
+                  : 'bg-emerald-100 text-emerald-800 border-emerald-300'
+              }`}>
+                {isDeficit 
+                  ? '⚠️ Saldo Kas Kurang (Defisit)' 
+                  : isWarningLow 
+                  ? '⚠️ Saldo Kas Menipis' 
+                  : '✓ Saldo Kas Cukup'}
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between gap-1 text-xs pt-1 border-t border-slate-200/60">
+              <div>
+                <span className="text-[10px] text-slate-500 block font-medium">Saldo Kas Saat Ini</span>
+                <span className={`font-bold font-mono text-[12px] ${currentSaldo < 0 ? 'text-rose-600' : 'text-slate-800'}`}>
+                  {formatRupiah(currentSaldo)}
+                </span>
               </div>
-            ) : calc.saldo < 5000000 ? (
-              <div className="p-3.5 bg-amber-50 border border-amber-200/90 rounded-2xl flex items-start gap-2.5 text-xs animate-fade-in shadow-2xs">
-                <span className="text-base leading-none mt-0.5">⚠️</span>
-                <div className="flex-1 space-y-0.5">
-                  <div className="font-black text-amber-900 flex items-center justify-between">
-                    <span>Sisa Saldo Kas Menipis</span>
-                    <span className="font-mono text-amber-700 font-bold">{formatRupiah(calc.saldo)}</span>
-                  </div>
-                  <p className="text-[11px] text-amber-700 leading-relaxed font-medium">
-                    Sisa saldo kas diperkirakan kurang dari Rp 5.000.000. Disarankan untuk segera koordinasi Top-Up Kas.
-                  </p>
-                </div>
+              <div className="text-slate-400 font-bold">−</div>
+              <div>
+                <span className="text-[10px] text-slate-500 block font-medium">Biaya Keluar</span>
+                <span className="font-bold font-mono text-[12px] text-rose-600">
+                  {formatRupiah(finalDebit)}
+                </span>
               </div>
+              <div className="text-slate-400 font-bold">=</div>
+              <div>
+                <span className="text-[10px] text-slate-500 block font-medium">Estimasi Akhir</span>
+                <span className={`font-black font-mono text-[13px] ${
+                  isDeficit ? 'text-rose-700' : isWarningLow ? 'text-amber-700' : 'text-emerald-700'
+                }`}>
+                  {formatRupiah(calc.saldo)}
+                </span>
+              </div>
+            </div>
+
+            {isDeficit ? (
+              <p className="text-[11px] text-rose-700 font-medium pt-1 border-t border-rose-200/60 leading-relaxed">
+                🚨 Pengeluaran ini melebihi kas tersedia. Transaksi tetap dapat disimpan dan otomatis dipantau di kas operasional.
+              </p>
+            ) : isWarningLow ? (
+              <p className="text-[11px] text-amber-700 font-medium pt-1 border-t border-amber-200/60 leading-relaxed">
+                ⚠️ Sisa saldo kas diperkirakan kurang dari Rp 5.000.000. Disarankan untuk segera koordinasi Top-Up Kas.
+              </p>
             ) : null}
-          </>
+          </div>
         )}
 
         {/* Sticky Submit Button */}

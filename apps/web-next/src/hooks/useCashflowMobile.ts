@@ -16,6 +16,8 @@ export interface CashflowEntry {
   act_explaination?: string;
   vendor_name_raw?: string;
   vendor_id?: number;
+  customer_name_raw?: string;
+  customer_id?: number;
   top_days?: number;
   due_date?: string;
   grand_cost: number;
