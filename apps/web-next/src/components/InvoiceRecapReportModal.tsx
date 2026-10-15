@@ -54,28 +54,87 @@ export function InvoiceRecapReportModal({
   const [isExporting, setIsExporting] = useState(false);
   const [isExportingExcel, setIsExportingExcel] = useState(false);
 
-  // 18 Month Dropdown Options
+  const [dbPeriods, setDbPeriods] = useState<Array<{
+    month_key: string;
+    year: number;
+    month: number;
+    total_count: number;
+  }>>([]);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadInvoicePeriods() {
+      try {
+        const res = await fetchWithAuth("/api/v1/invoices/periods");
+        if (res.ok) {
+          const json = await res.json();
+          if (json.status && Array.isArray(json.data) && isMounted) {
+            setDbPeriods(json.data);
+          }
+        }
+      } catch (err) {
+        console.error("Gagal memuat periode invoice report:", err);
+      }
+    }
+    loadInvoicePeriods();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // Dynamic Month Options based on actual Invoice data from backend
   const monthOptions = useMemo(() => {
-    const options = [];
     const now = new Date();
     const currentY = now.getFullYear();
     const currentM = now.getMonth();
+    const curRange = getMonthRange(currentY, currentM);
+    const lastRange = getMonthRange(currentY, currentM - 1);
 
-    for (let i = -12; i <= 5; i++) {
-      const d = new Date(currentY, currentM + i, 1);
-      const y = d.getFullYear();
-      const m = d.getMonth();
-      const range = getMonthRange(y, m);
-      const isCurrent = y === currentY && m === currentM;
+    const countMap = new Map<string, number>();
+    dbPeriods.forEach((p) => {
+      countMap.set(p.month_key, p.total_count);
+    });
 
-      options.push({
+    const keysSet = new Set<string>();
+    keysSet.add(curRange.monthKey);
+    keysSet.add(lastRange.monthKey);
+
+    dbPeriods.forEach((p) => {
+      if (p.month_key && p.month_key <= curRange.monthKey) {
+        keysSet.add(p.month_key);
+      }
+    });
+
+    const options = Array.from(keysSet).map((mKey) => {
+      const [yStr, mStr] = mKey.split("-");
+      const y = parseInt(yStr, 10);
+      const mIdx = parseInt(mStr, 10) - 1;
+      const range = getMonthRange(y, mIdx);
+      const count = countMap.get(mKey) || 0;
+      const isCurrent = mKey === curRange.monthKey;
+      const isLast = mKey === lastRange.monthKey;
+
+      let displayLabel = range.label;
+      if (isCurrent) {
+        displayLabel = count > 0 
+          ? `${range.label} (Bulan Ini - ${count} invoice)`
+          : `${range.label} (Bulan Ini)`;
+      } else if (isLast && count === 0) {
+        displayLabel = `${range.label} (Bulan Lalu)`;
+      } else if (count > 0) {
+        displayLabel = `${range.label} (${count} invoice)`;
+      }
+
+      return {
         ...range,
         isCurrent,
-        displayLabel: `${MONTH_NAMES[m]} ${y}${isCurrent ? " (Bulan Ini)" : ""}`
-      });
-    }
-    return options;
-  }, []);
+        totalCount: count,
+        displayLabel
+      };
+    });
+
+    return options.sort((a, b) => b.monthKey.localeCompare(a.monthKey));
+  }, [dbPeriods]);
 
   // Determine current active dropdown key
   const currentMonthKey = useMemo(() => {

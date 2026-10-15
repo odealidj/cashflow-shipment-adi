@@ -28,4 +28,5 @@ type InvoiceRepository interface {
 	RescheduleDueDate(ctx context.Context, id int, history domain.InvoiceDueDateHistory) error
 	GetInvoiceHistory(ctx context.Context, invoiceID int) (*domain.InvoiceHistorySummary, error)
 	GetSummary(ctx context.Context, filter InvoiceFilter) (map[string]interface{}, error)
+	GetAvailablePeriods(ctx context.Context) ([]domain.AvailablePeriod, error)
 }

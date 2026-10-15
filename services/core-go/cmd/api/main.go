@@ -333,6 +333,7 @@ func main() {
 			r.Route("/invoices", func(r chi.Router) {
 				r.Use(middleware.RequirePermission("invoices.view"))
 				r.Get("/", invoiceHandler.List)
+				r.Get("/periods", invoiceHandler.GetAvailablePeriods)
 				r.Get("/summary", invoiceHandler.GetSummary)
 				r.Get("/export", invoiceHandler.ExportExcel)
 				r.With(middleware.RequirePermission("invoices.create")).Post("/", invoiceHandler.Create)

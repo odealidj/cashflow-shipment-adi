@@ -97,27 +97,93 @@ export default function InvoicesPage() {
     });
   };
 
-  // 18 Month Dropdown Options (Sama dengan CashflowTable)
+  // Dynamic Month Options based on actual Invoice data from backend
+  const [dbPeriods, setDbPeriods] = useState<Array<{
+    month_key: string;
+    year: number;
+    month: number;
+    total_count: number;
+  }>>([]);
+
+  // Fetch available invoice periods from backend database
+  useEffect(() => {
+    let isMounted = true;
+    async function loadInvoicePeriods() {
+      try {
+        const res = await fetchWithAuth("/api/v1/invoices/periods");
+        if (res.ok) {
+          const json = await res.json();
+          if (json.status && Array.isArray(json.data) && isMounted) {
+            setDbPeriods(json.data);
+          }
+        }
+      } catch (err) {
+        console.error("Gagal memuat periode tanggal invoice:", err);
+      }
+    }
+    loadInvoicePeriods();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // Generate dynamic month options bounded by actual invoice data and current month (strictly no future months)
   const monthOptions = useMemo(() => {
-    const options = [];
     const now = new Date();
     const currentY = now.getFullYear();
     const currentM = now.getMonth();
+    const curRange = getMonthRange(currentY, currentM);
+    const lastRange = getMonthRange(currentY, currentM - 1);
 
-    for (let i = -12; i <= 5; i++) {
-      const d = new Date(currentY, currentM + i, 1);
-      const y = d.getFullYear();
-      const m = d.getMonth();
-      const range = getMonthRange(y, m);
-      const isCurrent = i === 0;
-      options.push({
+    // Build count map from DB periods
+    const countMap = new Map<string, number>();
+    dbPeriods.forEach((p) => {
+      countMap.set(p.month_key, p.total_count);
+    });
+
+    // Keys set: always include current month and last month
+    const keysSet = new Set<string>();
+    keysSet.add(curRange.monthKey);
+    keysSet.add(lastRange.monthKey);
+
+    // Add all months from DB that have invoice data, capped at current month (strictly no future months)
+    dbPeriods.forEach((p) => {
+      if (p.month_key && p.month_key <= curRange.monthKey) {
+        keysSet.add(p.month_key);
+      }
+    });
+
+    const options = Array.from(keysSet).map((mKey) => {
+      const [yStr, mStr] = mKey.split("-");
+      const y = parseInt(yStr, 10);
+      const mIdx = parseInt(mStr, 10) - 1;
+      const range = getMonthRange(y, mIdx);
+      const count = countMap.get(mKey) || 0;
+      const isCurrent = mKey === curRange.monthKey;
+      const isLast = mKey === lastRange.monthKey;
+
+      let displayLabel = range.label;
+      if (isCurrent) {
+        displayLabel = count > 0 
+          ? `${range.label} (Bulan Ini - ${count} invoice)`
+          : `${range.label} (Bulan Ini)`;
+      } else if (isLast && count === 0) {
+        displayLabel = `${range.label} (Bulan Lalu)`;
+      } else if (count > 0) {
+        displayLabel = `${range.label} (${count} invoice)`;
+      }
+
+      return {
         ...range,
         isCurrent,
-        displayLabel: isCurrent ? `${range.label} (Bulan Ini)` : range.label
-      });
-    }
-    return options.reverse();
-  }, []);
+        totalCount: count,
+        displayLabel
+      };
+    });
+
+    // Sort newest first (descending by monthKey)
+    return options.sort((a, b) => b.monthKey.localeCompare(a.monthKey));
+  }, [dbPeriods]);
 
   const currentMonthKey = useMemo(() => {
     if (!dateFrom && !dateTo) return "ALL";
@@ -136,40 +202,36 @@ export default function InvoicesPage() {
     return "CUSTOM";
   }, [dateFrom, dateTo]);
 
-  // Month navigation: previous month
+  const currentIndex = useMemo(() => {
+    return monthOptions.findIndex((opt) => opt.monthKey === currentMonthKey);
+  }, [monthOptions, currentMonthKey]);
+
+  // Newer months are at lower index (0 is newest/current month)
+  // Older months are at higher index (monthOptions.length - 1 is oldest)
+  const canGoNext = currentIndex > 0;
+  const canGoPrev = currentIndex >= 0 && currentIndex < monthOptions.length - 1;
+
+  // Month navigation: previous month (older period)
   const handlePrevMonth = () => {
-    let baseYear: number;
-    let baseMonth: number;
-    if (dateFrom) {
-      const parts = dateFrom.split("-");
-      baseYear = parseInt(parts[0], 10);
-      baseMonth = parseInt(parts[1], 10) - 1;
-    } else {
-      const now = new Date();
-      baseYear = now.getFullYear();
-      baseMonth = now.getMonth();
+    if (currentIndex >= 0 && currentIndex < monthOptions.length - 1) {
+      const prevOpt = monthOptions[currentIndex + 1];
+      setDateFrom(prevOpt.date_from);
+      setDateTo(prevOpt.date_to);
+    } else if (currentIndex === -1 && monthOptions.length > 0) {
+      // If currently ALL or CUSTOM, select current month
+      const curOpt = monthOptions[0];
+      setDateFrom(curOpt.date_from);
+      setDateTo(curOpt.date_to);
     }
-    const prevRange = getMonthRange(baseYear, baseMonth - 1);
-    setDateFrom(prevRange.date_from);
-    setDateTo(prevRange.date_to);
   };
 
-  // Month navigation: next month
+  // Month navigation: next month (newer period)
   const handleNextMonth = () => {
-    let baseYear: number;
-    let baseMonth: number;
-    if (dateFrom) {
-      const parts = dateFrom.split("-");
-      baseYear = parseInt(parts[0], 10);
-      baseMonth = parseInt(parts[1], 10) - 1;
-    } else {
-      const now = new Date();
-      baseYear = now.getFullYear();
-      baseMonth = now.getMonth();
+    if (currentIndex > 0) {
+      const nextOpt = monthOptions[currentIndex - 1];
+      setDateFrom(nextOpt.date_from);
+      setDateTo(nextOpt.date_to);
     }
-    const nextRange = getMonthRange(baseYear, baseMonth + 1);
-    setDateFrom(nextRange.date_from);
-    setDateTo(nextRange.date_to);
   };
 
   // Month navigation: select dropdown
@@ -521,8 +583,13 @@ export default function InvoicesPage() {
                 <button
                   type="button"
                   onClick={handlePrevMonth}
-                  title="Bulan Sebelumnya"
-                  className="p-1 rounded-lg hover:bg-slate-100 text-slate-600 hover:text-slate-900 transition-colors cursor-pointer"
+                  disabled={!canGoPrev}
+                  title={canGoPrev ? "Bulan Sebelumnya" : "Batas periode terlama"}
+                  className={`p-1 rounded-lg transition-colors ${
+                    canGoPrev
+                      ? "hover:bg-slate-100 text-slate-600 hover:text-slate-900 cursor-pointer"
+                      : "text-slate-300 opacity-40 cursor-not-allowed"
+                  }`}
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </button>
@@ -534,12 +601,12 @@ export default function InvoicesPage() {
                     onChange={e => handleMonthSelect(e.target.value)}
                     className="bg-transparent text-xs font-bold text-slate-800 pr-5 py-1 focus:outline-none cursor-pointer appearance-none"
                   >
-                    <option value="ALL">Semua Periode Transaksi</option>
                     {monthOptions.map((opt: any) => (
                       <option key={opt.monthKey} value={opt.monthKey}>
                         {opt.displayLabel}
                       </option>
                     ))}
+                    <option value="ALL">Semua Waktu (Tanpa Filter)</option>
                     {currentMonthKey === "CUSTOM" && (
                       <option value="CUSTOM">
                         Kustom: {formatActivePeriod(dateFrom, dateTo)}
@@ -554,8 +621,13 @@ export default function InvoicesPage() {
                 <button
                   type="button"
                   onClick={handleNextMonth}
-                  title="Bulan Berikutnya"
-                  className="p-1 rounded-lg hover:bg-slate-100 text-slate-600 hover:text-slate-900 transition-colors cursor-pointer"
+                  disabled={!canGoNext}
+                  title={canGoNext ? "Bulan Berikutnya" : "Batas bulan terbaru (Bulan Ini)"}
+                  className={`p-1 rounded-lg transition-colors ${
+                    canGoNext
+                      ? "hover:bg-slate-100 text-slate-600 hover:text-slate-900 cursor-pointer"
+                      : "text-slate-300 opacity-40 cursor-not-allowed"
+                  }`}
                 >
                   <ChevronRight className="w-4 h-4" />
                 </button>

@@ -120,6 +120,23 @@ func (h *InvoiceHandler) GetSummary(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, http.StatusOK, "Invoice summary retrieved", summary)
 }
 
+// GetAvailablePeriods godoc
+// @Summary      Get available invoice periods (data-driven distinct months)
+// @Tags         Invoices
+// @Produce      json
+// @Security     BearerAuth
+// @Param        X-API-Version header string false "API Version (default: v1)"
+// @Success      200 {object} response.APIResponse
+// @Router       /invoices/periods [get]
+func (h *InvoiceHandler) GetAvailablePeriods(w http.ResponseWriter, r *http.Request) {
+	periods, err := h.invoiceService.GetAvailablePeriods(r.Context())
+	if err != nil {
+		response.Error(w, http.StatusInternalServerError, "Failed to retrieve available invoice periods")
+		return
+	}
+	response.JSON(w, http.StatusOK, "Available invoice periods retrieved", periods)
+}
+
 // Get Invoice Detail godoc
 // @Summary      Get invoice by ID
 // @Tags         Invoices

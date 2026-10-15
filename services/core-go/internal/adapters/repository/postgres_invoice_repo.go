@@ -441,3 +441,35 @@ func (r *PostgresInvoiceRepo) GetInvoiceHistory(ctx context.Context, invoiceID i
 
 	return summary, nil
 }
+
+func (r *PostgresInvoiceRepo) GetAvailablePeriods(ctx context.Context) ([]domain.AvailablePeriod, error) {
+	query := `
+		SELECT 
+			TO_CHAR(shipment_date, 'YYYY-MM') AS month_key,
+			EXTRACT(YEAR FROM shipment_date)::INT AS year,
+			EXTRACT(MONTH FROM shipment_date)::INT AS month,
+			COUNT(*) AS total_count
+		FROM invoices
+		WHERE deleted_at IS NULL
+		GROUP BY 1, 2, 3
+		ORDER BY month_key DESC;
+	`
+	rows, err := r.db.QueryContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var periods []domain.AvailablePeriod
+	for rows.Next() {
+		var p domain.AvailablePeriod
+		if err := rows.Scan(&p.MonthKey, &p.Year, &p.Month, &p.TotalCount); err != nil {
+			return nil, err
+		}
+		periods = append(periods, p)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return periods, nil
+}

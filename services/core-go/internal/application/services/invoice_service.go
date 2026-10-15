@@ -564,3 +564,7 @@ func (s *InvoiceService) GetSummary(ctx context.Context, filter ports.InvoiceFil
 	return summary, nil
 }
 
+func (s *InvoiceService) GetAvailablePeriods(ctx context.Context) ([]domain.AvailablePeriod, error) {
+	return s.repo.GetAvailablePeriods(ctx)
+}
+
