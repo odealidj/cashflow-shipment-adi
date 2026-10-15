@@ -45,3 +45,10 @@ type CashflowEntry struct {
 	UpdatedAt       time.Time     `json:"updated_at" db:"updated_at"`
 	InvoiceID       *int          `json:"invoice_id,omitempty" db:"invoice_id"`
 }
+
+type AvailablePeriod struct {
+	MonthKey   string `json:"month_key"`   // e.g. "2026-10"
+	Year       int    `json:"year"`        // e.g. 2026
+	Month      int    `json:"month"`       // e.g. 10
+	TotalCount int    `json:"total_count"` // e.g. 4
+}

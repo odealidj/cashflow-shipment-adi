@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { 
   Filter, 
   Search, 
@@ -15,6 +15,7 @@ import {
   AlertCircle
 } from "lucide-react";
 import { formatDate } from "@/lib/dateUtils";
+import { fetchWithAuth } from "@/lib/apiClient";
 
 export interface FilterState {
   date_from: string;
@@ -98,28 +99,92 @@ export function FilterBar({
   embedded = false
 }: FilterBarProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [dbPeriods, setDbPeriods] = useState<Array<{
+    month_key: string;
+    year: number;
+    month: number;
+    total_count: number;
+  }>>([]);
 
-  // Generate 18 month options (12 months back, current, 5 months forward)
+  // Fetch available periods from backend database
+  useEffect(() => {
+    let isMounted = true;
+    async function loadPeriods() {
+      try {
+        const res = await fetchWithAuth("/api/v1/cashflow/periods");
+        if (res.ok) {
+          const json = await res.json();
+          if (json.status && Array.isArray(json.data) && isMounted) {
+            setDbPeriods(json.data);
+          }
+        }
+      } catch (err) {
+        console.error("Gagal memuat periode transaksi cashflow:", err);
+      }
+    }
+    loadPeriods();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // Generate dynamic month options bounded by actual data and current month (no future months)
   const monthOptions = useMemo(() => {
-    const options = [];
     const now = new Date();
     const currentY = now.getFullYear();
     const currentM = now.getMonth();
+    const curRange = getMonthRange(currentY, currentM);
+    const lastRange = getMonthRange(currentY, currentM - 1);
 
-    for (let i = -12; i <= 5; i++) {
-      const d = new Date(currentY, currentM + i, 1);
-      const y = d.getFullYear();
-      const m = d.getMonth();
-      const range = getMonthRange(y, m);
-      const isCurrent = i === 0;
-      options.push({
+    // Build count map from DB periods
+    const countMap = new Map<string, number>();
+    dbPeriods.forEach((p) => {
+      countMap.set(p.month_key, p.total_count);
+    });
+
+    // Keys set: always include current month and last month
+    const keysSet = new Set<string>();
+    keysSet.add(curRange.monthKey);
+    keysSet.add(lastRange.monthKey);
+
+    // Add all months from DB that have data, capped at current month (strictly no future months)
+    dbPeriods.forEach((p) => {
+      if (p.month_key && p.month_key <= curRange.monthKey) {
+        keysSet.add(p.month_key);
+      }
+    });
+
+    const options = Array.from(keysSet).map((mKey) => {
+      const [yStr, mStr] = mKey.split("-");
+      const y = parseInt(yStr, 10);
+      const mIdx = parseInt(mStr, 10) - 1;
+      const range = getMonthRange(y, mIdx);
+      const count = countMap.get(mKey) || 0;
+      const isCurrent = mKey === curRange.monthKey;
+      const isLast = mKey === lastRange.monthKey;
+
+      let displayLabel = range.label;
+      if (isCurrent) {
+        displayLabel = count > 0 
+          ? `${range.label} (Bulan Ini - ${count} transaksi)`
+          : `${range.label} (Bulan Ini)`;
+      } else if (isLast && count === 0) {
+        displayLabel = `${range.label} (Bulan Lalu)`;
+      } else if (count > 0) {
+        displayLabel = `${range.label} (${count} transaksi)`;
+      }
+
+      return {
         ...range,
         isCurrent,
-        displayLabel: isCurrent ? `${range.label} (Bulan Ini)` : range.label
-      });
-    }
-    return options.reverse(); // Newest first
-  }, []);
+        totalCount: count,
+        displayLabel
+      };
+    });
+
+    // Sort newest first (descending by monthKey)
+    return options.sort((a, b) => b.monthKey.localeCompare(a.monthKey));
+  }, [dbPeriods]);
 
   // Determine current active month state
   const currentMonthKey = useMemo(() => {
@@ -139,6 +204,15 @@ export function FilterBar({
     return "CUSTOM";
   }, [filters.date_from, filters.date_to]);
 
+  const currentIndex = useMemo(() => {
+    return monthOptions.findIndex((opt) => opt.monthKey === currentMonthKey);
+  }, [monthOptions, currentMonthKey]);
+
+  // Newer months are at lower index (0 is newest/current month)
+  // Older months are at higher index (monthOptions.length - 1 is oldest)
+  const canGoNext = currentIndex > 0;
+  const canGoPrev = currentIndex >= 0 && currentIndex < monthOptions.length - 1;
+
   const handleChange = (key: keyof FilterState, value: string) => {
     onFilterChange({
       ...filters,
@@ -146,50 +220,36 @@ export function FilterBar({
     });
   };
 
-  // Month navigation: previous month
+  // Month navigation: previous month (older period)
   const handlePrevMonth = () => {
-    let baseYear: number;
-    let baseMonth: number;
-
-    if (filters.date_from) {
-      const parts = filters.date_from.split("-");
-      baseYear = parseInt(parts[0], 10);
-      baseMonth = parseInt(parts[1], 10) - 1;
-    } else {
-      const now = new Date();
-      baseYear = now.getFullYear();
-      baseMonth = now.getMonth();
+    if (currentIndex >= 0 && currentIndex < monthOptions.length - 1) {
+      const prevOpt = monthOptions[currentIndex + 1];
+      onFilterChange({
+        ...filters,
+        date_from: prevOpt.date_from,
+        date_to: prevOpt.date_to
+      });
+    } else if (currentIndex === -1 && monthOptions.length > 0) {
+      // If currently ALL or CUSTOM, select current month
+      const curOpt = monthOptions[0];
+      onFilterChange({
+        ...filters,
+        date_from: curOpt.date_from,
+        date_to: curOpt.date_to
+      });
     }
-
-    const prevRange = getMonthRange(baseYear, baseMonth - 1);
-    onFilterChange({
-      ...filters,
-      date_from: prevRange.date_from,
-      date_to: prevRange.date_to
-    });
   };
 
-  // Month navigation: next month
+  // Month navigation: next month (newer period)
   const handleNextMonth = () => {
-    let baseYear: number;
-    let baseMonth: number;
-
-    if (filters.date_from) {
-      const parts = filters.date_from.split("-");
-      baseYear = parseInt(parts[0], 10);
-      baseMonth = parseInt(parts[1], 10) - 1;
-    } else {
-      const now = new Date();
-      baseYear = now.getFullYear();
-      baseMonth = now.getMonth();
+    if (currentIndex > 0) {
+      const nextOpt = monthOptions[currentIndex - 1];
+      onFilterChange({
+        ...filters,
+        date_from: nextOpt.date_from,
+        date_to: nextOpt.date_to
+      });
     }
-
-    const nextRange = getMonthRange(baseYear, baseMonth + 1);
-    onFilterChange({
-      ...filters,
-      date_from: nextRange.date_from,
-      date_to: nextRange.date_to
-    });
   };
 
   // Select month from dropdown
@@ -241,6 +301,13 @@ export function FilterBar({
   const isCurrentMonthActive = 
     filters.date_from === curMonth.date_from && filters.date_to === curMonth.date_to;
 
+  const lastMonthRange = useMemo(() => {
+    const now = new Date();
+    return getMonthRange(now.getFullYear(), now.getMonth() - 1);
+  }, []);
+  const isLastMonthActive = 
+    filters.date_from === lastMonthRange.date_from && filters.date_to === lastMonthRange.date_to;
+
   const hasActiveFilters =
     Boolean(filters.entry_type) ||
     Boolean(filters.remarks) ||
@@ -272,8 +339,13 @@ export function FilterBar({
             <button
               type="button"
               onClick={handlePrevMonth}
-              title="Bulan Sebelumnya"
-              className="p-1 rounded-lg hover:bg-slate-100 text-slate-600 hover:text-slate-900 transition-colors cursor-pointer"
+              disabled={!canGoPrev}
+              title={canGoPrev ? "Bulan Sebelumnya" : "Batas periode terlama"}
+              className={`p-1 rounded-lg transition-colors ${
+                canGoPrev
+                  ? "hover:bg-slate-100 text-slate-600 hover:text-slate-900 cursor-pointer"
+                  : "text-slate-300 opacity-40 cursor-not-allowed"
+              }`}
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
@@ -305,8 +377,13 @@ export function FilterBar({
             <button
               type="button"
               onClick={handleNextMonth}
-              title="Bulan Berikutnya"
-              className="p-1 rounded-lg hover:bg-slate-100 text-slate-600 hover:text-slate-900 transition-colors cursor-pointer"
+              disabled={!canGoNext}
+              title={canGoNext ? "Bulan Berikutnya" : "Batas bulan terbaru (Bulan Ini)"}
+              className={`p-1 rounded-lg transition-colors ${
+                canGoNext
+                  ? "hover:bg-slate-100 text-slate-600 hover:text-slate-900 cursor-pointer"
+                  : "text-slate-300 opacity-40 cursor-not-allowed"
+              }`}
             >
               <ChevronRight className="w-4 h-4" />
             </button>
@@ -328,7 +405,11 @@ export function FilterBar({
             <button
               type="button"
               onClick={() => applyPreset("LAST_MONTH")}
-              className="px-2.5 py-1 rounded-lg text-[11px] font-bold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all cursor-pointer"
+              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                isLastMonthActive
+                  ? "bg-sky-800 text-white shadow-2xs"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+              }`}
             >
               Bulan Lalu
             </button>

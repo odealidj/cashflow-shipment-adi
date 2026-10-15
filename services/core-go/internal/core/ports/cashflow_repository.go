@@ -26,4 +26,5 @@ type CashflowRepository interface {
 	GetSummary(ctx context.Context, filter ListFilter) (map[string]interface{}, error)
 	UpdateRemarks(ctx context.Context, id int, status domain.PaymentStatus, updatedBy uuid.UUID) error
 	ArchiveEntry(ctx context.Context, entry *domain.CashflowEntry, archivedBy uuid.UUID, reason string) error
+	GetAvailablePeriods(ctx context.Context) ([]domain.AvailablePeriod, error)
 }

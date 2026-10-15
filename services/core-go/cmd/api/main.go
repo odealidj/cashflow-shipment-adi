@@ -289,6 +289,7 @@ func main() {
 				r.Use(middleware.RequirePermission("cashflow.view"))
 				r.Get("/", cashflowHandler.List)
 				r.Get("/summary", cashflowHandler.GetSummary)
+				r.Get("/periods", cashflowHandler.GetAvailablePeriods)
 				r.With(middleware.RequirePermission("cashflow.export")).Get("/export", cashflowHandler.ExportExcel)
 				r.With(middleware.RequirePermission("cashflow.import")).Post("/import", cashflowHandler.ImportExcel)
 				r.With(middleware.RequirePermission("cashflow.create")).Post("/shipment", cashflowHandler.CreateShipment)

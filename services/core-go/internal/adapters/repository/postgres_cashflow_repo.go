@@ -322,3 +322,34 @@ func (r *PostgresCashflowRepo) ArchiveEntry(ctx context.Context, entry *domain.C
 	)
 	return err
 }
+
+func (r *PostgresCashflowRepo) GetAvailablePeriods(ctx context.Context) ([]domain.AvailablePeriod, error) {
+	query := `
+		SELECT 
+			TO_CHAR(date_of_entry, 'YYYY-MM') AS month_key,
+			EXTRACT(YEAR FROM date_of_entry)::INT AS year,
+			EXTRACT(MONTH FROM date_of_entry)::INT AS month,
+			COUNT(*) AS total_count
+		FROM cashflow_entries
+		GROUP BY 1, 2, 3
+		ORDER BY month_key DESC;
+	`
+	rows, err := r.db.QueryContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var periods []domain.AvailablePeriod
+	for rows.Next() {
+		var p domain.AvailablePeriod
+		if err := rows.Scan(&p.MonthKey, &p.Year, &p.Month, &p.TotalCount); err != nil {
+			return nil, err
+		}
+		periods = append(periods, p)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return periods, nil
+}

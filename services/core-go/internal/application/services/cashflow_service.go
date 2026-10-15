@@ -428,6 +428,10 @@ func (s *CashflowService) GetSummary(ctx context.Context, filter ports.ListFilte
 	return summary, nil
 }
 
+func (s *CashflowService) GetAvailablePeriods(ctx context.Context) ([]domain.AvailablePeriod, error) {
+	return s.cashflowRepo.GetAvailablePeriods(ctx)
+}
+
 func parseExcelDate(s string) time.Time {
 	if s == "" {
 		return time.Now()

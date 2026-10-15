@@ -287,6 +287,15 @@ func (h *CashflowHandler) GetSummary(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, http.StatusOK, "Summary retrieved", summary)
 }
 
+func (h *CashflowHandler) GetAvailablePeriods(w http.ResponseWriter, r *http.Request) {
+	periods, err := h.cashflowService.GetAvailablePeriods(r.Context())
+	if err != nil {
+		response.Error(w, http.StatusInternalServerError, "Failed to retrieve available periods")
+		return
+	}
+	response.JSON(w, http.StatusOK, "Available periods retrieved", periods)
+}
+
 func findLogoPath() string {
 	candidates := []string{
 		"assets/logo.png",
