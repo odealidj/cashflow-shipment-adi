@@ -380,15 +380,15 @@ export default function InvoicesPage() {
       {/* UNIFIED 1 CARD CONTAINER: HEADER + FILTERS & TABS + 8-COL TABLE + FOOTER */}
       <div className="bg-white rounded-2xl overflow-hidden border border-slate-200/80 shadow-xs flex-1 flex flex-col min-h-0">
         {/* 1. Header & Primary Action Bar */}
-        <div className="shrink-0 px-6 py-4 border-b border-slate-100 flex flex-wrap justify-between items-center gap-4 bg-slate-50/50">
+        <div className="shrink-0 px-6 py-2.5 border-b border-slate-100 flex flex-wrap justify-between items-center gap-4 bg-slate-50/50">
           <div>
-            <h1 className="text-xl font-black text-slate-900 flex items-center gap-2.5 tracking-tight">
-              <div className="w-8 h-8 rounded-xl bg-sky-100/80 text-sky-800 flex items-center justify-center shadow-2xs">
+            <h1 className="text-base lg:text-lg font-black text-slate-900 flex items-center gap-2 tracking-tight">
+              <div className="w-7 h-7 rounded-lg bg-sky-100/80 text-sky-800 flex items-center justify-center shadow-2xs">
                 <FileText className="w-4 h-4" />
               </div>
               <span>Daftar Rekapitulasi Invoice & Piutang</span>
             </h1>
-            <p className="text-xs text-slate-500 font-medium mt-0.5">
+            <p className="text-[11px] text-slate-500 font-medium mt-0.5">
               Laporan pengiriman, syarat pembayaran (TOP), dan monitoring jatuh tempo tagihan klien
             </p>
           </div>
@@ -397,7 +397,7 @@ export default function InvoicesPage() {
             {can("invoices.print") && (
               <button
                 onClick={() => setIsRecapReportOpen(true)}
-                className="px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 text-xs font-bold hover:bg-slate-50 transition shadow-2xs flex items-center gap-1.5 cursor-pointer"
+                className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-700 text-xs font-bold hover:bg-slate-50 transition shadow-2xs flex items-center gap-1.5 cursor-pointer"
               >
                 <Printer className="w-3.5 h-3.5 text-slate-500" />
                 <span>Cetak Rekapitulasi</span>
@@ -407,18 +407,18 @@ export default function InvoicesPage() {
             {can("invoices.create") && (
               <button
                 onClick={() => setIsCreateOpen(true)}
-                className="px-4 py-2 rounded-xl bg-sky-700 hover:bg-sky-800 text-white text-xs font-black transition shadow-xs flex items-center gap-1.5 cursor-pointer active:scale-95"
+                className="px-3 py-1.5 rounded-lg bg-sky-700 hover:bg-sky-800 text-white text-xs font-bold transition shadow-xs flex items-center gap-1.5 cursor-pointer active:scale-95"
               >
-                <Plus className="w-4 h-4 stroke-[3]" />
+                <Plus className="w-3.5 h-3.5 stroke-[3]" />
                 <span>Buat Invoice Baru</span>
               </button>
             )}
           </div>
         </div>
 
-        {/* 2. Integrated Filter Toolbar (Sub-Header) - Persis Transaksi Cashflow & Shipment */}
-        <div className="shrink-0 p-4 pb-3.5 bg-slate-50/40 border-b border-slate-100 space-y-3 transition-all">
-          {/* BARIS UTAMA: SEARCH, MONTH CONTROLLER, QUICK PRESETS, RANGE & FILTER, RESET */}
+        {/* 2. Integrated Filter Toolbar (Sub-Header) - Persis Transaksi Cashflow & Shipment (Pilihan 1) */}
+        <div className="shrink-0 px-6 py-2.5 bg-slate-50/40 border-b border-slate-100 space-y-2.5 transition-all">
+          {/* BARIS UTAMA: SEARCH, MONTH CONTROLLER, QUICK PRESETS, RANGE & FILTER, URUTKAN, RESET */}
           <div className="flex flex-wrap items-center justify-between gap-2.5">
             <div className="flex flex-wrap items-center gap-2">
               {/* Quick Search */}
@@ -429,7 +429,7 @@ export default function InvoicesPage() {
                   placeholder="Cari nama klien / no. invoice / catatan..."
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
-                  className="bg-white border border-slate-200 rounded-xl pl-9 pr-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-600 w-56 sm:w-64 shadow-2xs font-medium"
+                  className="bg-white border border-slate-200 rounded-xl pl-9 pr-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-600 w-52 sm:w-60 shadow-2xs font-medium"
                 />
               </div>
 
@@ -520,14 +520,47 @@ export default function InvoicesPage() {
                 type="button"
                 onClick={() => setIsRangeFilterOpen(!isRangeFilterOpen)}
                 className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer border ${
-                  isRangeFilterOpen || currentMonthKey === "CUSTOM"
+                  isRangeFilterOpen || currentMonthKey === "CUSTOM" || statusFilter !== "ALL"
                     ? "bg-sky-700 text-white border-sky-700 shadow-2xs"
                     : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50 shadow-2xs"
                 }`}
               >
                 <SlidersHorizontal className="w-3.5 h-3.5" />
-                <span>Range & Filter {currentMonthKey === "CUSTOM" ? "(Kustom)" : ""}</span>
+                <span>Range & Filter</span>
+                {statusFilter !== "ALL" && (
+                  <span className="ml-0.5 px-1.5 py-0.2 rounded text-[10px] bg-white/20 font-extrabold uppercase">
+                    {statusFilter === "UNPAID" ? "Belum Lunas" : statusFilter === "PAID" ? "Lunas" : "Overdue"}
+                  </span>
+                )}
+                {currentMonthKey === "CUSTOM" && statusFilter === "ALL" && (
+                  <span className="ml-0.5 text-[10px] text-sky-200 font-bold">(Kustom)</span>
+                )}
               </button>
+
+              {/* URUTKAN DROPDOWN (SEJAJAR DI BARIS UTAMA) */}
+              <div className="relative flex items-center bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 shadow-2xs">
+                <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 mr-1.5 pointer-events-none" />
+                <select
+                  value={`${sortBy}-${sortDir}`}
+                  onChange={(e) => {
+                    const [sb, sd] = e.target.value.split("-") as [string, "ASC" | "DESC"];
+                    setSortBy(sb);
+                    setSortDir(sd);
+                  }}
+                  className="bg-transparent text-xs font-bold text-slate-700 focus:outline-none cursor-pointer pr-1"
+                >
+                  <option value="created_at-DESC">Urut: Terbaru Dibuat (Default)</option>
+                  <option value="due_date-ASC">Urut: Jatuh Tempo Terdekat</option>
+                  <option value="due_date-DESC">Urut: Jatuh Tempo Terjauh</option>
+                  <option value="client_name-ASC">Urut: Nama Customer A-Z</option>
+                  <option value="client_name-DESC">Urut: Nama Customer Z-A</option>
+                  <option value="shipment_date-DESC">Urut: Tgl Kirim Terbaru</option>
+                  <option value="shipment_date-ASC">Urut: Tgl Kirim Terlama</option>
+                  <option value="amount-DESC">Urut: Nominal Tertinggi</option>
+                  <option value="amount-ASC">Urut: Nominal Terendah</option>
+                  <option value="created_at-ASC">Urut: Terlama Dibuat</option>
+                </select>
+              </div>
             </div>
 
             {/* RIGHT: RESET ACTION */}
@@ -536,7 +569,7 @@ export default function InvoicesPage() {
                 type="button"
                 onClick={handleResetFilter}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-xs font-bold text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer shadow-2xs"
-                title="Kembalikan ke Bulan Ini"
+                title="Kembalikan ke Bulan Ini & Semua Tagihan"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 <span>Reset (Bulan Ini)</span>
@@ -544,71 +577,53 @@ export default function InvoicesPage() {
             )}
           </div>
 
-          {/* BARIS SUB-NAV: STATUS TABS & STATUS PERIODE AKTIF */}
-          <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-slate-200/60">
-            {/* Status Pills */}
-            <div className="flex items-center gap-1">
-              {[
-                { id: "ALL", label: "Semua Tagihan" },
-                { id: "UNPAID", label: "Menunggu Pembayaran" },
-                { id: "PAID", label: "Lunas" },
-                { id: "OVERDUE", label: "Jatuh Tempo (Overdue)" },
-              ].map(tab => {
-                const active = statusFilter === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    onClick={() => setStatusFilter(tab.id)}
-                    className={`px-2.5 py-0.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
-                      active
-                        ? "bg-slate-800 text-white shadow-2xs"
-                        : "bg-white text-slate-600 hover:text-slate-900 border border-slate-200/80 hover:bg-slate-100"
-                    }`}
-                  >
-                    {tab.label}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Status Periode Aktif & Urutan */}
-            <div className="flex items-center gap-2 text-[11px] flex-wrap">
-              <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-sky-100/70 text-sky-900 font-bold border border-sky-200">
-                <Calendar className="w-3 h-3 text-sky-700" />
-                <span>Periode: {formatActivePeriod(dateFrom, dateTo)}</span>
-              </span>
-
-              {/* Urutan Dropdown */}
-              <div className="relative flex items-center bg-white border border-slate-200 rounded-xl px-2.5 py-0.5 shadow-2xs">
-                <ArrowUpDown className="w-3 h-3 text-slate-400 mr-1.5 pointer-events-none" />
-                <select
-                  value={`${sortBy}-${sortDir}`}
-                  onChange={(e) => {
-                    const [sb, sd] = e.target.value.split("-") as [string, "ASC" | "DESC"];
-                    setSortBy(sb);
-                    setSortDir(sd);
-                  }}
-                  className="bg-transparent text-[11px] font-bold text-slate-700 focus:outline-hidden cursor-pointer"
-                >
-                  <option value="created_at-DESC">Urutkan: Terbaru Dibuat (Default)</option>
-                  <option value="due_date-ASC">Jatuh Tempo: Terdekat</option>
-                  <option value="due_date-DESC">Jatuh Tempo: Terjauh</option>
-                  <option value="client_name-ASC">Nama Customer: A-Z</option>
-                  <option value="client_name-DESC">Nama Customer: Z-A</option>
-                  <option value="shipment_date-DESC">Tgl Kirim: Terbaru</option>
-                  <option value="shipment_date-ASC">Tgl Kirim: Terlama</option>
-                  <option value="amount-DESC">Nominal: Tertinggi</option>
-                  <option value="amount-ASC">Nominal: Terendah</option>
-                  <option value="created_at-ASC">Terlama Dibuat</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          {/* EXPANDABLE SECTION: RENTANG TANGGAL KUSTOM */}
+          {/* EXPANDABLE SECTION: RENTANG TANGGAL KUSTOM & FILTER STATUS TAGIHAN */}
           {isRangeFilterOpen && (
-            <div className="pt-3 border-t border-slate-200/80 animate-fade-in space-y-3">
+            <div className="pt-2.5 border-t border-slate-200/80 animate-fade-in space-y-2.5">
+              {/* 1. Filter Status Tagihan */}
+              <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs">
+                <div className="text-xs font-bold text-slate-800 mb-2 flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <Filter className="w-3.5 h-3.5 text-sky-700" />
+                    Status Pembayaran Tagihan
+                  </span>
+                  {statusFilter !== "ALL" && (
+                    <button
+                      type="button"
+                      onClick={() => setStatusFilter("ALL")}
+                      className="text-[11px] text-sky-700 hover:underline font-bold cursor-pointer"
+                    >
+                      Tampilkan Semua
+                    </button>
+                  )}
+                </div>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {[
+                    { id: "ALL", label: "Semua Tagihan" },
+                    { id: "UNPAID", label: "Menunggu Pembayaran (Piutang)" },
+                    { id: "PAID", label: "Lunas" },
+                    { id: "OVERDUE", label: "Jatuh Tempo (Overdue)" },
+                  ].map(tab => {
+                    const active = statusFilter === tab.id;
+                    return (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        onClick={() => setStatusFilter(tab.id)}
+                        className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                          active
+                            ? "bg-sky-800 text-white shadow-2xs"
+                            : "bg-slate-50 text-slate-600 hover:text-slate-900 border border-slate-200/80 hover:bg-slate-100"
+                        }`}
+                      >
+                        {tab.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 2. Rentang Tanggal Spesifik */}
               <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs">
                 <div className="text-xs font-bold text-slate-800 mb-2 flex items-center justify-between">
                   <span className="flex items-center gap-1.5">
@@ -679,8 +694,8 @@ export default function InvoicesPage() {
           <table className="w-full text-left border-collapse text-xs">
             <thead className={tableTheadClass}>
               <tr>
-                <th className="py-3.5 px-3 text-center w-12">No</th>
-                <th className="py-3.5 px-3">No. Invoice</th>
+                <th className="py-2.5 px-2.5 text-center w-12">No</th>
+                <th className="py-2.5 px-2.5">No. Invoice</th>
                 <th 
                   onClick={() => {
                     if (sortBy === "client_name") {
@@ -690,7 +705,7 @@ export default function InvoicesPage() {
                       setSortDir("ASC");
                     }
                   }}
-                  className="py-3.5 px-3 cursor-pointer hover:bg-slate-100/80 transition-colors select-none group"
+                  className="py-2.5 px-2.5 cursor-pointer hover:bg-slate-100/80 transition-colors select-none group"
                   title="Klik untuk mengubah urutan nama customer"
                 >
                   <div className="flex items-center gap-1.5">
@@ -715,7 +730,7 @@ export default function InvoicesPage() {
                       setSortDir("DESC");
                     }
                   }}
-                  className="py-3.5 px-3 text-center cursor-pointer hover:bg-slate-100/80 transition-colors select-none group"
+                  className="py-2.5 px-2.5 text-center cursor-pointer hover:bg-slate-100/80 transition-colors select-none group"
                   title="Klik untuk mengubah urutan tanggal pengiriman"
                 >
                   <div className="flex items-center justify-center gap-1.5">
@@ -731,7 +746,7 @@ export default function InvoicesPage() {
                     )}
                   </div>
                 </th>
-                <th className="py-3.5 px-3 text-center">TOP (Terms)</th>
+                <th className="py-2.5 px-2.5 text-center">TOP (Terms)</th>
                 <th 
                   onClick={() => {
                     if (sortBy === "due_date") {
@@ -741,7 +756,7 @@ export default function InvoicesPage() {
                       setSortDir("ASC");
                     }
                   }}
-                  className="py-3.5 px-3 text-center cursor-pointer hover:bg-slate-100/80 transition-colors select-none group"
+                  className="py-2.5 px-2.5 text-center cursor-pointer hover:bg-slate-100/80 transition-colors select-none group"
                   title="Klik untuk mengubah urutan tanggal jatuh tempo"
                 >
                   <div className="flex items-center justify-center gap-1.5">
@@ -766,7 +781,7 @@ export default function InvoicesPage() {
                       setSortDir("DESC");
                     }
                   }}
-                  className="py-3.5 px-4 text-right cursor-pointer hover:bg-slate-100/80 transition-colors select-none group"
+                  className="py-2.5 px-2.5 text-right cursor-pointer hover:bg-slate-100/80 transition-colors select-none group"
                   title="Klik untuk mengubah urutan nominal tagihan"
                 >
                   <div className="flex items-center justify-end gap-1.5">
@@ -782,9 +797,9 @@ export default function InvoicesPage() {
                     )}
                   </div>
                 </th>
-                <th className="py-3.5 px-3 text-center">Status</th>
-                <th className="py-3.5 px-3 text-center">Tgl. Pelunasan</th>
-                <th className="py-3.5 px-3 text-center w-44">Aksi</th>
+                <th className="py-2.5 px-2.5 text-center">Status</th>
+                <th className="py-2.5 px-2.5 text-center">Tgl. Pelunasan</th>
+                <th className="py-2.5 px-2.5 text-center w-44">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
@@ -809,32 +824,32 @@ export default function InvoicesPage() {
 
                   return (
                     <tr key={inv.id} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="py-3 px-3 text-center font-mono text-slate-400 font-bold">
+                      <td className="py-2 px-2.5 text-center font-mono text-slate-400 font-bold">
                         {idx + 1}
                       </td>
-                      <td className="py-3 px-3 font-mono font-black text-sky-900">
+                      <td className="py-2 px-2.5 font-mono font-black text-sky-900">
                         {inv.invoice_no}
                       </td>
-                      <td className="py-3 px-3">
+                      <td className="py-2 px-2.5">
                         <span className="font-extrabold text-slate-900 block">{inv.client_name}</span>
                         {inv.notes && (
-                          <span className="text-[11px] text-slate-400 truncate max-w-xs block">
+                          <span className="text-[10.5px] text-slate-400 truncate max-w-xs block">
                             {inv.notes}
                           </span>
                         )}
                       </td>
-                      <td className="py-3 px-3 text-center font-mono font-medium text-slate-600">
+                      <td className="py-2 px-2.5 text-center font-mono font-medium text-slate-600">
                         {formatDate(inv.shipment_date)}
                       </td>
-                      <td className="py-3 px-3 text-center">
-                        <span className="px-2 py-0.5 rounded-md font-mono text-[11px] font-bold bg-slate-100 text-slate-700">
+                      <td className="py-2 px-2.5 text-center">
+                        <span className="px-1.5 py-0.5 rounded-md font-mono text-[10.5px] font-bold bg-slate-100 text-slate-700">
                           {inv.top_days} Hari
                         </span>
                       </td>
-                      <td className="py-3 px-3 text-center font-mono">
+                      <td className="py-2 px-2.5 text-center font-mono">
                         <div className="flex flex-col items-center justify-center">
                           <span
-                            className={`inline-block px-2 py-0.5 rounded-md font-bold text-xs border ${
+                            className={`inline-block px-2 py-0.5 rounded-md font-bold text-[11px] border ${
                               isPaid
                                 ? "text-slate-600 bg-slate-100/80 border-slate-200"
                                 : isOverdue
@@ -849,7 +864,7 @@ export default function InvoicesPage() {
                               type="button"
                               onClick={() => setSelectedInvoiceForHistory(inv)}
                               title="Lihat riwayat perpanjangan jatuh tempo"
-                              className="mt-1 inline-flex items-center gap-1 text-[10px] font-bold text-amber-800 bg-amber-100/80 hover:bg-amber-200 border border-amber-300 px-1.5 py-0.5 rounded-md cursor-pointer transition"
+                              className="mt-0.5 inline-flex items-center gap-1 text-[9.5px] font-bold text-amber-800 bg-amber-100/80 hover:bg-amber-200 border border-amber-300 px-1.5 py-0.2 rounded-md cursor-pointer transition"
                             >
                               <History className="w-2.5 h-2.5" />
                               Diundur {inv.reschedule_count}x
@@ -857,12 +872,12 @@ export default function InvoicesPage() {
                           )}
                         </div>
                       </td>
-                      <td className="py-3 px-4 text-right font-mono font-black text-slate-900 text-xs">
+                      <td className="py-2 px-2.5 text-right font-mono font-black text-slate-900 text-xs">
                         {formatCurrency(inv.amount ?? inv.total_amount)}
                       </td>
-                      <td className="py-3 px-3 text-center">
+                      <td className="py-2 px-2.5 text-center">
                         <span
-                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-extrabold border ${
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10.5px] font-extrabold border ${
                             isPaid
                               ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                               : isOverdue
@@ -888,16 +903,16 @@ export default function InvoicesPage() {
                           )}
                         </span>
                       </td>
-                      <td className="py-3 px-3 text-center font-mono">
+                      <td className="py-2 px-2.5 text-center font-mono">
                         {inv.paid_at ? (
-                          <span className="inline-block px-2 py-0.5 rounded-md font-bold text-xs text-emerald-800 bg-emerald-50 border border-emerald-200">
+                          <span className="inline-block px-2 py-0.5 rounded-md font-bold text-[11px] text-emerald-800 bg-emerald-50 border border-emerald-200">
                             {formatDate(inv.paid_at)}
                           </span>
                         ) : (
                           <span className="text-slate-400 font-medium">-</span>
                         )}
                       </td>
-                      <td className="py-3 px-3 text-center">
+                      <td className="py-2 px-2.5 text-center">
                         <div className="flex items-center justify-center gap-1.5">
                           {/* 1. Pelunasan Invoice (Full Settlement) */}
                           {!isPaid && can("invoices.mark_paid") && (
@@ -926,7 +941,6 @@ export default function InvoicesPage() {
                             title="Riwayat & Audit Log Tagihan"
                             variant="slate"
                           />
-
                           {/* 4. Cetak Kwitansi */}
                           {can("invoices.print") && (
                             <ActionButton
