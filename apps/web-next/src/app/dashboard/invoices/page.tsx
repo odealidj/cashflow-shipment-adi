@@ -24,6 +24,8 @@ import {
   SlidersHorizontal,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
   History
 } from "lucide-react";
 import { CreateInvoiceModal } from "@/components/CreateInvoiceModal";
@@ -75,6 +77,25 @@ export default function InvoicesPage() {
   const [sortBy, setSortBy] = useState<string>("created_at");
   const [sortDir, setSortDir] = useState<"ASC" | "DESC">("DESC");
   const [isRangeFilterOpen, setIsRangeFilterOpen] = useState(false);
+
+  // Collapsible KPI Summary State (dengan penyimpanan preferensi di localStorage)
+  const [isKpiCollapsed, setIsKpiCollapsed] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("invoices_kpi_collapsed");
+      return saved !== null ? saved === "true" : true;
+    }
+    return true;
+  });
+
+  const toggleKpi = () => {
+    setIsKpiCollapsed(prev => {
+      const next = !prev;
+      if (typeof window !== "undefined") {
+        localStorage.setItem("invoices_kpi_collapsed", String(next));
+      }
+      return next;
+    });
+  };
 
   // 18 Month Dropdown Options (Sama dengan CashflowTable)
   const monthOptions = useMemo(() => {
@@ -323,56 +344,118 @@ export default function InvoicesPage() {
   return (
     <>
       <div className={`flex-1 flex flex-col space-y-4 min-h-0 ${isRecapReportOpen || !!selectedInvoiceForPrint ? "print:hidden" : ""}`}>
-      {/* 4 SUMMARY CARDS (SHARED DESIGN SYSTEM) */}
+      {/* 4 SUMMARY CARDS (COLLAPSIBLE / COMPACT) */}
       {summary && (() => {
         const curMonth = getCurrentMonthRange();
         const isCurrentMonth = dateFrom === curMonth.date_from && dateTo === curMonth.date_to;
         const activePeriodLabel = formatActivePeriod(dateFrom, dateTo);
 
         return (
-          <div className="shrink-0">
-            <KpiCardGrid
-              periodPrefix="Monitoring Piutang & Invoice"
-              periodLabel={activePeriodLabel}
-              isCurrentPeriod={isCurrentMonth}
-              cols={4}
-            >
-            {/* Card 1: Total Tagihan */}
-            <KpiCard
-              title="Total Tagihan"
-              value={formatCurrency(summary.total_amount)}
-              icon={<FileText className="w-4 h-4" />}
-              subtitle={`${summary.total_count} Invoice tercatat`}
-              variant="default"
-            />
+          <div className="shrink-0 space-y-2">
+            {/* PENANDA WAKTU, PERIODE AKTIF & TOGGLE RINGKASAN */}
+            <div className="flex flex-wrap items-center justify-between gap-2 px-1">
+              <div className="flex items-center gap-2 text-xs font-black text-slate-700">
+                <div className="w-5 h-5 rounded-md bg-sky-100/80 text-sky-800 flex items-center justify-center">
+                  <Calendar className="w-3.5 h-3.5" />
+                </div>
+                <span>
+                  Monitoring Piutang & Invoice: <span className="text-sky-800 underline decoration-sky-300 underline-offset-2">{activePeriodLabel}</span>
+                </span>
+                {isCurrentMonth && (
+                  <span className="text-[10px] font-bold bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full border border-emerald-200">
+                    ● Bulan Berjalan
+                  </span>
+                )}
+              </div>
 
-            {/* Card 2: Terbayar (Lunas) */}
-            <KpiCard
-              title="Terbayar (Lunas)"
-              value={formatCurrency(summary.paid_amount)}
-              icon={<CheckCircle2 className="w-4 h-4" />}
-              subtitle={`${summary.paid_count} Invoice terselesaikan`}
-              variant="success"
-            />
+              <div className="flex items-center gap-2.5">
+                {/* Mini Ringkasan Inline Saat Kartu KPI Dilipat */}
+                {isKpiCollapsed && (
+                  <div className="flex items-center gap-2.5 text-xs font-mono font-bold bg-white px-3 py-1 rounded-xl border border-slate-200/80 shadow-2xs animate-fade-in">
+                    <span className="text-slate-400 font-sans text-[10px] uppercase font-bold">Total:</span>
+                    <span className="text-sky-950 font-black">{formatCurrency(summary.total_amount)}</span>
+                    <span className="text-slate-200">|</span>
+                    <span className="text-slate-400 font-sans text-[10px] uppercase font-bold">Terbayar:</span>
+                    <span className="text-emerald-700 font-black">{formatCurrency(summary.paid_amount)}</span>
+                    <span className="text-slate-200">|</span>
+                    <span className="text-slate-400 font-sans text-[10px] uppercase font-bold">Piutang:</span>
+                    <span className="text-amber-700 font-black">{formatCurrency(summary.unpaid_amount)}</span>
+                    {summary.overdue_amount > 0 && (
+                      <>
+                        <span className="text-slate-200">|</span>
+                        <span className="text-slate-400 font-sans text-[10px] uppercase font-bold">Overdue:</span>
+                        <span className="text-rose-600 font-black">{formatCurrency(summary.overdue_amount)}</span>
+                      </>
+                    )}
+                  </div>
+                )}
 
-            {/* Card 3: Menunggu Pembayaran (Piutang) */}
-            <KpiCard
-              title="Menunggu Pembayaran"
-              value={formatCurrency(summary.unpaid_amount)}
-              icon={<Clock className="w-4 h-4" />}
-              subtitle={`${summary.unpaid_count} Invoice kredit berjalan`}
-              variant="warning"
-            />
+                <div className="text-[11px] text-slate-400 font-medium hidden md:block">
+                  {isKpiCollapsed ? "Ringkasan dilipat" : "Nilai otomatis menyesuaikan filter"}
+                </div>
 
-            {/* Card 4: Jatuh Tempo (Overdue) */}
-            <KpiCard
-              title="Jatuh Tempo (Overdue)"
-              value={formatCurrency(summary.overdue_amount)}
-              icon={<AlertTriangle className="w-4 h-4" />}
-              subtitle={`${summary.overdue_count} Invoice melewati tempo`}
-              variant="danger"
-            />
-            </KpiCardGrid>
+                {/* Tombol Toggle Sembunyikan / Tampilkan Ringkasan */}
+                <button
+                  type="button"
+                  onClick={toggleKpi}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold text-slate-600 hover:text-sky-900 bg-white hover:bg-slate-50 border border-slate-200/80 shadow-2xs transition-all cursor-pointer"
+                  title={isKpiCollapsed ? "Tampilkan 4 kartu ringkasan KPI lengkap" : "Sembunyikan kartu ringkasan KPI untuk memperluas tabel invoice"}
+                >
+                  {isKpiCollapsed ? (
+                    <>
+                      <ChevronDown className="w-3.5 h-3.5 text-sky-600" />
+                      <span>Tampilkan Ringkasan</span>
+                    </>
+                  ) : (
+                    <>
+                      <ChevronUp className="w-3.5 h-3.5 text-slate-500" />
+                      <span>Sembunyikan Ringkasan</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* 4 KARTU KPI DENGAN LABEL JELAS (TAMPIL HANYA JIKA TIDAK DILIPAT) */}
+            {!isKpiCollapsed && (
+              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 animate-fade-in">
+                {/* Card 1: Total Tagihan */}
+                <KpiCard
+                  title="Total Tagihan"
+                  value={formatCurrency(summary.total_amount)}
+                  icon={<FileText className="w-4 h-4" />}
+                  subtitle={`${summary.total_count} Invoice tercatat`}
+                  variant="default"
+                />
+
+                {/* Card 2: Terbayar (Lunas) */}
+                <KpiCard
+                  title="Terbayar (Lunas)"
+                  value={formatCurrency(summary.paid_amount)}
+                  icon={<CheckCircle2 className="w-4 h-4" />}
+                  subtitle={`${summary.paid_count} Invoice terselesaikan`}
+                  variant="success"
+                />
+
+                {/* Card 3: Menunggu Pembayaran (Piutang) */}
+                <KpiCard
+                  title="Menunggu Pembayaran"
+                  value={formatCurrency(summary.unpaid_amount)}
+                  icon={<Clock className="w-4 h-4" />}
+                  subtitle={`${summary.unpaid_count} Invoice kredit berjalan`}
+                  variant="warning"
+                />
+
+                {/* Card 4: Jatuh Tempo (Overdue) */}
+                <KpiCard
+                  title="Jatuh Tempo (Overdue)"
+                  value={formatCurrency(summary.overdue_amount)}
+                  icon={<AlertTriangle className="w-4 h-4" />}
+                  subtitle={`${summary.overdue_count} Invoice melewati tempo`}
+                  variant="danger"
+                />
+              </div>
+            )}
           </div>
         );
       })()}
