@@ -61,12 +61,14 @@ export default function AuthPage() {
     setError("");
     setWarningMessage("");
 
+    const cleanIdentifier = identifier.trim();
+
     try {
       const res = await fetch("/api/v1/auth/login", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ identifier, password }),
+        body: JSON.stringify({ identifier: cleanIdentifier, password }),
       });
 
       const data = await res.json();
@@ -119,9 +121,9 @@ export default function AuthPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          full_name: regFullName,
-          email: regEmail,
-          phone: regPhone || undefined,
+          full_name: regFullName.trim(),
+          email: regEmail.trim(),
+          phone: regPhone.trim() || undefined,
           password: regPassword,
         }),
       });

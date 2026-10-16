@@ -42,6 +42,8 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	req.Identifier = strings.TrimSpace(req.Identifier)
+
 	session, token, err := h.authService.Login(r.Context(), req.Identifier, req.Password)
 	if err != nil {
 		response.Error(w, http.StatusUnauthorized, err.Error())

@@ -49,12 +49,14 @@ function MobileLoginContent() {
     setError('');
     setWarningMessage('');
 
+    const cleanIdentifier = identifier.trim();
+
     try {
       const res = await fetch('/api/v1/auth/login', {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ identifier, password }),
+        body: JSON.stringify({ identifier: cleanIdentifier, password }),
       });
 
       const data = await res.json();
