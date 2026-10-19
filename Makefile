@@ -1,4 +1,4 @@
-.PHONY: help up down up-local down-local status-local logs-local infra-up infra-down infra-logs run-local-core-go run-core-go run-local-api-gateway-go run-api-gateway-go run-local-all-go run-all-go run-local-web-next generate-ui-assets swagger-gen db-migrate db-seed db-seed-2026 db-clean db-clean-all db-reset db-fresh db-fresh-2026 db-status redis-flush
+.PHONY: help up down up-local down-local status-local logs-local infra-up infra-down infra-logs run-local-core-go run-core-go run-local-api-gateway-go run-api-gateway-go run-local-all-go run-all-go run-local-web-next generate-ui-assets swagger-gen db-migrate db-seed db-seed-2026 db-clean db-clean-all db-reset db-fresh db-fresh-2026 db-status redis-flush valkey-flush test test-e2e
 
 # Default command
 help:
@@ -12,12 +12,12 @@ help:
 	@echo "  make down                    - Stop all Docker containers (services + infra)"
 	@echo ""
 	@echo "  --- Infrastructure (Database, Cache & Observability) ---"
-	@echo "  make infra-up                - Start PostgreSQL 15, Redis 7, Prometheus & k6 containers"
+	@echo "  make infra-up                - Start PostgreSQL 15, Valkey 8 (Redis-compatible), Prometheus & k6 containers"
 	@echo "  make infra-down              - Stop infrastructure containers"
 	@echo "  make infra-logs              - View infrastructure container logs"
 	@echo ""
 	@echo "  --- Database & Demo Data Management ---"
-	@echo "  make db-fresh                - Full fresh restart: drop schema + migrate + seed demo data + flush redis"
+	@echo "  make db-fresh                - Full fresh restart: drop schema + migrate + seed demo data + flush cache"
 	@echo "  make db-fresh-2026           - Full fresh restart with 9-month demo data (Januari - September 2026)"
 	@echo "  make db-seed                 - Populate standard executive demo data (August-September)"
 	@echo "  make db-seed-2026            - Populate comprehensive 9-month demo data (Januari - September 2026)"
@@ -26,7 +26,8 @@ help:
 	@echo "  make db-reset                - Drop schema, recreate & re-run all migrations (clean empty DB)"
 	@echo "  make db-migrate              - Run all database SQL migrations (000001 to 000013)"
 	@echo "  make db-status               - Check database connection and table row count statistics"
-	@echo "  make redis-flush             - Flush all cached queries, metrics and sessions in Redis"
+	@echo "  make valkey-flush            - Flush all cached queries, metrics and sessions in Valkey (alias: redis-flush)"
+	@echo "  make redis-flush             - Alias for valkey-flush"
 	@echo ""
 	@echo "  --- Go Backend Services Orchestration ---"
 	@echo "  make run-local-core-go       - Run Core Go API locally on host (http://localhost:8080)"
@@ -40,6 +41,8 @@ help:
 	@echo "  make run-local-web-next      - Run Next.js App locally (http://localhost:3000)"
 	@echo "  make swagger-gen             - Generate Swagger OpenAPI documentation"
 	@echo "  make generate-ui-assets      - Generate stitched full-page composite assets"
+	@echo "  make test                    - Run Go backend unit & calculation tests"
+	@echo "  make test-e2e                - Run comprehensive automated Happy Path E2E test suite"
 
 # Container Compose Command Detection (Docker Compose v2 CLI plugin vs docker-compose standalone)
 DOCKER_COMPOSE ?= $(shell if docker compose version >/dev/null 2>&1; then echo "docker compose"; else echo "docker-compose"; fi)
@@ -109,6 +112,9 @@ db-status:
 redis-flush:
 	@bash scripts/database/db_manager.sh redis-flush
 
+valkey-flush:
+	@bash scripts/database/db_manager.sh valkey-flush
+
 # 1. Run Core Go on Host (Standalone on port 8080)
 run-local-core-go:
 	@echo "Starting Core Go API service on host OS (http://localhost:8080)..."
@@ -159,3 +165,13 @@ generate-ui-assets:
 swagger-gen:
 	@echo "Generating Swagger OpenAPI documentation..."
 	cd services/core-go && swag init -g cmd/api/main.go
+
+# Automated Testing Suites
+test:
+	@echo "Running Go unit & business logic tests..."
+	@cd services/core-go && go test -v ./...
+	@cd services/gateway-go && go test -v ./...
+
+test-e2e:
+	@echo "Executing End-to-End Happy Path test suite..."
+	@bash tests/e2e/happy_path_test.sh
