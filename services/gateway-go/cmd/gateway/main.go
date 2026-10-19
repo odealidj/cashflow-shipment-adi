@@ -40,9 +40,9 @@ func main() {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	if err := rdb.Ping(ctx).Err(); err != nil {
-		log.Printf("[Warning] Redis connection failed (%v). Idempotency lock will be disabled.\n", err)
+		log.Printf("[Warning] Valkey/Redis connection failed (%v). Idempotency lock will be disabled.\n", err)
 	} else {
-		log.Println("[Redis] Successfully connected to Redis for Idempotency & Session caching")
+		log.Println("[Valkey/Redis] Successfully connected for Idempotency & Session caching")
 	}
 	cancel()
 

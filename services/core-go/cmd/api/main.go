@@ -94,7 +94,10 @@ func main() {
 		dbUrl = "postgres://cashflow_user:cashflow_password@localhost:5432/cashflow_db?sslmode=disable"
 	}
 
-	redisUrl := os.Getenv("REDIS_URL")
+	redisUrl := os.Getenv("VALKEY_URL")
+	if redisUrl == "" {
+		redisUrl = os.Getenv("REDIS_URL")
+	}
 	if redisUrl == "" {
 		redisUrl = "localhost:6379"
 	}
@@ -109,10 +112,10 @@ func main() {
 	// Bind DB Connection Pool metrics to Prometheus GaugeFuncs
 	telemetry.RegisterDBPoolMetrics(dbPool)
 
-	// Initialize Redis Client
+	// Initialize Valkey / Redis Client
 	redisClient, err := repository.NewRedisClient(ctx, redisUrl)
 	if err != nil {
-		log.Fatalf("Failed to initialize Redis: %v", err)
+		log.Fatalf("Failed to initialize Valkey/Redis: %v", err)
 	}
 	defer redisClient.Close()
 

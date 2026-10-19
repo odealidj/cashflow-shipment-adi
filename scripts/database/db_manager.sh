@@ -344,15 +344,22 @@ show_status() {
 }
 
 # -----------------------------------------------------------------------------
-# 7. FLUSH CACHE REDIS
+# 7. FLUSH CACHE VALKEY / REDIS
 # -----------------------------------------------------------------------------
 flush_redis() {
-    log_step "Mengosongkan cache Redis (Session, Cache Query & Metrik)..."
-    if "${COMPOSE_CMD[@]}" exec -T redis redis-cli ping > /dev/null 2>&1; then
-        "${COMPOSE_CMD[@]}" exec -T redis redis-cli flushall > /dev/null 2>&1 || true
-        log_success "Cache Redis berhasil dikosongkan (FLUSHALL OK)."
+    log_step "Mengosongkan cache Valkey/Redis (Session, Cache Query & Metrik)..."
+    local cli_cmd=""
+    if "${COMPOSE_CMD[@]}" exec -T redis which valkey-cli > /dev/null 2>&1; then
+        cli_cmd="valkey-cli"
+    elif "${COMPOSE_CMD[@]}" exec -T redis which redis-cli > /dev/null 2>&1; then
+        cli_cmd="redis-cli"
+    fi
+
+    if [ -n "$cli_cmd" ] && "${COMPOSE_CMD[@]}" exec -T redis "$cli_cmd" ping > /dev/null 2>&1; then
+        "${COMPOSE_CMD[@]}" exec -T redis "$cli_cmd" flushall > /dev/null 2>&1 || true
+        log_success "Cache Valkey/Redis berhasil dikosongkan ($cli_cmd FLUSHALL OK)."
     else
-        log_warn "Container Redis tidak aktif atau belum siap. Melewati flush Redis."
+        log_warn "Container Valkey/Redis tidak aktif atau belum siap. Melewati flush cache."
     fi
 }
 
@@ -387,11 +394,11 @@ case "$1" in
     status)
         show_status
         ;;
-    redis-flush)
+    redis-flush|valkey-flush)
         flush_redis
         ;;
     *)
-        echo "Penggunaan: $0 {migrate|seed|seed-2026|clean|clean-all|reset|fresh|fresh-2026|status|redis-flush}"
+        echo "Penggunaan: $0 {migrate|seed|seed-2026|clean|clean-all|reset|fresh|fresh-2026|status|redis-flush|valkey-flush}"
         exit 1
         ;;
 esac

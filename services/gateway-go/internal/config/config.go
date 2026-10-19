@@ -30,12 +30,18 @@ func LoadConfig() *Config {
 		trackingURL = "http://localhost:8082"
 	}
 
-	redisAddr := os.Getenv("REDIS_ADDR")
+	redisAddr := os.Getenv("VALKEY_ADDR")
+	if redisAddr == "" {
+		redisAddr = os.Getenv("VALKEY_URL")
+	}
+	if redisAddr == "" {
+		redisAddr = os.Getenv("REDIS_ADDR")
+	}
 	if redisAddr == "" {
 		redisAddr = os.Getenv("REDIS_URL")
-		if redisAddr == "" {
-			redisAddr = "localhost:6379"
-		}
+	}
+	if redisAddr == "" {
+		redisAddr = "localhost:6379"
 	}
 
 	redisPassword := os.Getenv("REDIS_PASSWORD")

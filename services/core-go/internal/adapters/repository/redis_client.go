@@ -30,7 +30,7 @@ func NewRedisClient(ctx context.Context, redisURL string) (*redis.Client, error)
 	defer cancel()
 
 	if err := client.Ping(pingCtx).Err(); err != nil {
-		return nil, fmt.Errorf("unable to connect to Redis at %s: %w", redisURL, err)
+		return nil, fmt.Errorf("unable to connect to Valkey/Redis at %s: %w", redisURL, err)
 	}
 
 	return client, nil
